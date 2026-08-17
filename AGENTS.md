@@ -12,10 +12,17 @@ keine Gestenkommandos lernen müssen. Leitgedanke:
 > **WIRKLICHT visualisiert nicht die Befehle von Menschen, sondern die Spuren
 > ihrer Anwesenheit, Bewegung und Beziehung.**
 
-Vor Änderungen an Wahrnehmungslogik, Effekten oder Dramaturgie zuerst
-`docs/plan.md` und `docs/Theologische-Aesthetik.md` lesen. Beide Dokumente sind
-für die Entwicklungsrichtung verbindliche Referenzen; das ästhetische Papier ist
-als Diskussions- und Prüfdokument zu verstehen, nicht als starre Dogmatik.
+Ebenso wichtig: Die Installation darf ihre Interaktivität nicht so stark
+verbergen, dass Passant:innen den Zusammenhang zwischen eigener Anwesenheit und
+Fassadenbild nur zufällig entdecken können. Der Nahraum muss die Kopplung
+**Ich ↔ Resonanz ↔ Fassade** schnell erfahrbar machen, ohne daraus eine
+Bedienoberfläche oder Technikdemo zu machen.
+
+Vor Änderungen an Wahrnehmungslogik, Effekten, Stand-/Monitorlogik oder
+Dramaturgie zuerst `docs/plan.md`, `docs/Standkonzept.md` und
+`docs/Theologische-Aesthetik.md` lesen. Diese Dokumente sind für die
+Entwicklungsrichtung verbindliche Referenzen; das ästhetische Papier ist als
+Diskussions- und Prüfdokument zu verstehen, nicht als starre Dogmatik.
 
 ## Projektstruktur
 
@@ -24,7 +31,9 @@ als Diskussions- und Prüfdokument zu verstehen, nicht als starre Dogmatik.
   - `features.py` — reine Python-Mathematik (ID-Tracking, Intensität, Paare) — **ohne** ML-Abhängigkeiten, damit unit-testbar.
   - `pose.py`, `camera.py`, `net.py`, `sim.py` — MediaPipe, Webcam (OpenCV), UDP, Simulator.
 - `renderer/` — Godot-4.7-Projekt (empfängt JSON/UDP, interpretiert Resonanzsignale als visuelle Materialitäten).
-- `config/config.json` — zentrale Konfiguration für Kamera, Netzwerk, Feature-Parameter und Renderer-Effekte.
+- `config/config.json` — zentrale Konfiguration für Kamera, Netzwerk, Feature-Parameter, Stand-/Monitoroptionen und Renderer-Effekte.
+- `config/prompts.json` — kuratierte kurze Sprachimpulse für den Nahraum; keine technischen Bedienanweisungen.
+- `docs/Standkonzept.md` — räumliche, technische und vermittlungsbezogene Gestaltung des Resonanzraums.
 - `docs/plan.md` — verbindlicher Projektplan, Resonanzgrammatik, Roadmap und Realwelt-Test.
 - `docs/Theologische-Aesthetik.md` — Diskussionspapier zur theologischen und ästhetischen Logik des Projekts.
 - `docs/protocol.md` — verbindliches JSON/UDP-Protokoll zwischen capture ↔ renderer.
@@ -43,6 +52,59 @@ als Diskussions- und Prüfdokument zu verstehen, nicht als starre Dogmatik.
   keine „Freude“, „Trauer“, „Gebet“ o. Ä.
 - Capture beschreibt beobachtbare Qualitäten; **der Renderer interpretiert sie
   künstlerisch**. Diese Schichten nicht unnötig koppeln.
+
+### Verständlichkeit ohne Bedienlogik
+
+Die Interaktion muss **entdeckbar**, aber nicht **erklärungsbedürftig bedienbar**
+sein.
+
+Verbindliche Dramaturgie:
+
+```text
+Lichtinsel → Nahraum-Rückkopplung → Fassade
+```
+
+und inhaltlich:
+
+```text
+Gehen → Spur
+Bleiben → Resonanz
+Mehrere → Beziehung
+Fortgehen → Nachwirkung
+```
+
+Daraus folgen Regeln:
+
+- Der kleine Monitor in Kameranähe ist **Nahraum der Rückkopplung**, nicht zweite
+  Hauptleinwand.
+- Im Publikumsbetrieb darf der Monitor **niemals das rohe Kamerabild** zeigen.
+- Bevorzugter Modus ist `facade_preview`: dieselbe oder eine visuell eng
+  verwandte Resonanzdarstellung wie auf der Fassade.
+- Die Vorschau muss ausreichend latenzarm sein, damit Menschen die eigene
+  Anwesenheit als Ursache der Resonanz erkennen können.
+- Der Monitor darf die Fassade nicht als Blickziel ersetzen; er soll den Blick
+  dorthin weiterführen.
+- Ein kurzer Satz darf die Entdeckung anstoßen, soll aber keine Technik erklären
+  und keine konkrete Geste verlangen.
+- Bevorzugter Impuls: **„Was geschieht, wenn du bleibst?“**
+- Kurze Impulse ausschließlich in `config/prompts.json` kuratieren; nicht als
+  String-Literale in Renderer-/Capture-Code verstreuen.
+- Aktive Auswahl/Deaktivierung erfolgt über `station.prompt` in
+  `config/config.json`.
+- Änderungen an Sprachimpulsen als **inhaltlich-ästhetische Änderungen** behandeln,
+  nicht bloß als UI-Copy.
+
+### Bleiben muss eine Antwort bekommen
+
+Wenn der Stand mit „Was geschieht, wenn du bleibst?“ zum Verweilen einlädt, muss
+`stillness` bzw. `presence_time` eine qualitativ andere Resonanz ermöglichen als
+bloßes Vorübergehen.
+
+Nicht ausreichend ist: Ein bewegter Effekt friert einfach ein.
+
+Geeignete Zielrichtungen sind z. B. Verdichtung, langsames Pulsieren, ruhigere
+Feldbildung oder räumliche Ausbreitung. Der Übergang soll eher als allmähliche
+Entdeckung denn als harter Zustands-Schalter erscheinen.
 
 ### Individuum → Beziehung → Gruppe → Raum
 
@@ -93,6 +155,8 @@ Bei neuen oder geänderten Effekten immer bedenken:
 - klare helle Kanten und aus Distanz lesbare Formen bevorzugen;
 - nicht alles als Glow lösen: neue Effekte sollen nach Möglichkeit eine eigene
   Materialität bzw. Resonanzqualität beitragen;
+- Monitorvorschau und Fassadenbild müssen visuell eng genug verwandt bleiben,
+  damit die Kausalität verständlich wird;
 - „mehr spektakulär“ ist **kein** hinreichendes Qualitätskriterium.
 
 Vor einem neuen visuellen Effekt die Prüffragen in
@@ -133,6 +197,21 @@ Reservierte, noch nicht vollständig implementierte Effektfamilien:
 - `aftereffect_waves`
 - `crowd_field`
 
+## Stand-Konfiguration
+
+`station.monitor` und `station.prompt` gehören nicht unter `effects`, weil sie
+Vermittlungs-/Standfunktionen und keine visuellen Effektfamilien sind.
+
+Verbindlich:
+
+- `station.monitor.enabled` schaltet den Publikumsmonitor.
+- `station.monitor.mode = "facade_preview"` ist der bevorzugte Zielmodus.
+- `station.monitor.show_camera_image` bleibt im Publikumsbetrieb `false`.
+- `station.prompt.enabled` schaltet den kurzen Sprachimpuls.
+- `station.prompt.prompt_key` referenziert einen Eintrag in
+  `config/prompts.json`.
+- Neue Promptvarianten werden zentral dort ergänzt und ästhetisch geprüft.
+
 ## Räumlicher und technischer Rahmen
 
 - Kein ganzer Straßenzug: vorgesehen ist ein begrenzter, beleuchteter Bereich am
@@ -141,18 +220,22 @@ Reservierte, noch nicht vollständig implementierte Effektfamilien:
 - RGB-Kamera ist zunächst Primärlösung; IR/Tiefe sind Optionen nach Realwelt-Test.
 - Beleuchtung, Entfernung, Sichtfeld, Verdeckungen und Track-Stabilität unter
   realen Abendbedingungen früh testen.
+- Zwischen Kamerastand/Sensorrechner und Hauptrechner liegen ungefähr 50 m.
+- Primär abstrakte Resonanzdaten zum Hauptrechner übertragen; Diagnosevideo ist
+  separat und nicht Bestandteil der Publikumsdarstellung.
+- Für den Nahraum-Monitor einen latenzarmen Rückkanal der Visualisierung vorsehen.
 
 ## Build, Test & Entwicklung
 
 ```powershell
 python -m venv .venv; .\.venv\Scripts\Activate.ps1
 pip install -r capture/requirements.txt
-python capture/download_model.py                 # Multi-Person-Pose-Modell
+python capture/download_model.py
 
-python -m unittest discover -s tests -v          # komplette Testsuite
-python -m capture.tracker --sim                  # Renderer ohne Kamera speisen
-python -m capture.tracker --list-cameras         # verfügbare Kameras + Index
-python -m capture.tracker --camera 1             # echte Webcam, Index überschreiben
+python -m unittest discover -s tests -v
+python -m capture.tracker --sim
+python -m capture.tracker --list-cameras
+python -m capture.tracker --camera 1
 ```
 
 Godot 4.7: `renderer/project.godot` importieren, mit **F5** starten.
@@ -162,19 +245,18 @@ Godot 4.7: `renderer/project.godot` importieren, mit **F5** starten.
 - **Jede Änderung wird über Tests verifiziert.** Vor Abschluss läuft
   `python -m unittest discover -s tests -v` grün durch, soweit die Änderung mit
   der verfügbaren Umgebung ausführbar ist.
-- Neue oder geänderte Logik in `capture/` erhält passende Tests in `tests/`
-  (Dateiname nach Verhalten, z. B. `test_features.py`, `test_cli.py`).
+- Neue oder geänderte Logik in `capture/` erhält passende Tests in `tests/`.
 - Test-Design: Logik von Hardware/ML trennen. Reine Mathematik und CLI/Config
-  gehören in test-bare Funktionen (siehe `features.py`, `build_parser`,
-  `apply_overrides`); OpenCV/MediaPipe/Godot werden **nicht** in Unit-Tests
-  geladen. `cv2` wird lazy importiert, damit Tests ohne Kamera laufen.
-- Erfolgs- **und** Fehlerpfade prüfen (z. B. unbekanntes Backend, leere Eingaben,
-  fehlende oder ungültige Config-Werte).
-- Visuelle Änderungen zusätzlich im Godot-Simulator prüfen. Wenn kein Godot-Lauf
-  möglich ist, dies im Abschluss transparent benennen und keinen erfolgreichen
-  Lauf behaupten.
-- Neue Resonanzsignale im Simulator mit repräsentativen Situationen abbilden,
-  bevor Hardware als Voraussetzung für Tests entsteht.
+  gehören in test-bare Funktionen; OpenCV/MediaPipe/Godot werden nicht in
+  Unit-Tests geladen.
+- Erfolgs- und Fehlerpfade prüfen.
+- Visuelle Änderungen zusätzlich im Godot-Simulator prüfen.
+- Neue Resonanzsignale im Simulator mit repräsentativen Situationen abbilden.
+- Für Monitor-/Promptlogik zusätzlich testen: deaktivierter Zustand, ungültiger
+  `prompt_key`, fehlende Promptdatei und sichere Fallbacks.
+- Der Realwelt-Test muss ausdrücklich auch die **Entdeckbarkeit der Interaktion**
+  prüfen: Erkennen Menschen ohne Erklärung den Zusammenhang? Führt der Monitor
+  den Blick zur Fassade? Bewirkt der Satz tatsächlich Verweilen?
 
 ## Coding Style
 
@@ -189,25 +271,26 @@ abschaltbar sein soll.
 ## Datenschutz (KO-Kriterium)
 
 - Bildverarbeitung läuft **ausschließlich lokal**. Es werden **keine** Bilder
-  oder Videos gespeichert oder übertragen.
-- Über UDP (nur `127.0.0.1`) wandern **nur abstrakte Zahlenwerte** wie Position,
-  Intensität, Resonanzqualitäten, Beziehungen und ausgewählte Zustandsereignisse
-  — keine Kameraaufnahmen, keine Cloud. Dies gilt für jede Änderung.
-- Keine Gesichtserkennung, Personenidentifikation oder biometrische Zuordnung
-  hinzufügen.
+  oder Videos gespeichert oder in die Cloud übertragen.
+- Über das Produktionsprotokoll wandern nur abstrakte Zahlenwerte wie Position,
+  Intensität, Resonanzqualitäten, Beziehungen und ausgewählte Zustandsereignisse.
+- Keine Gesichtserkennung, Personenidentifikation oder biometrische Zuordnung.
+- Ein lokaler Diagnose-Videostream darf nur für Aufbau/Kalibrierung dienen.
+- **Der Publikumsmonitor zeigt kein Kameravideo.**
 
 ## Kameras (Windows-Hinweis)
 
 Neben physischen Webcams existieren oft **virtuelle Kameras** (OBS, Handy-als-
-Webcam, Hersteller-Tools). `--camera 0` erwischt häufig eine solche (erkennbar
-an Logo-Bild, „0 Personen"). Mit `--list-cameras` die Indizes ermitteln und den
-richtigen per `--camera N` oder in `config.json` (`camera.index`) setzen. Backend
-über `--backend {any,dshow,msmf}` bzw. `camera.backend` wählbar.
+Webcam, Hersteller-Tools). `--camera 0` erwischt häufig eine solche. Mit
+`--list-cameras` die Indizes ermitteln und den richtigen per `--camera N` oder in
+`config.json` (`camera.index`) setzen. Backend über `--backend {any,dshow,msmf}`
+bzw. `camera.backend` wählbar.
 
 ## Commits & Pull Requests
 
 Kurze imperative Betreffzeilen, optional nach Bereich (z. B. `capture:`,
-`renderer:`, `docs:`). Unabhängige Änderungen trennen. PRs beschreiben nicht nur
-die technische Änderung, sondern bei visuellen/interactionalen Änderungen auch
-die **sichtbare Wirkung und Resonanzabsicht**. Ausgeführte Validierungsbefehle
-auflisten; bei visuellen Änderungen Screenshot/kurzes Video beifügen.
+`renderer:`, `docs:`, `config:`). Unabhängige Änderungen trennen. PRs beschreiben
+nicht nur die technische Änderung, sondern bei visuellen, sprachlichen oder
+interactionalen Änderungen auch die **sichtbare Wirkung und Resonanzabsicht**.
+Ausgeführte Validierungsbefehle auflisten; bei visuellen Änderungen Screenshot/
+kurzes Video beifügen.
