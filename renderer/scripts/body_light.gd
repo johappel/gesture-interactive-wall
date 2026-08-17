@@ -1,8 +1,7 @@
-# One luminous body: a glow sprite, a particle burst and a fading motion trail.
+# One luminous body: independently configurable glow, sparks and motion trail.
 class_name BodyLight
 extends Node2D
 
-const TRAIL_MAX := 48
 const GOLD := Color(1.0, 0.78, 0.38)
 const INTENSE := Color(1.0, 0.36, 0.14)
 
@@ -10,12 +9,12 @@ var _sprite: Sprite2D
 var _particles: GPUParticles2D
 var _trail: Line2D
 var _alpha := 1.0
+var _effects: Dictionary = {}
 
 func _ready() -> void:
 	var tex := _make_glow_texture(256)
 
 	_trail = Line2D.new()
-	_trail.width = 10.0
 	_trail.default_color = GOLD
 	_trail.joint_mode = Line2D.LINE_JOINT_ROUND
 	_trail.begin_cap_mode = Line2D.LINE_CAP_ROUND
@@ -33,10 +32,15 @@ func _ready() -> void:
 
 	_particles = GPUParticles2D.new()
 	_particles.texture = tex
-	_particles.amount = 48
-	_particles.lifetime = 1.4
 	_particles.process_material = _make_particle_material()
 	add_child(_particles)
+
+	_apply_effect_config()
+
+func configure_effects(effects: Dictionary) -> void:
+	_effects = effects.duplicate(true)
+	if is_node_ready():
+		_apply_effect_config()
 
 func update_state(pos: Vector2, intensity: float, openness: float) -> void:
 	_alpha = 1.0
@@ -46,17 +50,26 @@ func update_state(pos: Vector2, intensity: float, openness: float) -> void:
 	var brightness := 1.2 + intensity * 2.5
 	var hdr := Color(color.r * brightness, color.g * brightness, color.b * brightness)
 
-	var size := 0.35 + openness * 0.6 + intensity * 0.3
-	_sprite.scale = Vector2(size, size)
-	_sprite.modulate = hdr
+	if _effect_enabled("body_glow", true):
+		var size := 0.35 + openness * 0.6 + intensity * 0.3
+		_sprite.scale = Vector2(size, size)
+		_sprite.modulate = hdr
 
-	var mat := _particles.process_material as ParticleProcessMaterial
-	mat.color = hdr
-	mat.initial_velocity_max = 40.0 + intensity * 260.0
-	mat.emission_sphere_radius = 6.0 + openness * 30.0
-	_particles.amount = int(24 + intensity * 88)
+	if _effect_enabled("sparks", true):
+		var sparks := _effect_block("sparks")
+		var amount_min := int(sparks.get("amount_min", 24))
+		var amount_max := max(int(sparks.get("amount_max", 112)), amount_min)
+		var velocity_min := float(sparks.get("velocity_min", 20.0))
+		var velocity_max := max(float(sparks.get("velocity_max", 300.0)), velocity_min)
+		var mat := _particles.process_material as ParticleProcessMaterial
+		mat.color = hdr
+		mat.initial_velocity_min = velocity_min
+		mat.initial_velocity_max = lerp(velocity_min, velocity_max, clamp(intensity, 0.0, 1.0))
+		mat.emission_sphere_radius = 6.0 + openness * 30.0
+		_particles.amount = int(round(lerp(float(amount_min), float(amount_max), clamp(intensity, 0.0, 1.0))))
 
-	_push_trail(pos)
+	if _effect_enabled("trails", true):
+		_push_trail(pos)
 
 func fade(delta: float) -> bool:
 	# Returns true when fully faded and safe to remove.
@@ -64,12 +77,42 @@ func fade(delta: float) -> bool:
 	modulate.a = _alpha
 	return _alpha <= 0.0
 
+func _apply_effect_config() -> void:
+	if _sprite == null or _particles == null or _trail == null:
+		return
+
+	_sprite.visible = _effect_enabled("body_glow", true)
+
+	var trails_enabled := _effect_enabled("trails", true)
+	_trail.visible = trails_enabled
+	if not trails_enabled:
+		_trail.clear_points()
+	else:
+		var trails := _effect_block("trails")
+		_trail.width = float(trails.get("width", 10.0))
+
+	var sparks_enabled := _effect_enabled("sparks", true)
+	_particles.visible = sparks_enabled
+	_particles.emitting = sparks_enabled
+	if sparks_enabled:
+		var sparks := _effect_block("sparks")
+		_particles.lifetime = float(sparks.get("lifetime", 1.4))
+
 func _push_trail(pos: Vector2) -> void:
 	# Trail lives in world space; keep points in the parent's coordinates.
 	_trail.global_position = Vector2.ZERO
 	_trail.add_point(pos)
-	while _trail.get_point_count() > TRAIL_MAX:
+	var max_points := int(_effect_block("trails").get("max_points", 48))
+	while _trail.get_point_count() > max(max_points, 1):
 		_trail.remove_point(0)
+
+func _effect_block(name: String) -> Dictionary:
+	var block = _effects.get(name, {})
+	return block if block is Dictionary else {}
+
+func _effect_enabled(name: String, default_value: bool) -> bool:
+	var block := _effect_block(name)
+	return bool(block.get("enabled", default_value))
 
 func _make_particle_material() -> ParticleProcessMaterial:
 	var mat := ParticleProcessMaterial.new()
