@@ -25,6 +25,9 @@ Eine Person oder Gruppe soll beim Verlassen des Erfassungsbereichs außerdem nic
 einfach verschwinden: Als **Nachwirkung** kann vom Austrittsrand eine ruhige,
 zurücklaufende Wasser-/Lichtwelle in die Fassadenfläche hinein entstehen.
 
+Die theologisch-ästhetische Begründung und offene Diskussionsfragen stehen in
+[docs/Theologische-Aesthetik.md](docs/Theologische-Aesthetik.md).
+
 ## Datenschutz (KO-Kriterium)
 
 - Die Bildverarbeitung läuft **ausschließlich lokal** auf dem Rechner.
@@ -46,7 +49,8 @@ Kamera ──► capture/ (Python + MediaPipe) ──JSON/UDP──► renderer/
 - `renderer/` — Godot-4-Projekt: interpretiert die abstrakten Werte künstlerisch.
 - `config/` — zentrale Konfiguration für Kamera, Netzwerk, Feature-Parameter und
   **alle eigenständigen visuellen Effektfamilien**.
-- `docs/` — Projektplan, Protokoll und Betriebsdokumentation.
+- `docs/` — Projektplan, Datenprotokoll, theologisch-ästhetisches Diskussionspapier
+  und spätere Betriebsdokumentation.
 - `tests/` — Unit-Tests der Feature-Mathematik (ohne Kamera lauffähig).
 
 Die Wahrnehmungsschicht bleibt bewusst unabhängig von der Darstellung: Ein
@@ -86,26 +90,47 @@ So können vor Ort Effekte kurzfristig abgeschaltet werden, wenn sie zu unruhig,
 zu schwach, performancekritisch oder für die reale Projektionsfläche ungeeignet
 sind.
 
-Beispielstruktur:
+Aktuell werden `body_glow`, `trails`, `sparks` und `proximity_bridges` vom
+Renderer tatsächlich aus der gemeinsamen Config gelesen. Weitere Effektfamilien
+sind bereits als deaktivierte Config-Blöcke reserviert und werden erst bei ihrer
+Implementierung aktiviert.
+
+Beispiel:
 
 ```json
 {
   "effects": {
+    "enabled": true,
+    "minimal_mode": false,
     "body_glow": { "enabled": true },
-    "trails": { "enabled": true },
-    "sparks": { "enabled": true },
+    "trails": {
+      "enabled": true,
+      "max_points": 48,
+      "width": 10.0
+    },
+    "sparks": {
+      "enabled": true,
+      "amount_min": 24,
+      "amount_max": 112,
+      "lifetime": 1.4,
+      "velocity_min": 20.0,
+      "velocity_max": 300.0
+    },
     "proximity_bridges": { "enabled": true },
-    "mist": { "enabled": true },
-    "waves": { "enabled": true },
+    "mist": { "enabled": false },
+    "waves": { "enabled": false },
     "floating_bodies": { "enabled": false },
-    "aftereffect_waves": { "enabled": true },
-    "crowd_field": { "enabled": true }
+    "aftereffect_waves": { "enabled": false },
+    "crowd_field": { "enabled": false }
   }
 }
 ```
 
 Dabei gilt:
 
+- `effects.enabled: false` schaltet alle Effektfamilien ab.
+- `effects.minimal_mode: true` erzwingt einen stabilen Fallback aus
+  **Body Glow + Trails + Proximity Bridges**.
 - `enabled: false` bedeutet **nicht erzeugen und nicht weiter simulieren**, nicht
   bloß unsichtbar machen.
 - Effektparameter gehören in den jeweiligen Effektblock.
@@ -113,8 +138,14 @@ Dabei gilt:
   unabhängig davon verfügbar.
 - Neue Effektfamilien gelten erst dann als vollständig integriert, wenn ihr
   Config-Schalter vorhanden ist.
-- Später können Presets wie `minimal`, `calm`, `full` oder `debug` hinzukommen;
-  sie ersetzen die Einzel-Schalter nicht.
+- Änderungen an `config/config.json` werden derzeit beim Start des Godot-Renderers
+  eingelesen; für Änderungen im Betrieb muss der Renderer neu gestartet werden.
+- Später können Presets wie `calm`, `full` oder `debug` hinzukommen; sie ersetzen
+  die Einzel-Schalter nicht.
+
+Beim Start gibt der Renderer den effektiven On/Off-Zustand der Effektfamilien in
+der Godot-Konsole aus. So ist auch ein versehentlich aktivierter Effekt vor einem
+Live-Test schnell erkennbar.
 
 ## Schnellstart
 
@@ -180,7 +211,7 @@ nach einem Realwelt-Test unter Dämmerungs-/Nachtbedingungen.
 - [x] Phase 2 — Renderer-MVP (Godot: Lichtgestalten, Bloom)
 - [x] Phase 3 — Leuchtspuren (Trails)
 - [x] Phase 4 — Multi-Person + Verbundenheit (Lichtbrücken)
-- [ ] Phase 4.5 — Resonanzgrammatik + Nachwirkung + Effektsteuerung
+- [ ] Phase 4.5 — Resonanzgrammatik + Nachwirkung (Effektsteuerung bereits umgesetzt)
 - [ ] Phase 5 — Realwelt-Test (Beleuchtung, Distanz, 2–20 Personen)
 - [ ] Phase 6 — Projektion & Kalibrierung
 - [ ] Phase 7 — Hardware-Entscheidung / Robustheit
@@ -188,4 +219,5 @@ nach einem Realwelt-Test unter Dämmerungs-/Nachtbedingungen.
 - [ ] Phase 9 — DSGVO/Beschilderung & Betriebshandbuch
 
 Vollständiger Projektplan und Resonanzkonzept: [docs/plan.md](docs/plan.md).
+Theologisch-ästhetisches Diskussionspapier: [docs/Theologische-Aesthetik.md](docs/Theologische-Aesthetik.md).
 Datenprotokoll: [docs/protocol.md](docs/protocol.md).
