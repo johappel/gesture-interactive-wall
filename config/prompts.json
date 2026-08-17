@@ -1,0 +1,7 @@
+{
+  "prompts": {
+    "stay_question": "Was geschieht, wenn du bleibst?",
+    "stay_invitation": "Bleib einen Augenblick.",
+    "trace_hint": "Deine Bewegung hinterlässt etwas."
+  }
+}
