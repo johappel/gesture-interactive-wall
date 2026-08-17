@@ -1,0 +1,27 @@
+{
+  "camera": {
+    "index": 0,
+    "width": 1280,
+    "height": 720,
+    "flip": true
+  },
+  "network": {
+    "host": "127.0.0.1",
+    "port": 4242
+  },
+  "pose": {
+    "model_path": "models/pose_landmarker_full.task",
+    "num_poses": 4,
+    "min_detection_confidence": 0.5
+  },
+  "features": {
+    "intensity_scale": 1.5,
+    "intensity_smoothing": 0.4,
+    "proximity_threshold": 0.35,
+    "track_max_dist": 0.25,
+    "track_timeout": 0.6
+  },
+  "debug": {
+    "preview": true
+  }
+}

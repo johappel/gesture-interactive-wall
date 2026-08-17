@@ -1,0 +1,15 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# MediaPipe model (downloaded, not committed)
+models/
+
+# Godot
+renderer/.godot/
+renderer/*.import
+
+# OS
+.DS_Store
+Thumbs.db
