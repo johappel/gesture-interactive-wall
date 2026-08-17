@@ -1,88 +1,71 @@
 # WIRKLICHT — Projektplan & Roadmap
 
-Dieses Dokument ist die **gemeinsame Diskussionsgrundlage**. Es beschreibt nicht
-nur die technische Umsetzung, sondern auch die künstlerische Logik, nach der
-Körper, Beziehungen und gemeinsame Anwesenheit auf der Fassade sichtbar werden.
+Dieses Dokument ist die **gemeinsame Diskussionsgrundlage**. Es beschreibt nicht nur die technische Umsetzung, sondern auch die künstlerische Logik, nach der Körper, Beziehungen und gemeinsame Anwesenheit auf der Fassade sichtbar werden.
 
-Ereignis: **Lichterfest Bad Wilhelmshöhe, 30.10.2026, 18–22 Uhr** (Dämmerung/Nacht).
-Rahmen: *Licht in der Dunkelheit* — Menschen wirken wie Lichter. Ihre Anwesenheit,
-Bewegung, Nähe und gemeinsame Dynamik hinterlassen sichtbare Resonanz.
+Ereignis: **Lichterfest Bad Wilhelmshöhe, 30.10.2026, 18–22 Uhr** (Dämmerung/Nacht).  
+Rahmen: *Licht in der Dunkelheit* — Menschen wirken wie Lichter. Ihre Anwesenheit, Bewegung, Nähe und gemeinsame Dynamik hinterlassen sichtbare Resonanz.
 
 ## 1. Leitidee und KO-Kriterien
 
-WIRKLICHT soll **kein berührungsloses Bedieninterface** sein. Menschen sollen
-nicht lernen müssen: „Wenn ich Geste X mache, passiert Effekt Y.“
+WIRKLICHT soll **kein berührungsloses Bedieninterface** sein. Menschen sollen nicht lernen müssen: „Wenn ich Geste X mache, passiert Effekt Y.“
 
 Leitgedanke:
 
-> **WIRKLICHT visualisiert nicht die Befehle von Menschen, sondern die Spuren
-> ihrer Anwesenheit, Bewegung und Beziehung.**
+> **WIRKLICHT visualisiert nicht die Befehle von Menschen, sondern die Spuren ihrer Anwesenheit, Bewegung und Beziehung.**
 
-Daraus folgen fünf Grundsätze:
+Daraus folgen sechs Grundsätze:
 
-1. **Resonanz statt Gestensteuerung:** überwiegend kontinuierliche Körper- und
-   Beziehungssignale statt eines Katalogs benannter Kommandogesten.
-2. **Nachwirkung statt sofortigem Verschwinden:** Menschen und Gruppen können
-   Spuren hinterlassen, die noch weiterwirken, wenn sie den Erfassungsbereich
-   verlassen haben.
-3. **Individuum → Beziehung → Gruppe → Raum:** je mehr Menschen beteiligt sind,
-   desto weniger soll die Fassade wie viele einzelne Avatare wirken und desto
-   stärker wird das gemeinsame Geschehen sichtbar.
-4. **Datenschutz als Architekturprinzip:** Bildverarbeitung ausschließlich lokal,
-   keine Speicherung oder Übertragung von Bildern.
-5. **Live-Tauglichkeit durch schaltbare Effekte:** jede eigenständige visuelle
-   Materialität muss über `config.json` einzeln deaktivierbar sein, damit sich
-   die Installation vor Ort schnell beruhigen, vereinfachen oder stabilisieren
-   lässt.
+1. **Resonanz statt Gestensteuerung:** kontinuierliche Körper- und Beziehungssignale statt eines Katalogs benannter Kommandogesten.
+2. **Nachwirkung statt sofortigem Verschwinden:** Menschen und Gruppen können Spuren hinterlassen, die noch weiterwirken, wenn sie den Erfassungsbereich verlassen haben.
+3. **Individuum → Beziehung → Gruppe → Raum:** je mehr Menschen beteiligt sind, desto weniger soll die Fassade wie viele einzelne Avatare wirken und desto stärker wird das gemeinsame Geschehen sichtbar.
+4. **Datenschutz als Architekturprinzip:** Bildverarbeitung ausschließlich lokal; keine Speicherung oder Cloud-Übertragung von Bildern.
+5. **Live-Tauglichkeit durch schaltbare Effekte:** jede eigenständige visuelle Materialität muss über `config/config.json` einzeln deaktivierbar sein.
+6. **Verständliche Rückkopplung ohne Bedienanleitung:** Passant:innen dürfen nicht erst zufällig die Fassade beobachten und den Zusammenhang selbst erraten müssen. Der Nahraum muss die Kopplung **Ich ↔ Resonanz ↔ Fassade** schnell erfahrbar machen, ohne das Projekt zur Technikdemo zu machen.
 
-Über UDP (`127.0.0.1`) werden ausschließlich **abstrakte Zahlenwerte**
-(Position, Bewegung, Resonanzqualitäten, Beziehungen, Ereignisse) an den Renderer
-gesendet.
+## 2. Räumlicher Rahmen und Stand
 
-## 2. Räumlicher Rahmen
-
-Die Installation erfasst **nicht einen ganzen Straßenzug**. Vorgesehen ist ein
-klar begrenzter Interaktionsbereich an einem beleuchteten Stand vor der Fassade
-bzw. im Eingangsbereich des Kirchenamtes.
+Die Installation erfasst **nicht einen ganzen Straßenzug**. Vorgesehen ist ein klar begrenzter, beleuchteter Resonanzbereich am Stand bzw. im Eingangsbereich des Kirchenamtes.
 
 Zielgröße: ungefähr **2–20 gleichzeitig erfasste Personen**.
 
-Daraus folgt für die Hardware:
+Der Stand ist keine Informations- oder Spielstation, sondern eine **Schwelle** zwischen alltäglichem Verkehrsraum und Resonanzraum. Die Lichtinsel markiert den zuverlässig erfassbaren Bereich atmosphärisch, nicht als exakte Bühnenposition.
 
-- Eine normale RGB-Kamera bleibt zunächst die **Primärlösung**.
-- Entscheidend ist eine gute, gleichmäßige Stand-/Eingangsbeleuchtung, die für
-  Menschen angenehm und für Pose-Tracking ausreichend ist.
-- IR-Beleuchtung oder Tiefenkamera bleiben **Optionen nach Praxistest**, nicht
-  automatisch Voraussetzung.
-- Früh testen: reale Entfernung, reales Sichtfeld, reale Beleuchtung, mehrere
-  Personen und teilweise Verdeckungen.
+Neu verbindlich ist eine dreistufige Vermittlungsdramaturgie:
+
+1. **Lichtinsel:** „Hier ist ein besonderer Ort.“
+2. **Nahraum-Monitor:** „Das dort hat mit mir zu tun.“
+3. **Kurze Frage:** „Was geschieht, wenn du bleibst?“
+
+Die Fassade bleibt der eigentliche öffentliche Resonanzraum. Der Monitor ist nur die unmittelbare Rückkopplung im Nahbereich.
+
+Details: `docs/Standkonzept.md`.
 
 ## 3. Architektur
 
 ```text
 Kamera ─[OpenCV]→ MediaPipe Pose ─[features.py]→ Resonanzsignale
        ─JSON/UDP→ Godot 4.7 → Licht / Partikel / Felder / Spuren / Wellen → Beamer
+                                      │
+                                      └→ Resonanz-Vorschau → Nahraum-Monitor
 ```
 
-Die Trennung bleibt bewusst einfach:
+Die Trennung bleibt bewusst:
 
-- `capture/` erkennt Körper und berechnet möglichst **semantisch arme,
-  kontinuierliche Eigenschaften**.
-- Das Protokoll transportiert Körper-, Beziehungs-, Gruppen- und ausgewählte
-  Ereignisdaten.
+- `capture/` erkennt Körper und berechnet möglichst **semantisch arme, kontinuierliche Eigenschaften**.
+- Das Protokoll transportiert Körper-, Beziehungs-, Gruppen- und ausgewählte Ereignisdaten.
 - `renderer/` interpretiert diese Daten künstlerisch.
-- `config/config.json` steuert Kamera, Features und **alle eigenständigen
-  visuellen Effektfamilien**.
+- `config/config.json` steuert Kamera, Features, Stand-/Monitoroptionen und visuelle Effektfamilien.
+- `config/prompts.json` enthält die **kuratierten kurzen Sprachimpulse**; Texte werden nicht im Renderer-Code festgeschrieben.
 
-So kann die visuelle Grammatik verändert werden, ohne die Wahrnehmungsschicht neu
-zu bauen.
+Für die räumliche Installation ist ein Sensorrechner in Kameranähe weiterhin die bevorzugte Variante. Über die etwa 50 m zum Hauptrechner werden primär abstrakte Tracking-/Resonanzdaten transportiert. Für den Nahraum-Monitor fließt zusätzlich eine niedrig-latente Visualisierungs-Vorschau zurück.
 
-### 3.1 Verbindliche Regel für visuelle Effekte
+**Wichtig:** Der Publikumsmonitor zeigt niemals das rohe Kamerabild. Kameravideo bleibt ausschließlich Diagnose-/Einrichtungswerkzeug.
 
-Jeder eigenständige visuelle Effekt benötigt in `config.json` mindestens einen
-expliziten `enabled`-Schalter.
+## 4. Konfiguration und Live-Schalter
 
-Beispiel:
+### 4.1 Visuelle Effekte
+
+Jeder eigenständige visuelle Effekt benötigt in `config/config.json` mindestens einen expliziten `enabled`-Schalter.
 
 ```json
 {
@@ -91,37 +74,47 @@ Beispiel:
     "trails": { "enabled": true },
     "sparks": { "enabled": true },
     "proximity_bridges": { "enabled": true },
-    "mist": { "enabled": true },
-    "waves": { "enabled": true },
+    "mist": { "enabled": false },
+    "waves": { "enabled": false },
     "floating_bodies": { "enabled": false },
-    "aftereffect_waves": { "enabled": true },
-    "crowd_field": { "enabled": true }
+    "aftereffect_waves": { "enabled": false },
+    "crowd_field": { "enabled": false }
   }
 }
 ```
 
-Architekturregeln:
+`enabled: false` bedeutet: Effekt nicht erzeugen und nicht weiter simulieren. Capture-/Resonanzsignale bleiben davon unabhängig.
 
-- `enabled: false` bedeutet: Der Effekt wird **nicht erzeugt und nicht weiter
-  simuliert**, nicht nur unsichtbar geschaltet.
-- Effektparameter gehören zum jeweiligen Effektblock, z. B. Partikelanzahl,
-  Lebensdauer oder Intensität unter `effects.sparks` statt verteilt an anderen
-  Stellen der Config.
-- Resonanzsignale im Capture bleiben **unabhängig von Renderer-Effekten**. Ein
-  deaktivierter Effekt darf nicht dazu führen, dass `stillness`, `openness`,
-  `rhythm` usw. nicht mehr berechnet oder übertragen werden.
-- Neue eigenständige Effektfamilien gelten nur dann als vollständig integriert,
-  wenn sie einen Config-Schalter besitzen.
-- Die Defaults sollen einen robusten, ästhetisch brauchbaren Zustand ergeben.
+### 4.2 Stand, Monitor und Sprachimpuls
 
-Optional kann später zusätzlich ein Preset-System (`minimal`, `calm`, `full`,
-`debug`) eingeführt werden. Presets ersetzen die Einzel-Schalter nicht, sondern
-setzen sie nur gesammelt.
+Standbezogene Funktionen erhalten einen eigenen Config-Bereich:
 
-Ein späterer `minimal_mode` darf als schneller Fallback dienen, z. B. nur mit
-`body_glow`, `trails` und `proximity_bridges`.
+```json
+{
+  "station": {
+    "monitor": {
+      "enabled": true,
+      "mode": "facade_preview",
+      "show_camera_image": false
+    },
+    "prompt": {
+      "enabled": true,
+      "source": "config/prompts.json",
+      "prompt_key": "stay_question"
+    }
+  }
+}
+```
 
-## 4. Status
+Die Config entscheidet also **ob und welcher** Sprachimpuls aktiv ist; `config/prompts.json` ist die kuratierte Inhaltsquelle.
+
+Bevorzugter Impuls:
+
+> **Was geschieht, wenn du bleibst?**
+
+Weitere Varianten dürfen erprobt werden, müssen aber dieselbe Leitplanke einhalten: keine Bedienanweisung, keine Geste-X→Effekt-Y-Sprache, keine Technikbeschreibung.
+
+## 5. Status
 
 | Phase | Inhalt | Stand |
 |------:|--------|-------|
@@ -130,34 +123,19 @@ Ein späterer `minimal_mode` darf als schneller Fallback dienen, z. B. nur mit
 | 2 | Renderer-MVP: Lichtgestalten, Bloom | ✅ |
 | 3 | Leuchtspuren (Trails) | ✅ |
 | 4 | Multi-Person + Lichtbrücken (Nähe) | ✅ |
-| **4.5** | **Resonanzgrammatik + Nachwirkung + Effektsteuerung** | 🔜 **nächster Schritt** |
-| 5 | Realwelt-Test: Beleuchtung, Distanz, 2–20 Personen | offen |
+| **4.5** | **Resonanzgrammatik + Nachwirkung + Effektsteuerung** | 🔜 nächster Schritt |
+| **4.6** | **Nahraum-Monitor + Sprachimpuls + Verweil-Dramaturgie** | 🔜 parallel prototypisieren |
+| 5 | Realwelt-Test: Beleuchtung, Distanz, 2–20 Personen, Verständlichkeit | offen |
 | 6 | Projektion & Kalibrierung (Fassaden-Mapping) | offen |
 | 7 | Hardware-Entscheidung / Robustheit | offen |
 | 8 | Klang (optional) | offen |
 | 9 | DSGVO/Beschilderung & Betriebshandbuch | offen |
 
-Heute erfasst das System bereits pro Person:
+## 6. Resonanzgrammatik
 
-- Position und Geschwindigkeit,
-- Bewegungsintensität,
-- Armöffnung,
-- Nähe zwischen Personen,
-- Crowd-Energie.
+WIRKLICHT soll nicht versuchen zu erkennen, **was eine Bewegung bedeutet** oder welche Emotion jemand hat. Es erkennt beobachtbare körperliche Qualitäten.
 
-Das ist bereits eine gute Grundlage für die Resonanzgrammatik.
-
-## 5. Resonanzgrammatik
-
-### 5.1 Wahrnehmung statt Bedeutungszuschreibung
-
-WIRKLICHT soll nicht versuchen zu erkennen, **was eine Bewegung bedeutet** oder
-welche Emotion jemand hat. Es erkennt nur beobachtbare körperliche Qualitäten.
-
-Keine Emotionsklassifikation, keine Interpretation wie „Freude“, „Trauer“ oder
-„Gebet“.
-
-Geeignete Resonanzsignale sind beispielsweise:
+Geeignete Resonanzsignale:
 
 | Signal | Bedeutung im System |
 |--------|---------------------|
@@ -172,305 +150,244 @@ Geeignete Resonanzsignale sind beispielsweise:
 | `synchrony` | ähnliche Bewegung mehrerer Personen über Zeit |
 | `presence_time` | Dauer der Anwesenheit im Resonanzraum |
 
-Nicht alle Signale müssen sofort implementiert werden. Wichtig ist die Richtung:
-**kontinuierliche Resonanzqualitäten vor benannten Gesten.**
+Keine Emotionsklassifikation und keine Interpretation wie „Freude“, „Trauer“ oder „Gebet“.
 
-### 5.2 Visuelles Vokabular
-
-Die Fassade soll nicht ausschließlich aus unterschiedlich hellem Glow bestehen.
-Verschiedene Resonanzqualitäten dürfen verschiedene **visuelle Materialitäten**
-annehmen:
+## 7. Visuelles Vokabular
 
 | Resonanz | mögliche Materialität |
 |----------|-----------------------|
 | Anwesenheit | Lichtkörper / Glow |
 | Bewegung | Funken / aufsteigende Lichtpartikel |
 | schnelle oder kräftige Bewegung | stärkerer Partikelstrom |
-| Ruhe | Verdichtung, langsames Pulsieren |
+| Ruhe / Bleiben | Verdichtung, langsames Pulsieren, ruhigere Feldbildung |
 | Öffnung | räumliche Ausdehnung des Lichtfeldes |
 | Bewegung durch den Raum | Spur / Trail |
 | Nähe | Lichtbrücke / gemeinsames Feld |
 | längere Nähe | Lichtdunst / leuchtende Atmosphäre |
 | gemeinsamer Rhythmus | Wellen / rhythmische Modulation |
-| intensive gemeinsame Phase | gelegentlich schwebender Lichtkörper |
 | größere Gruppe | gemeinsamer Atmosphärenzustand der Fassade |
 | Verlassen | Nachwirkung / zurücklaufende Welle |
 
-Diese Tabelle ist **kein 1:1-Regelwerk**. Der Renderer soll Eigenschaften mischen.
-Ein Zustand entsteht aus mehreren Signalen gleichzeitig, ähnlich wie bei einem
-Instrument Klangfarbe, Dynamik und Artikulation zusammenwirken.
+Die Tabelle ist **kein 1:1-Regelwerk**. Ein Zustand entsteht aus mehreren Signalen gleichzeitig.
 
-### 5.3 Materialitäten und Projektionstauglichkeit
+Besonders wichtig für die neue Standdramaturgie:
 
-Die Installation läuft nachts auf einer realen Fassade bzw. Projektionsfläche.
-Deshalb müssen Effekte aus Distanz und unter Restlicht lesbar bleiben.
+> **Bleiben darf nicht bloß die Abwesenheit von Bewegung sein.**
+
+Wenn eine Person nach dem Entdecken der Rückkopplung stehen bleibt, muss das System nach kurzer Zeit eine qualitativ andere Antwort anbieten können. Sonst bleibt die Frage „Was geschieht, wenn du bleibst?“ leer.
+
+Zieldramaturgie:
+
+> **Gehen → Spur.  
+> Bleiben → Resonanz.  
+> Mehrere → Beziehung.  
+> Fortgehen → Nachwirkung.**
+
+## 8. Projektionstauglichkeit
+
+Die Installation läuft bei Dämmerung/Nacht auf einer realen Fassade bzw. Projektionsfläche.
 
 Grundregeln:
 
-- feine dunkle Effekte vermeiden — der Projektor kann kein echtes Schwarz
-  erzeugen und der Nachthimmel schluckt schwache Details;
-- lieber **klare helle Kanten und gut lesbare Formen** als zu filigrane Partikel;
-- Dunst eher als leuchtende Atmosphäre, nicht als realistischer Rauch;
+- feine dunkle Effekte vermeiden;
+- klare helle Kanten und aus Distanz lesbare Formen bevorzugen;
+- Dunst eher als leuchtende Atmosphäre statt realistischer Rauch;
 - Partikel nicht zu klein wählen;
-- Nachwirkungen dürfen eine andere Formsprache besitzen als Anwesenheit, damit
-  nicht alles zu einer einzigen Glow-Ästhetik verschmilzt.
+- Nachwirkungen dürfen eine andere Formsprache besitzen als Anwesenheit;
+- Monitorvorschau und Fassadenbild müssen visuell eng genug verwandt sein, dass die Kopplung intuitiv erkennbar bleibt.
 
-## 6. Nachwirkung / Echo
+## 9. Nachwirkung / Echo
 
-Eine Person oder Gruppe soll beim Verlassen des Erfassungsbereichs **nicht einfach
-verschwinden**.
+Eine Person oder Gruppe soll beim Verlassen des Erfassungsbereichs **nicht einfach verschwinden**.
 
-Der Bildrand wird künstlerisch als **Schwelle** verstanden.
+Bevorzugte Formsprache ist eine ruhige, vom Austrittsrand zurücklaufende Wasser-/Lichtwelle:
 
-Wenn ein stabil verfolgter Track den Bereich plausibel an einem Rand verlässt,
-kann dort eine Nachwirkung entstehen:
+- Ursprung am plausiblen Austrittsrand;
+- wenige breite Wellenfronten statt Splash-/Feuerwerk;
+- Lichtreflexion statt realistisches Wasser;
+- langsamer als normale Körperbewegung;
+- kann vorhandene Partikel/Felder kurz modulieren;
+- Gruppen-Austritte dürfen aggregiert werden.
 
-> Die Person ist bereits fort, aber ihre Wirkung breitet sich noch einmal in den
-> gemeinsamen Raum hinein aus.
+Nur ein plausibler Austritt am Bildrand erzeugt `departure`; Trackingverlust durch Verdeckung nicht.
 
-### 6.1 Wasser-/Lichtwelle
-
-Bevorzugte visuelle Form ist eine **zurücklaufende Wasserwelle**:
-
-- Ursprung genau dort, wo die Person den Erfassungsbereich verlässt;
-- Bewegung **vom Rand zurück in die Fassadenfläche**;
-- ein bis wenige breite, ruhige Wellenfronten statt eines Splash- oder
-  Feuerwerk-Effekts;
-- optisch eher wie **Lichtreflexion auf Wasser** als wie realistisches Wasser;
-- hohe Lesbarkeit durch helle, schmale Brechungs-/Reflexionskanten;
-- langsamer als normale Körperbewegungen, damit die Nachwirkung als eigener
-  zeitlicher Zustand erkennbar wird;
-- nach einigen Sekunden ausdünnen und in den gemeinsamen Fassadenzustand
-  übergehen.
-
-Besonders interessant: Die Welle kann vorhandene Partikel oder Lichtfelder kurz
-modulieren, verschieben oder zum Mitschwingen bringen. Die Nachwirkung ist dann
-nicht nur ein aufgesetzter Ring, sondern beeinflusst das bestehende Geschehen.
-
-### 6.2 Gruppen-Nachwirkung
-
-Verlassen mehrere Menschen ungefähr gemeinsam denselben Randbereich, sollen nicht
-zwangsläufig viele einzelne Wellen übereinandergelegt werden.
-
-Möglich ist eine Aggregation:
-
-- ähnliche Austrittszeit + ähnlicher Randbereich → gemeinsamer Nachwirkungsimpuls;
-- größere Gruppe → breitere / energiereichere, nicht zwingend hellere Welle;
-- mehrere zeitlich versetzte Gruppen → sich überlagernde Wellenfronten.
-
-So kann das System auch nach dem Fortgehen noch Beziehung sichtbar machen.
-
-### 6.3 Technisches Ereignis
-
-Diskrete Ereignisse bleiben sinnvoll, wenn sie **Zustandswechsel** beschreiben,
-nicht Gestenkommandos.
-
-Für die Nachwirkung könnte das Protokoll beispielsweise enthalten:
-
-```json
-{
-  "events": [
-    {
-      "type": "departure",
-      "id": 3,
-      "edge": "right",
-      "x": 0.99,
-      "y": 0.58,
-      "dx": 0.42,
-      "dy": 0.03,
-      "intensity": 0.55,
-      "presence_time": 18.4
-    }
-  ]
-}
-```
-
-Wichtig: Nur ein **plausibler Austritt am Bildrand** soll `departure` erzeugen.
-Ein durch Verdeckung oder Trackingfehler verlorener Körper darf nicht sofort eine
-Nachwirkungswelle auslösen.
-
-## 7. Vom Individuum zum gemeinsamen Resonanzkörper
-
-Die Darstellung soll sich mit der Zahl der Menschen verändern.
+## 10. Vom Individuum zum gemeinsamen Resonanzkörper
 
 ### ca. 2–4 Personen
 
 - Individuen deutlich erkennbar;
 - eigene Lichtkörper und Spuren;
-- Beziehungen zwischen einzelnen Personen gut sichtbar.
+- direkte Beziehungen gut sichtbar.
 
 ### ca. 5–10 Personen
 
 - Paarbeziehungen und kleine Gruppen gewinnen an Bedeutung;
-- Felder, Dunst, gemeinsame Rhythmen und überlagerte Spuren treten stärker hervor;
-- einzelne Lichtkörper bleiben sichtbar, dominieren aber weniger.
+- Felder, Dunst, gemeinsame Rhythmen und überlagerte Spuren treten stärker hervor.
 
 ### ca. 10–20 Personen
 
-- nicht zwanzig unabhängige Effektmaschinen darstellen;
-- stärkerer Übergang zu einem **gemeinsamen Resonanzkörper der Fassade**;
-- Crowd-Energie, Gruppierung, Rhythmus und Atmosphäre bestimmen zunehmend das
-  Gesamtbild.
+- keine zwanzig unabhängigen Effektmaschinen;
+- stärkerer gemeinsamer Resonanzkörper der Fassade;
+- Crowd-Energie, Gruppierung, Rhythmus und Atmosphäre bestimmen zunehmend das Gesamtbild.
 
 Leitregel:
 
-> **Je mehr Menschen dazukommen, desto weniger zeigt WIRKLICHT einzelne Menschen
-> und desto stärker zeigt es das Geschehen zwischen ihnen.**
+> **Je mehr Menschen dazukommen, desto weniger zeigt WIRKLICHT einzelne Menschen und desto stärker zeigt es das Geschehen zwischen ihnen.**
 
-Das vorhandene Datenmodell `body → pair → crowd` bleibt dafür eine gute Grundlage
-und kann perspektivisch um zeitliche Nachwirkung ergänzt werden:
+Zeitliche Zielrichtung:
 
 ```text
 presence → relation → collective → memory
 ```
 
-## 8. Phase 4.5 — Umsetzung Resonanzgrammatik
+## 11. Phase 4.5 — Resonanzgrammatik
 
-### 8.1 Capture / Features
+### Capture / Features
 
-Zuerst wenige robuste zusätzliche Signale implementieren und testen:
+Priorisiert ergänzen:
 
 1. `stillness`
-2. `verticality` bzw. `contraction`
-3. einfacher zeitlicher `rhythm`
-4. `presence_time`
+2. `presence_time`
+3. `verticality` bzw. `contraction`
+4. einfacher zeitlicher `rhythm`
 5. robuste Erkennung eines plausiblen Rand-Austritts (`departure`)
 
 Bestehende Signale `intensity`, `openness` und `proximity` weiterverwenden.
 
-Tests zuerst, gemäß `AGENTS.md`.
+### Simulator
 
-### 8.2 Simulator
-
-`sim.py` so erweitern, dass ohne Kamera mindestens folgende Situationen erzeugt
-werden können:
+Mindestens simulieren:
 
 - lebendige Bewegung,
-- Ruhe,
+- Ruhe / Verweilen,
 - Öffnung / Verdichtung,
 - zwei Personen kommen zusammen,
 - größere Gruppe,
 - einzelne Person verlässt links/rechts,
 - mehrere Personen verlassen gemeinsam einen Randbereich.
 
-### 8.3 Renderer
+### Renderer
 
 Schrittweise ergänzen:
 
-1. vorhandene Partikel stärker als **Funken / Aufstieg** nutzen;
+1. Funken / Aufstieg;
 2. Ruhe als Verdichtung statt Dunkelwerden;
-3. Nähe nicht nur als Linie, sondern optional als gemeinsames Feld / Dunst;
+3. Nähe als Feld / Dunst zusätzlich zur Linie;
 4. rhythmische Bewegung als dezente Wellenmodulation;
 5. `departure` als zurücklaufende Wasser-/Lichtwelle;
-6. Wellen dürfen bestehende Partikel / Felder vorübergehend beeinflussen;
-7. **für jede eigenständige Effektfamilie einen verpflichtenden Config-Schalter
-   implementieren und testen.**
+6. Interaktion der Wellen mit vorhandenen Partikeln/Feldern;
+7. verpflichtende Config-Schalter für jede eigenständige Effektfamilie.
 
-### 8.4 Protokoll
+## 12. Phase 4.6 — Verständliche Rückkopplung im Nahraum
 
-`protocol.md` erst nach Festlegung der tatsächlich implementierten Felder
-aktualisieren. Neue Felder bleiben abwärtskompatibel; der Renderer ignoriert
-unbekannte Werte.
+Diese Phase wird parallel zur Resonanzgrammatik prototypisiert, weil sie kein nachträgliches „Informationsdesign“, sondern Teil der Interaktion ist.
 
-### 8.5 Effektsteuerung / Live-Fallback
+### 12.1 Monitor
 
-Vor dem Realwelt-Test müssen mindestens die aktuell implementierten Effekte über
-`config.json` einzeln schaltbar sein. Für neue Effekte gilt diese Regel ab ihrer
-Einführung.
+Zu bauen/testen:
 
-Mindestens vorzusehen:
+- kleiner Monitor in Kameranähe;
+- keine rohe Kameraansicht im Publikumsbetrieb;
+- `facade_preview`: möglichst gleiche oder eng verwandte Visualisierung wie auf der Fassade;
+- niedrige Latenz zwischen Bewegung und Vorschau;
+- Vorschau darf technisch reduziert sein, darf aber die Kausalität nicht verfälschen;
+- Monitor darf die Fassade nicht als Hauptblickziel ersetzen.
 
-- `body_glow`
-- `trails`
-- `sparks`
-- `proximity_bridges`
-- `mist`
-- `waves`
-- `floating_bodies`
-- `aftereffect_waves`
-- `crowd_field` (sobald implementiert)
+### 12.2 Sprachimpuls
 
-Tests sollen sicherstellen, dass deaktivierte Effekte weder erzeugt noch weiter
-simuliert werden und dass andere Effekte bzw. Resonanzsignale davon unbeeinflusst
-bleiben.
+Ruhezustand zunächst mit:
 
-## 9. Phase 5 — Realwelt-Test
+> **Was geschieht, wenn du bleibst?**
 
-Diese Phase wird bewusst vor eine endgültige Hardwareentscheidung gezogen.
+Beim Eintritt einer Person soll der Text zurücktreten oder verschwinden und die Resonanz-Vorschau übernehmen.
 
-Zu testen sind:
+Texte werden aus `config/prompts.json` geladen bzw. dort kuratiert; aktive Auswahl über `station.prompt.prompt_key`.
+
+### 12.3 Verweil-Antwort
+
+Der Prototyp muss sicherstellen, dass `stillness`/`presence_time` eine **qualitativ andere Resonanz** ermöglichen als bloßes Vorübergehen.
+
+Zu testen:
+
+- nach welcher Zeit „Bleiben“ wahrnehmbar werden soll;
+- ob Verdichtung, Pulsieren oder Feldbildung am verständlichsten und ästhetisch stärksten wirkt;
+- ob der Übergang langsam genug ist, um als Entdeckung statt als Schalter wahrgenommen zu werden.
+
+## 13. Phase 5 — Realwelt-Test
+
+Zu testen sind nicht nur Tracking und Projektion, sondern ausdrücklich auch **Verständlichkeit und Verweildynamik**:
 
 - reale Stand-/Eingangsbeleuchtung bei Dämmerung und Nacht;
 - Kameraposition und Sichtfeld;
-- Ganzkörpererkennung in realistischer Entfernung;
 - 2, 5, 10 und wenn möglich bis etwa 20 Personen;
 - Verdeckungen und kreuzende Laufwege;
 - Stabilität der Track-IDs;
-- zuverlässige Erkennung tatsächlicher Rand-Austritte;
-- Lesbarkeit der Projektion auf der realen Fassade / Testfläche;
-- Wirkung und Lesbarkeit der verschiedenen Materialitäten;
-- gezieltes Abschalten einzelner Effekte und Nutzung eines Minimalzustands als
-  Live-Fallback.
+- zuverlässige Rand-Austritte;
+- Lesbarkeit der Projektion;
+- Wirkung der Materialitäten;
+- Latenz und Lesbarkeit des Nahraum-Monitors;
+- erkennen Menschen innerhalb weniger Sekunden, dass ihre Anwesenheit die Visualisierung beeinflusst?
+- verstehen sie ohne Erklärung, dass Fassade und Nahraum-Vorschau zusammengehören?
+- erzeugt die Frage „Was geschieht, wenn du bleibst?“ tatsächlich Verweilen?
+- erleben Menschen beim Bleiben eine neue Qualität oder nur einen gestoppten Effekt?
+- konkurriert der Monitor mit der Fassade oder führt er den Blick dorthin?
+- gezieltes Abschalten einzelner Effekte und Minimalzustand als Live-Fallback.
 
-Erst danach wird entschieden, ob RGB + Standbeleuchtung genügt oder ob IR/Tiefe
-wirklich nötig wird.
+Erst nach diesem Test werden endgültige Hardware- und Vermittlungsentscheidungen getroffen.
 
-## 10. Weitere Roadmap
+## 14. Weitere Roadmap
 
 ### Phase 6 — Projektion & Kalibrierung
 
 - Vollbildbetrieb;
-- Eckpunkt-/Warp-Mapping für die reale Fassade;
+- Eckpunkt-/Warp-Mapping;
 - Laden/Speichern der Kalibrierung;
-- Kontrast- und Helligkeitsabstimmung für Nachthimmel und Projektionsfläche.
+- Kontrast- und Helligkeitsabstimmung.
 
 ### Phase 7 — Hardware / Robustheit
 
-Auf Basis des Realwelt-Tests:
-
-- RGB beibehalten oder zusätzliche Beleuchtung optimieren;
-- falls nötig IR- oder Tiefenkamera evaluieren;
+- RGB beibehalten oder Beleuchtung optimieren;
+- falls nötig IR-/Tiefenkamera evaluieren;
 - Performance bei 2–20 Personen;
-- Fallbacks bei Tracking-Ausfällen.
+- robuste Netzwerkstrecke zum Sensorstand;
+- Rückkanal für Monitorvorschau;
+- Fallbacks bei Tracking-/Netzwerkausfällen.
 
 ### Phase 8 — Klang (optional)
 
-Klang nur ergänzen, wenn er die Resonanzidee stärkt und die Installation nicht
-überlädt. Möglich wären OSC-Spiegelung oder prozeduraler Klang in Godot.
+Nur ergänzen, wenn Klang die Resonanzidee stärkt und die Installation nicht überlädt.
 
 ### Phase 9 — DSGVO & Betrieb
 
 - Beschilderung zur lokalen, anonymen Verarbeitung;
+- klare Trennung Datenschutzinfo ↔ poetischer Sprachimpuls;
 - Kiosk-/Autostart;
 - Failsafe;
 - Betriebshandbuch;
-- dokumentierte Effekt-Defaults und Minimal-/Fallback-Konfiguration.
+- dokumentierte Effekt- und Stand-Defaults.
 
-## 11. Bewusste Grenzen
+## 15. Bewusste Grenzen
 
 - Keine Finger-/Handzeichenerkennung als Kerninteraktion.
 - Keine Emotionserkennung.
 - Keine Geste-X-löst-Effekt-Y-Sprache als dominantes Bedienprinzip.
 - Keine Cloud-Bildverarbeitung.
 - Keine Speicherung von Kameraaufnahmen.
-- Tracking muss nicht „100 Menschen auf der Straße“ beherrschen; Ziel ist ein
-  begrenzter Resonanzbereich mit ca. 2–20 Menschen.
+- Kein rohes Kamerabild auf dem Publikumsmonitor.
+- Kein erklärender Textblock als Voraussetzung zum Verstehen.
+- Tracking muss nicht einen ganzen Straßenzug beherrschen; Ziel ist ein begrenzter Resonanzbereich mit ca. 2–20 Menschen.
 - Projektionstauglichkeit ist wichtiger als feine Bildschirmästhetik.
-- Jeder eigenständige visuelle Effekt bleibt **zur Laufzeit konfigurierbar
-  abschaltbar**.
+- Jeder eigenständige visuelle Effekt bleibt zur Laufzeit abschaltbar.
+- Monitor und Sprachimpuls müssen ebenfalls zur Laufzeit deaktivierbar sein.
 
-## 12. Offene Entscheidungen
+## 16. Offene Entscheidungen
 
-1. Welche zusätzlichen Resonanzsignale bringen im ersten Wurf wirklich sichtbaren
-   Mehrwert: `stillness`, `verticality`, `rhythm` — alle oder priorisieren?
-2. Wie stark darf Dunst/Feldbildung werden, bevor die Projektion zu weich und
-   unlesbar wird?
-3. Wie lange soll Nachwirkung typischerweise bestehen: eher 5–10 Sekunden oder
-   deutlich länger?
-4. Soll eine Welle nur visuell überlagert werden oder tatsächlich andere
-   Partikel/Felder kurz beeinflussen?
-5. Welche Toleranz gilt für „gemeinsames Verlassen“, bevor mehrere `departure`-
-   Ereignisse zu einer Gruppenwelle aggregiert werden?
-6. Welche Kombination wird als robuster `minimal`-Fallback definiert?
-7. Klang: überhaupt gewünscht, und wenn ja eher atmosphärisch in Godot oder über
-   OSC an ein externes System?
+1. Wie lange muss eine Person ungefähr verweilen, bevor `stillness`/`presence_time` eine deutlich neue visuelle Qualität auslösen?
+2. Welche Formsprache beantwortet das Bleiben am stärksten: Verdichtung, Pulsieren, Feldbildung oder eine Mischung?
+3. Wie exakt muss die Monitor-Vorschau das Fassadenbild spiegeln, und wie stark darf sie reduziert werden?
+4. Welcher technische Rückkanal bietet über ca. 50 m die ausreichend niedrige Latenz für die Vorschau?
+5. Welche Monitorgröße und Position führen den Blick zur Fassade, statt ihn dort festzuhalten?
+6. Welcher kurze Sprachimpuls funktioniert im Realwelt-Test am besten?
+7. Wie lange soll Nachwirkung typischerweise bestehen?
+8. Welche Kombination wird als robuster `minimal`-Fallback definiert?
+9. Klang: überhaupt gewünscht, und wenn ja eher atmosphärisch in Godot oder über OSC an ein externes System?
