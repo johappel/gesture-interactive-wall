@@ -18,7 +18,7 @@ Leitgedanke:
 > **WIRKLICHT visualisiert nicht die Befehle von Menschen, sondern die Spuren
 > ihrer Anwesenheit, Bewegung und Beziehung.**
 
-Daraus folgen vier Grundsätze:
+Daraus folgen fünf Grundsätze:
 
 1. **Resonanz statt Gestensteuerung:** überwiegend kontinuierliche Körper- und
    Beziehungssignale statt eines Katalogs benannter Kommandogesten.
@@ -30,6 +30,10 @@ Daraus folgen vier Grundsätze:
    stärker wird das gemeinsame Geschehen sichtbar.
 4. **Datenschutz als Architekturprinzip:** Bildverarbeitung ausschließlich lokal,
    keine Speicherung oder Übertragung von Bildern.
+5. **Live-Tauglichkeit durch schaltbare Effekte:** jede eigenständige visuelle
+   Materialität muss über `config.json` einzeln deaktivierbar sein, damit sich
+   die Installation vor Ort schnell beruhigen, vereinfachen oder stabilisieren
+   lässt.
 
 Über UDP (`127.0.0.1`) werden ausschließlich **abstrakte Zahlenwerte**
 (Position, Bewegung, Resonanzqualitäten, Beziehungen, Ereignisse) an den Renderer
@@ -67,9 +71,55 @@ Die Trennung bleibt bewusst einfach:
 - Das Protokoll transportiert Körper-, Beziehungs-, Gruppen- und ausgewählte
   Ereignisdaten.
 - `renderer/` interpretiert diese Daten künstlerisch.
+- `config/config.json` steuert Kamera, Features und **alle eigenständigen
+  visuellen Effektfamilien**.
 
 So kann die visuelle Grammatik verändert werden, ohne die Wahrnehmungsschicht neu
 zu bauen.
+
+### 3.1 Verbindliche Regel für visuelle Effekte
+
+Jeder eigenständige visuelle Effekt benötigt in `config.json` mindestens einen
+expliziten `enabled`-Schalter.
+
+Beispiel:
+
+```json
+{
+  "effects": {
+    "body_glow": { "enabled": true },
+    "trails": { "enabled": true },
+    "sparks": { "enabled": true },
+    "proximity_bridges": { "enabled": true },
+    "mist": { "enabled": true },
+    "waves": { "enabled": true },
+    "floating_bodies": { "enabled": false },
+    "aftereffect_waves": { "enabled": true },
+    "crowd_field": { "enabled": true }
+  }
+}
+```
+
+Architekturregeln:
+
+- `enabled: false` bedeutet: Der Effekt wird **nicht erzeugt und nicht weiter
+  simuliert**, nicht nur unsichtbar geschaltet.
+- Effektparameter gehören zum jeweiligen Effektblock, z. B. Partikelanzahl,
+  Lebensdauer oder Intensität unter `effects.sparks` statt verteilt an anderen
+  Stellen der Config.
+- Resonanzsignale im Capture bleiben **unabhängig von Renderer-Effekten**. Ein
+  deaktivierter Effekt darf nicht dazu führen, dass `stillness`, `openness`,
+  `rhythm` usw. nicht mehr berechnet oder übertragen werden.
+- Neue eigenständige Effektfamilien gelten nur dann als vollständig integriert,
+  wenn sie einen Config-Schalter besitzen.
+- Die Defaults sollen einen robusten, ästhetisch brauchbaren Zustand ergeben.
+
+Optional kann später zusätzlich ein Preset-System (`minimal`, `calm`, `full`,
+`debug`) eingeführt werden. Presets ersetzen die Einzel-Schalter nicht, sondern
+setzen sie nur gesammelt.
+
+Ein späterer `minimal_mode` darf als schneller Fallback dienen, z. B. nur mit
+`body_glow`, `trails` und `proximity_bridges`.
 
 ## 4. Status
 
@@ -80,7 +130,7 @@ zu bauen.
 | 2 | Renderer-MVP: Lichtgestalten, Bloom | ✅ |
 | 3 | Leuchtspuren (Trails) | ✅ |
 | 4 | Multi-Person + Lichtbrücken (Nähe) | ✅ |
-| **4.5** | **Resonanzgrammatik + Nachwirkung** | 🔜 **nächster Schritt** |
+| **4.5** | **Resonanzgrammatik + Nachwirkung + Effektsteuerung** | 🔜 **nächster Schritt** |
 | 5 | Realwelt-Test: Beleuchtung, Distanz, 2–20 Personen | offen |
 | 6 | Projektion & Kalibrierung (Fassaden-Mapping) | offen |
 | 7 | Hardware-Entscheidung / Robustheit | offen |
@@ -312,13 +362,37 @@ Schrittweise ergänzen:
 3. Nähe nicht nur als Linie, sondern optional als gemeinsames Feld / Dunst;
 4. rhythmische Bewegung als dezente Wellenmodulation;
 5. `departure` als zurücklaufende Wasser-/Lichtwelle;
-6. Wellen dürfen bestehende Partikel / Felder vorübergehend beeinflussen.
+6. Wellen dürfen bestehende Partikel / Felder vorübergehend beeinflussen;
+7. **für jede eigenständige Effektfamilie einen verpflichtenden Config-Schalter
+   implementieren und testen.**
 
 ### 8.4 Protokoll
 
 `protocol.md` erst nach Festlegung der tatsächlich implementierten Felder
 aktualisieren. Neue Felder bleiben abwärtskompatibel; der Renderer ignoriert
 unbekannte Werte.
+
+### 8.5 Effektsteuerung / Live-Fallback
+
+Vor dem Realwelt-Test müssen mindestens die aktuell implementierten Effekte über
+`config.json` einzeln schaltbar sein. Für neue Effekte gilt diese Regel ab ihrer
+Einführung.
+
+Mindestens vorzusehen:
+
+- `body_glow`
+- `trails`
+- `sparks`
+- `proximity_bridges`
+- `mist`
+- `waves`
+- `floating_bodies`
+- `aftereffect_waves`
+- `crowd_field` (sobald implementiert)
+
+Tests sollen sicherstellen, dass deaktivierte Effekte weder erzeugt noch weiter
+simuliert werden und dass andere Effekte bzw. Resonanzsignale davon unbeeinflusst
+bleiben.
 
 ## 9. Phase 5 — Realwelt-Test
 
@@ -332,76 +406,71 @@ Zu testen sind:
 - 2, 5, 10 und wenn möglich bis etwa 20 Personen;
 - Verdeckungen und kreuzende Laufwege;
 - Stabilität der Track-IDs;
-- zuverlässige Erkennung von Austritten am Rand;
-- Sichtbarkeit von Glow, Partikeln, Dunst und Wellen aus Zuschauerentfernung;
-- Projektionswirkung auf realer oder vergleichbarer Fassadenoberfläche.
+- zuverlässige Erkennung tatsächlicher Rand-Austritte;
+- Lesbarkeit der Projektion auf der realen Fassade / Testfläche;
+- Wirkung und Lesbarkeit der verschiedenen Materialitäten;
+- gezieltes Abschalten einzelner Effekte und Nutzung eines Minimalzustands als
+  Live-Fallback.
 
-Erst aus diesem Test folgt die Entscheidung, ob RGB + Standbeleuchtung genügt
-oder ob IR/Tiefe zusätzlich sinnvoll wird.
+Erst danach wird entschieden, ob RGB + Standbeleuchtung genügt oder ob IR/Tiefe
+wirklich nötig wird.
 
 ## 10. Weitere Roadmap
 
 ### Phase 6 — Projektion & Kalibrierung
 
 - Vollbildbetrieb;
-- Eckpunkt-/Warp-Shader für Fassaden-Mapping;
+- Eckpunkt-/Warp-Mapping für die reale Fassade;
 - Laden/Speichern der Kalibrierung;
-- Tests auf realer Fassadengeometrie;
-- Lesbarkeit der visuellen Materialitäten aus Zuschauerentfernung.
+- Kontrast- und Helligkeitsabstimmung für Nachthimmel und Projektionsfläche.
 
-### Phase 7 — Hardware und Robustheit
+### Phase 7 — Hardware / Robustheit
 
-- RGB-Kamera + optimierte Beleuchtung als Ausgangspunkt;
-- nur bei Bedarf IR-Beleuchtung oder Tiefenkamera evaluieren;
-- Tracking bei teilweiser Verdeckung;
-- Performance mit realistischen Personenzahlen;
-- Failsafe bei Kamera-/Trackingausfall.
+Auf Basis des Realwelt-Tests:
+
+- RGB beibehalten oder zusätzliche Beleuchtung optimieren;
+- falls nötig IR- oder Tiefenkamera evaluieren;
+- Performance bei 2–20 Personen;
+- Fallbacks bei Tracking-Ausfällen.
 
 ### Phase 8 — Klang (optional)
 
-Klang ist kein Kernkriterium für den ersten funktionierenden Prototyp.
-
-Falls gewünscht:
-
-- OSC-Spiegelung von `body|pair|crowd|event`;
-- Ableton/SuperCollider oder prozeduraler Klang in Godot;
-- möglichst keine simplen Soundeffekte pro Geste;
-- Klang ebenfalls als Atmosphäre / Resonanz behandeln.
+Klang nur ergänzen, wenn er die Resonanzidee stärkt und die Installation nicht
+überlädt. Möglich wären OSC-Spiegelung oder prozeduraler Klang in Godot.
 
 ### Phase 9 — DSGVO & Betrieb
 
-- Beschilderung „lokale, anonyme Verarbeitung“;
-- klare Markierung des erfassten Interaktionsbereichs;
-- keine Speicherung von Bildern/Videos;
+- Beschilderung zur lokalen, anonymen Verarbeitung;
 - Kiosk-/Autostart;
 - Failsafe;
 - Betriebshandbuch;
-- Aufbau-, Licht- und Kameracheck für den Veranstaltungstag.
+- dokumentierte Effekt-Defaults und Minimal-/Fallback-Konfiguration.
 
-## 11. Grenzen und bewusste Entscheidungen
+## 11. Bewusste Grenzen
 
-- **Keine Finger-/Handzeichen als Kerninteraktion.** MediaPipe Pose liefert keine
-  zuverlässige Fingersemantik; für WIRKLICHT ist sie konzeptionell auch nicht
-  notwendig.
-- **Keine Emotionserkennung.** Das System beobachtet Körper und Beziehungen,
-  nicht innere Zustände.
-- **Keine erlernbare Gesten-Befehlssprache** als Grundprinzip. Einzelne diskrete
-  Ereignisse sind nur dann sinnvoll, wenn sie Zustandswechsel ausdrücken.
-- **Projektion bestimmt die Ästhetik mit.** Dunkle, extrem feine oder zu schwache
-  Effekte funktionieren nachts auf einer Fassade schlechter als auf einem
-  Monitor.
-- **Zeit gehört zur Gestaltung.** Resonanz entsteht nicht nur pro Frame, sondern
-  durch Anwesenheitsdauer, Rhythmus, Akkumulation, Nachglimmen und Nachwirkung.
+- Keine Finger-/Handzeichenerkennung als Kerninteraktion.
+- Keine Emotionserkennung.
+- Keine Geste-X-löst-Effekt-Y-Sprache als dominantes Bedienprinzip.
+- Keine Cloud-Bildverarbeitung.
+- Keine Speicherung von Kameraaufnahmen.
+- Tracking muss nicht „100 Menschen auf der Straße“ beherrschen; Ziel ist ein
+  begrenzter Resonanzbereich mit ca. 2–20 Menschen.
+- Projektionstauglichkeit ist wichtiger als feine Bildschirmästhetik.
+- Jeder eigenständige visuelle Effekt bleibt **zur Laufzeit konfigurierbar
+  abschaltbar**.
 
 ## 12. Offene Entscheidungen
 
-1. Welche zusätzlichen Resonanzsignale sind für den ersten Versuch wirklich
-   nötig: `stillness`, `verticality/contraction`, `rhythm`, `presence_time`?
-2. Wie stark soll Nähe von einer klaren Lichtbrücke zu einem diffuseren
-   gemeinsamen Feld / Lichtdunst übergehen?
-3. Wie lange soll eine Nachwirkungswelle sichtbar bleiben und wie stark darf sie
-   vorhandene Partikel/Felder beeinflussen?
-4. Ab welcher Personenzahl soll der Renderer deutlich vom Individuum zum
-   gemeinsamen Fassadenzustand überblenden?
-5. Welche Standbeleuchtung reicht für robustes RGB-Pose-Tracking am realen Ort?
-6. Klang: überhaupt notwendig, und wenn ja erst nach dem visuellen Realwelt-Test?
+1. Welche zusätzlichen Resonanzsignale bringen im ersten Wurf wirklich sichtbaren
+   Mehrwert: `stillness`, `verticality`, `rhythm` — alle oder priorisieren?
+2. Wie stark darf Dunst/Feldbildung werden, bevor die Projektion zu weich und
+   unlesbar wird?
+3. Wie lange soll Nachwirkung typischerweise bestehen: eher 5–10 Sekunden oder
+   deutlich länger?
+4. Soll eine Welle nur visuell überlagert werden oder tatsächlich andere
+   Partikel/Felder kurz beeinflussen?
+5. Welche Toleranz gilt für „gemeinsames Verlassen“, bevor mehrere `departure`-
+   Ereignisse zu einer Gruppenwelle aggregiert werden?
+6. Welche Kombination wird als robuster `minimal`-Fallback definiert?
+7. Klang: überhaupt gewünscht, und wenn ja eher atmosphärisch in Godot oder über
+   OSC an ein externes System?
