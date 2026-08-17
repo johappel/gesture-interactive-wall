@@ -87,9 +87,11 @@ mit `--backend dshow` (Windows) wählen. Mit `q` im Vorschaufenster beenden.
 - [x] Phase 2 — Renderer-MVP (Godot: Lichtgestalten, Bloom)
 - [x] Phase 3 — Leuchtspuren (Trails)
 - [x] Phase 4 — Multi-Person + Verbundenheit (Lichtbrücken)
+- [ ] Phase 4.5 — Gestenerkennung (Zeigen/Lichtkugeln, Klatschen, Recken, Wiegen)
 - [ ] Phase 5 — Klang (optional)
 - [ ] Phase 6 — Projektion & Kalibrierung
 - [ ] Phase 7 — Nacht-Robustheit & Hardware
 - [ ] Phase 8 — DSGVO/Beschilderung & Betriebshandbuch
 
-Details siehe [docs/protocol.md](docs/protocol.md).
+Vollständiger Plan & Gesten-Konzept: [docs/plan.md](docs/plan.md).
+Datenprotokoll: [docs/protocol.md](docs/protocol.md).
