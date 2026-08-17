@@ -17,13 +17,15 @@ Der „Stand“ soll Menschen ermöglichen zu entdecken:
 
 > Wenn ich hier bin, verändert sich etwas.
 
+Diese Entdeckung darf aber nicht voraussetzen, dass Passant:innen zuerst zufällig zur Fassade schauen, dort eine Veränderung bemerken und anschließend selbst den Zusammenhang mit ihrer eigenen Bewegung rekonstruieren. Der Nahraum muss die Rückkopplung so deutlich machen, dass der Zusammenhang **Ich ↔ Resonanz ↔ Fassade** in wenigen Augenblicken erfassbar wird.
+
 Er fordert dabei weder bestimmte Gesten noch eine bestimmte Dauer des Aufenthalts.
 
 ---
 
-## 2. Keine Spielstation
+## 2. Keine Spielstation – aber verständliche Rückkopplung
 
-Die Gestaltung soll unbedingt vermeiden, dass der Eindruck eines interaktiven Exponats entsteht.
+Die Gestaltung soll vermeiden, dass der Eindruck eines interaktiven Exponats mit Bedienlogik entsteht.
 
 Deshalb möglichst keine:
 
@@ -44,6 +46,12 @@ Entscheidend ist nicht:
 sondern:
 
 **Anwesenheit → Resonanz.**
+
+Gleichzeitig darf die Installation nicht so rätselhaft werden, dass die Interaktion praktisch unsichtbar bleibt. Deshalb gehört eine **unmittelbare Rückkopplung im Nahraum** zum Standkonzept: Ein kleiner Monitor in Kameranähe kann das Fassadengeschehen als Resonanz-Vorschau zeigen. Er zeigt ausdrücklich **nicht das Kamerabild**, sondern dieselbe bzw. eine möglichst eng verwandte visuelle Antwort, die auf der Fassade erscheint.
+
+Seine Aufgabe ist nicht Erklärung, sondern Entdeckung:
+
+> **Ach – das dort hat mit mir zu tun.**
 
 ---
 
@@ -116,17 +124,19 @@ Eine Person nähert sich.
 
 Die Installation muss noch nicht deutlich reagieren.
 
-Vielleicht gibt es lediglich eine minimale Veränderung auf der Fassade.
+Vielleicht gibt es lediglich eine minimale Veränderung auf der Fassade bzw. auf der Resonanz-Vorschau am Stand.
 
 ### Schwelle
 
 Die Person tritt in den zuverlässig erfassten Raum.
 
-Ihre Anwesenheit beginnt eine erkennbare Resonanz auszulösen.
+Ihre Anwesenheit beginnt eine erkennbare Resonanz auszulösen. Der Monitor in Kameranähe hilft, diese Kopplung sofort wahrzunehmen; die Fassade bleibt der eigentliche öffentliche Resonanzraum.
 
 ### Resonanzraum
 
 Bleibt die Person oder bewegt sie sich dort, kann die Antwort differenzierter werden.
+
+Gerade das **Bleiben** sollte dabei nicht nur als „keine Bewegung“ erscheinen. Nach kurzer Verweildauer muss sich die visuelle Antwort qualitativ verändern können: etwa durch Verdichtung, langsames Pulsieren, Feldbildung oder eine ruhigere räumliche Ausbreitung. So beantwortet die Installation tatsächlich die Frage, ob Verweilen etwas anderes bewirkt als bloßes Vorübergehen.
 
 ### Verlassen
 
@@ -140,27 +150,67 @@ Damit wird gerade das Weggehen zu einem Bestandteil der Erfahrung.
 
 ---
 
-# 6. Ein möglicher sprachlicher Impuls
+# 6. Der sprachliche Impuls
 
-Die Installation sollte möglichst ohne Erklärung verständlich werden.
+Die Installation sollte möglichst wenig erklären, muss aber einen Grund eröffnen, **nicht einfach weiterzugehen**.
 
-Falls ein Text notwendig ist, sollte er extrem zurückhaltend sein.
+Dafür ist ein kurzer Satz sinnvoll. Er soll keine Technik erklären, keine richtige Geste benennen und keine Bedienhandlung verlangen. Er öffnet vielmehr eine Frage, die durch die Installation selbst beantwortet werden kann.
 
-Beispielsweise:
+Bevorzugter Satz:
 
-**Bleib einen Augenblick.**
+> **Was geschieht, wenn du bleibst?**
 
-Der Satz erklärt die Technik nicht.
+Dieser Satz hat gegenüber einer reinen Aufforderung einen besonderen Vorteil: Sobald jemand bemerkt, dass die eigene Bewegung Resonanz erzeugt, entsteht unmittelbar eine zweite Hypothese – vielleicht verändert sich auch etwas, wenn ich nicht weitergehe.
 
-Er fordert auch keine Geste.
+Weitere kuratierte Varianten können sein:
 
-Er unterbricht lediglich für einen Moment die Logik des Weitergehens.
+- **Bleib einen Augenblick.**
+- **Deine Bewegung hinterlässt etwas.**
 
-Informationen über die Kameraerfassung und den Datenschutz müssen selbstverständlich vorhanden sein, sollten gestalterisch jedoch von dieser poetischen Einladung unterschieden werden.
+Die kurzen Formulierungen werden nicht im Renderer-Code festgeschrieben. Die kuratierte Sammlung liegt in `config/prompts.json`; `config/config.json` bestimmt, welcher Satz im Betrieb aktiv ist und ob der sprachliche Impuls überhaupt angezeigt wird.
+
+Informationen über Kameraerfassung und Datenschutz müssen selbstverständlich vorhanden sein, sollten gestalterisch jedoch von dieser poetischen Einladung unterschieden werden.
 
 ---
 
-# 7. Kameras und Technik im Resonanzraum
+# 7. Der Monitor als Nahraum der Installation
+
+Ein kleiner Monitor in Kameranähe ist kein Kontrollbildschirm und keine zweite Hauptleinwand. Er bildet den **Nahraum der Rückkopplung**.
+
+Seine Funktionen:
+
+1. Er liegt im normalen Blickfeld der Menschen, die sich der Lichtinsel nähern.
+2. Er macht die zeitliche Kopplung zwischen eigener Anwesenheit und visueller Antwort unmittelbar erfahrbar.
+3. Er verweist auf die Fassade, ohne deren Rolle als eigentlichen öffentlichen Resonanzraum zu ersetzen.
+4. Er kann im Ruhezustand den kurzen sprachlichen Impuls zeigen und beim Eintritt einer Person fließend in die Resonanz-Vorschau übergehen.
+
+Verbindliche Gestaltungsregel:
+
+> **Der Monitor zeigt im Publikumsbetrieb niemals das rohe Kamerabild.**
+
+Ein Kamerabild würde die Ästhetik in Richtung Überwachung oder Technikdemo verschieben. Gezeigt wird stattdessen das Fassadenbild selbst oder eine eng damit gekoppelte Resonanz-Vorschau.
+
+Ein möglicher Ablauf:
+
+```text
+kein Mensch erkannt
+        ↓
+„Was geschieht, wenn du bleibst?“
+        ↓
+Person betritt Lichtinsel
+        ↓
+Text tritt zurück / verschwindet
+        ↓
+Resonanz-Vorschau erscheint unmittelbar
+        ↓
+Blick kann zur großen Fassade wandern
+```
+
+Der Monitor soll klein genug bleiben, dass Menschen nicht dauerhaft davor stehen und nur auf ihn schauen. Seine Aufgabe ist **Hinführung**, nicht Konkurrenz zur Fassade.
+
+---
+
+# 8. Kameras und Technik im Resonanzraum
 
 Die Kameras sollen sichtbar genug sein, dass keine versteckte Überwachung entsteht, dürfen aber nicht die Wahrnehmung des Ortes dominieren.
 
@@ -171,6 +221,7 @@ Sie können aufnehmen:
 - Kamera bzw. Kameras,
 - ggf. Tiefen-/IR-Sensorik,
 - kleine Orientierungsleuchten,
+- Nahraum-Monitor,
 - Netzwerk,
 - lokale Stromversorgung,
 - gegebenenfalls einen Sensorrechner.
@@ -179,7 +230,7 @@ Die Kamerapositionen werden so eingerichtet, dass der durch die Lichtinsel bezei
 
 ---
 
-# 8. Technische Grundarchitektur
+# 9. Technische Grundarchitektur
 
 Zwischen Kamerastandort und Hauptrechner liegen ungefähr 50 Meter.
 
@@ -189,19 +240,19 @@ Die bevorzugte Architektur lautet:
 
 ```text
                   RESONANZRAUM
-                         
+
         Kamera A ─┐
-                  ├── Sensorrechner
-        Kamera B ─┘       │
-                          │
-                 Personenerkennung
-                 Tracking
-                 Gestenanalyse
-                          │
+                  ├── Sensorrechner ──→ Nahraum-Monitor
+        Kamera B ─┘       │                 ↑
+                          │                 │ Vorschau
+                 Personenerkennung          │
+                 Tracking                   │
+                 Resonanzsignale            │
+                          │                 │
                           │ Ethernet / Glasfaser
-                          │ ca. 50 m
-                          ▼
-                    HAUPTRECHNER
+                          │ ca. 50 m         │
+                          ▼                 │
+                    HAUPTRECHNER ───────────┘
                           │
                    Resonanz-Engine
                    Visualisierung
@@ -215,7 +266,7 @@ Die bevorzugte Architektur lautet:
 
 Der wesentliche Gedanke:
 
-**Über die 50-Meter-Strecke müssen möglichst nicht die Kamerabilder transportiert werden.**
+**Über die 50-Meter-Strecke müssen für die Resonanzlogik möglichst nicht die Kamerabilder transportiert werden.**
 
 Der Sensorrechner am Stand erkennt beispielsweise:
 
@@ -233,11 +284,13 @@ Zum Hauptrechner werden daraus nur strukturierte Bewegungsdaten übertragen.
 
 Dafür reichen sehr geringe Datenmengen.
 
+Für den Nahraum-Monitor fließt zusätzlich eine **Visualisierungs-Vorschau vom Hauptrechner zurück zum Stand**. Diese Vorschau darf technisch komprimiert oder reduziert sein; entscheidend ist eine geringe Latenz, damit Ursache und Resonanz als zusammengehörig erlebt werden.
+
 ---
 
-# 9. Warum diese Trennung sinnvoll ist
+# 10. Warum diese Trennung sinnvoll ist
 
-Die Architektur trennt zwei Aufgaben.
+Die Architektur trennt drei Aufgaben.
 
 ## Sensorik
 
@@ -263,11 +316,17 @@ Dort laufen:
 - Effekt-Schalter,
 - Projektion.
 
-Damit bleibt die künstlerische Logik unabhängig von einem bestimmten Kameramodell.
+## Vermittlung im Nahraum
+
+Monitor und kurzer Satz beantworten weder technisch noch didaktisch, „wie WIRKLICHT funktioniert“. Sie ermöglichen lediglich die schnelle Entdeckung:
+
+> **Das, was dort erscheint, hängt mit unserer Anwesenheit hier zusammen.**
+
+Damit bleibt die künstlerische Logik unabhängig von einem bestimmten Kameramodell und die Fassade muss nicht selbst zur Erklärungstafel werden.
 
 ---
 
-# 10. Netzwerk
+# 11. Netzwerk
 
 Für die Verbindung zwischen Sensorrechner und Hauptrechner bietet sich eine kabelgebundene Netzwerkverbindung an.
 
@@ -291,11 +350,13 @@ Die übermittelten Trackingdaten könnten beispielsweise per:
 
 übertragen werden.
 
-Für die eigentliche Gestensteuerung sollte die Verbindung lokal und kabelgebunden bleiben. WLAN wäre höchstens eine Diagnose- oder Backup-Lösung.
+Für die eigentliche Resonanzsteuerung sollte die Verbindung lokal und kabelgebunden bleiben. WLAN wäre höchstens eine Diagnose- oder Backup-Lösung.
+
+Die Rückübertragung der Resonanz-Vorschau zum Monitor sollte über dasselbe lokale Netzwerk erfolgen. Das konkrete Verfahren wird erst nach einem Latenztest festgelegt; entscheidend ist nicht maximale Bildqualität, sondern eine **unmittelbar wirkende Kopplung**.
 
 ---
 
-# 11. Kameravideo für Einrichtung und Diagnose
+# 12. Kameravideo für Einrichtung und Diagnose
 
 Während Aufbau und Kalibrierung muss das Kamerabild dennoch am Hauptrechner sichtbar sein können.
 
@@ -309,13 +370,13 @@ Dieser Stream dient vor allem:
 - Lichttests,
 - Fehlersuche.
 
-Für die eigentliche Installation ist dieser Videostream nicht zwingend Bestandteil der Resonanzlogik.
+Für die eigentliche Installation ist dieser Videostream nicht Bestandteil der Resonanzlogik und **nicht für den Publikumsmonitor bestimmt**.
 
 Damit bleibt WIRKLICHT auch funktionsfähig, wenn die Diagnoseübertragung deaktiviert wird.
 
 ---
 
-# 12. Alternative ohne Sensorrechner
+# 13. Alternative ohne Sensorrechner
 
 Falls die eingesetzten Kameras zwingend direkt am Hauptrechner betrieben werden müssen, ist eine zweite Variante möglich:
 
@@ -346,7 +407,7 @@ Für einen mehrtägigen öffentlichen Betrieb ist die Variante mit lokalem Senso
 
 ---
 
-# 13. Vom Rechner zum Beamer
+# 14. Vom Rechner zum Beamer
 
 Auch die Strecke vom Hauptrechner zum Projektor muss separat betrachtet werden.
 
@@ -387,7 +448,7 @@ Welche Variante sinnvoll ist, hängt vom endgültigen Beamer und dessen Eingäng
 
 ---
 
-# 14. Gesamtsystem
+# 15. Gesamtsystem
 
 Das räumliche und technische Konzept folgen damit derselben Idee:
 
@@ -396,23 +457,28 @@ MENSCH
   ↓
 LICHTINSEL
   ↓
-KAMERA
+KURZE FRAGE + RESONANZ-VORSCHAU
   ↓
-WAHRNEHMUNG
+KAMERA / WAHRNEHMUNG
   ↓
-GESTE / BEWEGUNG / BEZIEHUNG
+ANWESENHEIT / BEWEGUNG / BEZIEHUNG
   ↓
 RESONANZ-ENGINE
   ↓
 LICHT AUF DER FASSADE
   ↓
-NACH-WIRKUNG
+BLEIBEN / BEZIEHUNG / NACH-WIRKUNG
 ```
-
-Die Technik soll diesen Zusammenhang ermöglichen, aber möglichst wenig selbst zum Gegenstand der Wahrnehmung werden.
 
 Der „Stand“ ist deshalb letztlich **keine Station vor der Fassade**.
 
 Er ist die kleine, erkennbare Schwelle zwischen dem alltäglichen Verkehrsraum und dem Moment, in dem ein Mensch erfahren kann:
 
 **Meine Anwesenheit hinterlässt eine Wirkung.**
+
+Die entscheidende Dramaturgie lässt sich knapp zusammenfassen:
+
+> **Gehen → Spur.  
+> Bleiben → Resonanz.  
+> Mehrere → Beziehung.  
+> Fortgehen → Nachwirkung.**
