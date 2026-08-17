@@ -22,6 +22,44 @@
     "track_max_dist": 0.25,
     "track_timeout": 0.6
   },
+  "effects": {
+    "enabled": true,
+    "minimal_mode": false,
+    "body_glow": {
+      "enabled": true
+    },
+    "trails": {
+      "enabled": true,
+      "max_points": 48,
+      "width": 10.0
+    },
+    "sparks": {
+      "enabled": true,
+      "amount_min": 24,
+      "amount_max": 112,
+      "lifetime": 1.4,
+      "velocity_min": 20.0,
+      "velocity_max": 300.0
+    },
+    "proximity_bridges": {
+      "enabled": true
+    },
+    "mist": {
+      "enabled": false
+    },
+    "waves": {
+      "enabled": false
+    },
+    "floating_bodies": {
+      "enabled": false
+    },
+    "aftereffect_waves": {
+      "enabled": false
+    },
+    "crowd_field": {
+      "enabled": false
+    }
+  },
   "debug": {
     "preview": true
   }
