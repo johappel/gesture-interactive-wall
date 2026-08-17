@@ -26,7 +26,11 @@
     "monitor": {
       "enabled": true,
       "mode": "facade_preview",
-      "show_camera_image": false
+      "show_camera_image": false,
+      "title": "WIRKLICHT – Resonanz",
+      "width": 960,
+      "height": 540,
+      "prompt_font_size": 38
     },
     "prompt": {
       "enabled": true,
