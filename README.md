@@ -65,11 +65,20 @@ Es sollten Lichtgestalten über die Godot-Ausgabe wandern.
 
 ### 4. Mit echter Webcam
 
+Zuerst die richtige Kamera finden (Windows zeigt oft auch **virtuelle** Kameras):
+
 ```powershell
-python -m capture.tracker
+python -m capture.tracker --list-cameras
 ```
 
-Mit `q` im Vorschaufenster beenden.
+Dann mit dem passenden Index starten (Index 0 ist häufig eine virtuelle Kamera):
+
+```powershell
+python -m capture.tracker --camera 1
+```
+
+Ohne `--camera` gilt `camera.index` aus `config/config.json`. Backend bei Bedarf
+mit `--backend dshow` (Windows) wählen. Mit `q` im Vorschaufenster beenden.
 
 ## Status
 

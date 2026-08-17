@@ -71,7 +71,10 @@ def run_camera(cfg: dict) -> None:
     pcfg = cfg["pose"]
 
     model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", pcfg["model_path"]))
-    camera = Camera(ccfg["index"], ccfg["width"], ccfg["height"], ccfg["flip"])
+    print(f"Kamera-Index {ccfg['index']} (backend={ccfg.get('backend', 'any')}).")
+    camera = Camera(
+        ccfg["index"], ccfg["width"], ccfg["height"], ccfg["flip"], ccfg.get("backend", "any")
+    )
     pose = PoseTracker(model_path, pcfg["num_poses"], pcfg["min_detection_confidence"])
     tracker = BodyTracker(
         max_dist=fcfg["track_max_dist"],
@@ -134,12 +137,56 @@ def _draw_overlay(cv2, frame, bodies) -> None:
     )
 
 
-def main() -> None:
+def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="WIRKLICHT gesture capture")
     parser.add_argument("--sim", action="store_true", help="Ohne Kamera, synthetische Daten senden")
-    args = parser.parse_args()
+    parser.add_argument(
+        "--list-cameras",
+        action="store_true",
+        help="Verfügbare Kameras auflisten (Index, Auflösung) und beenden",
+    )
+    parser.add_argument(
+        "--camera", type=int, default=None, help="Kamera-Index (überschreibt config.json)"
+    )
+    parser.add_argument(
+        "--backend",
+        choices=("any", "dshow", "msmf"),
+        default=None,
+        help="OpenCV-Kamera-Backend (Windows: 'dshow' listet physische Webcams zuverlässig)",
+    )
+    return parser
 
-    cfg = load_config()
+
+def apply_overrides(cfg: dict, args: argparse.Namespace) -> dict:
+    """Merge CLI overrides into the camera config (returns the same dict)."""
+    if getattr(args, "camera", None) is not None:
+        cfg["camera"]["index"] = args.camera
+    if getattr(args, "backend", None) is not None:
+        cfg["camera"]["backend"] = args.backend
+    return cfg
+
+
+def print_cameras(backend: str = "any") -> None:
+    from .camera import list_cameras
+
+    cams = list_cameras(backend=backend)
+    if not cams:
+        print("Keine Kamera gefunden. Ist eine Webcam angeschlossen / von anderer App belegt?")
+        print("Tipp (Windows): --backend dshow ausprobieren.")
+        return
+    print("Gefundene Kameras (Index: Auflösung):")
+    for c in cams:
+        print(f"  {c['index']}: {c['width']}x{c['height']}")
+    print("Auswahl z. B.: python -m capture.tracker --camera 1")
+
+
+def main() -> None:
+    args = build_parser().parse_args()
+    cfg = apply_overrides(load_config(), args)
+
+    if args.list_cameras:
+        print_cameras(cfg["camera"].get("backend", "any"))
+        return
     if args.sim:
         run_sim(cfg)
     else:

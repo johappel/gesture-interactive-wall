@@ -1,9 +1,10 @@
 {
   "camera": {
-    "index": 0,
+    "index": 1,
     "width": 1280,
     "height": 720,
-    "flip": true
+    "flip": true,
+    "backend": "any"
   },
   "network": {
     "host": "127.0.0.1",

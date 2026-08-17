@@ -1,33 +1,70 @@
-# Repository Guidelines
+# Repository Guidelines (WIRKLICHT)
 
-## Project Structure & Module Organization
+Gesten-Resonanz auf einer Fassade: Kameras erfassen Bewegungen, ein Rechner
+übersetzt sie **vollständig lokal und anonym** in Licht auf einer Projektion.
 
-This repository is currently a clean starting point: no source, test, asset, or build directories are present yet. Keep the top level focused on project-wide configuration and documentation. As implementation begins, use a predictable layout such as `src/` for application code, `tests/` for automated tests, `public/` for static assets, and `docs/` for design or operational notes. Group related modules by feature rather than by file type when a feature becomes substantial.
+## Projektstruktur
 
-## Build, Test, and Development Commands
+- `capture/` — Python-App (MediaPipe Pose-Tracking, Feature-Mathematik, UDP-Versand).
+  - `tracker.py` — Einstiegspunkt (`python -m capture.tracker`), CLI, Frame-Bau.
+  - `features.py` — reine Python-Mathematik (ID-Tracking, Intensität, Paare) — **ohne** ML-Abhängigkeiten, damit unit-testbar.
+  - `pose.py`, `camera.py`, `net.py`, `sim.py` — MediaPipe, Webcam (OpenCV), UDP, Simulator.
+- `renderer/` — Godot-4.7-Projekt (empfängt JSON/UDP, erzeugt Licht/Partikel/Spuren).
+- `config/config.json` — zentrale Konfiguration (Kamera, Netzwerk, Feature-Parameter).
+- `docs/protocol.md` — verbindliches JSON/UDP-Protokoll zwischen capture ↔ renderer.
+- `tests/` — Unit-Tests (ohne Kamera/Godot lauffähig).
 
-No package manager, build system, or test runner is configured yet. When adding one, document the canonical commands here and in the project README. Prefer reproducible scripts exposed through the chosen package manifest, for example:
+## Build, Test & Entwicklung
 
-```text
-npm run dev      # start the local development server
-npm test         # run the complete automated test suite
-npm run build    # create the production build
+```powershell
+python -m venv .venv; .\.venv\Scripts\Activate.ps1
+pip install -r capture/requirements.txt
+python capture/download_model.py                 # Multi-Person-Pose-Modell
+
+python -m unittest discover -s tests -v          # komplette Testsuite
+python -m capture.tracker --sim                  # Renderer ohne Kamera speisen
+python -m capture.tracker --list-cameras         # verfügbare Kameras + Index
+python -m capture.tracker --camera 1             # echte Webcam, Index überschreiben
 ```
 
-Do not commit generated build output unless the project’s deployment workflow explicitly requires it.
+Godot 4.7: `renderer/project.godot` importieren, mit **F5** starten.
 
-## Coding Style & Naming Conventions
+## Test-Pflicht (verbindlich)
 
-Use the formatter and linter selected by the project before submitting changes; keep their configuration in the repository. Default to two-space indentation, UTF-8 files, descriptive names, and small single-purpose modules. Use `PascalCase` for components or classes, `camelCase` for functions and variables, and `kebab-case` for feature folders and URL-facing assets. Avoid hidden global state and document non-obvious interaction or gesture behavior.
+- **Jede Änderung wird über Tests verifiziert.** Vor Abschluss läuft
+  `python -m unittest discover -s tests -v` grün durch.
+- Neue oder geänderte Logik in `capture/` erhält passende Tests in `tests/`
+  (Dateiname nach Verhalten, z. B. `test_features.py`, `test_cli.py`).
+- Test-Design: Logik von Hardware/ML trennen. Reine Mathematik und CLI/Config
+  gehören in test-bare Funktionen (siehe `features.py`, `build_parser`,
+  `apply_overrides`); OpenCV/MediaPipe/Godot werden **nicht** in Unit-Tests
+  geladen. `cv2` wird lazy importiert, damit Tests ohne Kamera laufen.
+- Erfolgs- **und** Fehlerpfade prüfen (z. B. unbekanntes Backend, leere Eingaben).
 
-## Testing Guidelines
+## Coding Style
 
-Add tests alongside each meaningful feature, using the test runner adopted by the project. Name files after the behavior they cover (for example, `tests/gesture-navigation.test.*`). Include keyboard and pointer fallbacks for gesture-driven interactions where applicable, and verify both success and cancellation/error paths. Run the full suite before opening a pull request; maintain the repository’s configured coverage threshold once one exists.
+Python: 4 Leerzeichen Einrückung, UTF-8 mit echten Umlauten, Typannotationen an
+öffentlichen Funktionen, `snake_case` für Funktionen/Variablen, `PascalCase` für
+Klassen. Kleine, einzweckige Module; keine versteckten Globals.
 
-## Commit & Pull Request Guidelines
+## Datenschutz (KO-Kriterium)
 
-No commit history is available in this checkout, so no established message convention can be inferred. Use concise imperative subjects, optionally scoped by area (for example, `Add gesture canvas prototype`), and keep unrelated changes separate. Pull requests should explain the user-visible effect, list validation commands and results, link the relevant issue, and include screenshots or a short recording for visual or interaction changes.
+- Bildverarbeitung läuft **ausschließlich lokal**. Es werden **keine** Bilder
+  oder Videos gespeichert oder übertragen.
+- Über UDP (nur `127.0.0.1`) wandern **nur abstrakte Zahlenwerte** (Positionen,
+  Intensität) — keine Personendaten, keine Cloud. Dies gilt für jede Änderung.
 
-## Security & Configuration Tips
+## Kameras (Windows-Hinweis)
 
-Keep secrets, local credentials, and device-specific configuration out of Git; provide safe `.env.example` files instead. Treat camera, microphone, and gesture input permissions as explicit user-facing concerns, and validate all externally supplied configuration at startup.
+Neben physischen Webcams existieren oft **virtuelle Kameras** (OBS, Handy-als-
+Webcam, Hersteller-Tools). `--camera 0` erwischt häufig eine solche (erkennbar
+an Logo-Bild, „0 Personen"). Mit `--list-cameras` die Indizes ermitteln und den
+richtigen per `--camera N` oder in `config.json` (`camera.index`) setzen. Backend
+über `--backend {any,dshow,msmf}` bzw. `camera.backend` wählbar.
+
+## Commits & Pull Requests
+
+Kurze imperative Betreffzeilen, optional nach Bereich (z. B. `capture:`,
+`renderer:`). Unabhängige Änderungen trennen. PRs beschreiben die sichtbare
+Wirkung, listen ausgeführte Validierungsbefehle (inkl. Testlauf) und fügen bei
+visuellen Änderungen einen Screenshot/kurzes Video bei.
