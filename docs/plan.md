@@ -100,7 +100,7 @@ Bevorzugter Impuls:
 | 2 | Renderer-MVP: Lichtgestalten, Bloom | ✅ |
 | 3 | Leuchtspuren (Trails) | ✅ |
 | 4 | Multi-Person + Lichtbrücken (Nähe) | ✅ |
-| **4.4** | **Nahraum-Monitor + Sprachimpuls + technische Rückkopplung** | 🚧 **jetzt integrieren/prüfen** |
+| **4.4** | **Nahraum-Monitor + Sprachimpuls + technische Rückkopplung** | ✅ **technisch integriert; bereit für Abnahme** |
 | **4.5** | **Resonanzgrammatik + Nachwirkung + Effektsteuerung** | danach |
 | 5 | Realwelt-Test: Beleuchtung, Distanz, 2–20 Personen, Verständlichkeit | offen |
 | 6 | Projektion & Kalibrierung | offen |
@@ -129,22 +129,43 @@ Vor Phase 4.5 verbindlich integrieren:
 
 ### 6.2 Aktueller Integrationsstand
 
-Der Renderer besitzt dafür bereits:
+Der Renderer besitzt und prüft dafür jetzt:
 
 - `station`-Konfigurationsauswertung;
+- sichere Teil-Defaults für fehlende oder fehlerhafte `station.monitor`- und
+  `station.prompt`-Blöcke;
 - Laden der kuratierten Prompts;
+- Warnungen und leerer Zustand bei fehlender/ungültiger Prompt-Datei oder
+  unbekanntem Prompt-Key, ohne erfundenen Ersatztext;
 - `facade_preview` als separates Godot-Fenster;
 - konfigurierbare Monitorgröße und Prompt-Schriftgröße;
 - Ausblenden des Prompts bei erkannter Anwesenheit;
-- Schutz davor, das rohe Kamerabild im Publikumsmodus anzuzeigen.
+- Schutz davor, das rohe Kamerabild im Publikumsmodus anzuzeigen, auch wenn
+  `show_camera_image=true` gesetzt wird;
+- Schließen des lokalen Vorschaufensters ohne Beeinträchtigung der
+  Hauptausgabe;
+- ein wiederholbarer Simulatorablauf `Leerlauf → eine Person → mehrere
+  Personen → Leerlauf` mit den bestehenden Signalen.
+
+Die Vorschau spiegelt die Texture des Haupt-Viewports. Sie berechnet keine
+zweite Resonanz und zeigt keine Diagnosewerte. Die aktuelle Phase-4.4-Stufe
+verwendet dafür bewusst ein lokales zweites Godot-Fenster. Ein echter
+Netzwerk-Rückkanal über die perspektivischen ca. 50 m ist noch nicht
+implementiert und wird nicht vorgetäuscht.
 
 Noch praktisch zu prüfen:
 
-- Godot-Start mit zwei realen Displays;
+- sichtbare Ausgabe mit zwei realen Displays;
 - Platzierung des Vorschau-Fensters auf dem Monitor am Stand;
 - Latenz und visuelle Übereinstimmung von Vorschau und Fassadenbild;
 - Verhalten bei Vollbildbetrieb des Beamers;
 - Neustart-/Failsafe-Verhalten bei fehlendem zweiten Display.
+
+Automatisiert bzw. technisch geprüft sind: 23 Python-Unit-Tests, der
+GDScript-Editor-/Parse-Check mit Godot 4.7.1 und ein headless Renderer-Start
+mit UDP-Bind, Config-Laden, Monitor-/Prompt-Status und dem lokalen
+`facade_preview`-Pfad. Die headless-Prüfung ersetzt keine sichtbare
+Zwei-Monitor-Abnahme.
 
 ### 6.3 Abnahmekriterium vor 4.5
 
@@ -159,6 +180,42 @@ Leerlauf
 → Person verschwindet
 → nach dem Ausblenden kehrt der Leerlauf-Impuls zurück
 ```
+
+Der Simulator führt diese Abfolge in einem 14-Sekunden-Zyklus aus. Er nutzt
+weiterhin ausschließlich `intensity`, `openness`, Positionen, Paare und
+Crowd-Energie; Phase-4.5-Signale und Nachwirkungsereignisse wurden dafür nicht
+vorgezogen.
+
+### 6.4 Abnahmegrenzen
+
+Phase 4.4 ist technisch bereit für die manuelle Abnahme. Offen bleiben nur
+die Prüfungen, die eine sichtbare bzw. reale Installation voraussetzen:
+
+- zwei physische Displays inklusive Fensterplatzierung und Vollbildprojektor;
+- subjektiv ausreichende Latenz und Blickführung vom Nahraum zur Fassade;
+- reale 50-m-Netzwerkstrecke und ein späterer Netzwerk-Rückkanal;
+- Neustart- und Betriebserfahrung am konkreten Veranstaltungsaufbau.
+
+Für die manuelle Godot-Abnahme sind mit Neustart des Renderers diese Fälle
+auszuführen:
+
+1. Monitor und Prompt aktiviert: Prompt im Leerlauf, Vorschau bei Anwesenheit.
+2. Prompt deaktiviert: kein Text, Vorschau bleibt aktiv.
+3. Monitor deaktiviert: kein zusätzliches Fenster, Hauptausgabe bleibt aktiv.
+4. unbekannter `prompt_key`: Warnung und leerer Prompt-Zustand, kein Ersatztext.
+5. fehlende bzw. ungültige `prompts.json`: Warnung, kein Crash, Hauptausgabe
+   bleibt aktiv.
+6. `show_camera_image=true`: deutliche Warnung, weiterhin ausschließlich
+   Resonanz-Vorschau und kein Kamerabild.
+
+Diese sechs sichtbaren Varianten sowie die echte Fensterplatzierung auf zwei
+Displays wurden hier nicht als visuelle Hardware-Abnahme ausgeführt.
+
+Die verbindlichen Tracking-Lifecycle-Kriterien in
+`docs/Track-Lifecycle-Abnahme.md` bleiben ein Gate für Phase 4.5. Diese Phase
+4.4 führt weder `active`/`temporarily_missing`/`departed` als neue
+Produktionslogik noch `departure`, `stillness`, `presence_time`, `rhythm`,
+Nachwirkungswellen oder neue Effektfamilien ein.
 
 ## 7. Resonanzgrammatik
 

@@ -17,7 +17,7 @@ from capture.features import (  # noqa: E402
     crowd_energy,
     openness,
 )
-from capture.sim import make_sim_persons  # noqa: E402
+from capture.sim import make_phase44_persons, make_sim_persons  # noqa: E402
 
 _N = 33
 
@@ -117,6 +117,12 @@ class SimTest(unittest.TestCase):
             self.assertEqual(len(p), 33)
             for x, y, _ in p:
                 self.assertTrue(math.isfinite(x) and math.isfinite(y))
+
+    def test_phase44_sequence_covers_idle_one_multiple_idle(self):
+        self.assertEqual(len(make_phase44_persons(0.5)), 0)
+        self.assertEqual(len(make_phase44_persons(3.0)), 1)
+        self.assertEqual(len(make_phase44_persons(7.0)), 2)
+        self.assertEqual(len(make_phase44_persons(11.0)), 0)
 
 
 if __name__ == "__main__":

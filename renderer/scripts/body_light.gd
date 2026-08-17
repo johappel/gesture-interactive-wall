@@ -57,10 +57,10 @@ func update_state(pos: Vector2, intensity: float, openness: float) -> void:
 
 	if _effect_enabled("sparks", true):
 		var sparks := _effect_block("sparks")
-		var amount_min := int(sparks.get("amount_min", 24))
-		var amount_max := max(int(sparks.get("amount_max", 112)), amount_min)
-		var velocity_min := float(sparks.get("velocity_min", 20.0))
-		var velocity_max := max(float(sparks.get("velocity_max", 300.0)), velocity_min)
+		var amount_min: int = int(sparks.get("amount_min", 24))
+		var amount_max: int = max(int(sparks.get("amount_max", 112)), amount_min)
+		var velocity_min: float = float(sparks.get("velocity_min", 20.0))
+		var velocity_max: float = max(float(sparks.get("velocity_max", 300.0)), velocity_min)
 		var mat := _particles.process_material as ParticleProcessMaterial
 		mat.color = hdr
 		mat.initial_velocity_min = velocity_min

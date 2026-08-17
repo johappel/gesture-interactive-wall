@@ -18,6 +18,7 @@ var _prompts: Dictionary = {}
 var _port := DEFAULT_PORT
 var _monitor_window: Window
 var _monitor_prompt: Label
+var _monitor_closed := false
 
 func _ready() -> void:
 	_load_config()
@@ -105,14 +106,14 @@ func _load_config() -> void:
 	if not FileAccess.file_exists(config_path):
 		push_warning("WIRKLICHT config nicht gefunden: %s; Renderer nutzt Defaults." % config_path)
 		_effects = _default_effects()
-		_station = _default_station()
+		_station = _normalize_station(_default_station())
 		return
 
 	var file := FileAccess.open(config_path, FileAccess.READ)
 	if file == null:
 		push_warning("WIRKLICHT config konnte nicht geöffnet werden; Renderer nutzt Defaults.")
 		_effects = _default_effects()
-		_station = _default_station()
+		_station = _normalize_station(_default_station())
 		return
 
 	var json := JSON.new()
@@ -120,7 +121,7 @@ func _load_config() -> void:
 	if error != OK or not (json.get_data() is Dictionary):
 		push_warning("WIRKLICHT config ist ungültig; Renderer nutzt Defaults.")
 		_effects = _default_effects()
-		_station = _default_station()
+		_station = _normalize_station(_default_station())
 		return
 
 	var config: Dictionary = json.get_data()
@@ -133,7 +134,7 @@ func _load_config() -> void:
 	_effects = _resolve_effect_modes(_effects)
 
 	var configured_station = config.get("station", {})
-	_station = configured_station.duplicate(true) if configured_station is Dictionary else _default_station()
+	_station = _normalize_station(configured_station)
 	_load_prompts()
 
 func _load_prompts() -> void:
@@ -159,8 +160,24 @@ func _load_prompts() -> void:
 		return
 	var data: Dictionary = json.get_data()
 	var entries = data.get("prompts", {})
-	if entries is Dictionary:
-		_prompts = entries.duplicate(true)
+	if not entries is Dictionary:
+		push_warning("Prompt-Datei enthält kein gültiges 'prompts'-Objekt: %s" % prompts_path)
+		return
+	for key in entries.keys():
+		var value = entries[key]
+		if typeof(value) != TYPE_STRING or value.strip_edges() == "":
+			push_warning("Prompt-Eintrag '%s' ist kein nichtleerer Text; Eintrag wird ignoriert." % key)
+			continue
+		_prompts[str(key)] = value
+	_validate_prompt_key()
+
+func _validate_prompt_key() -> void:
+	var prompt_cfg = _station.get("prompt", {})
+	if not (prompt_cfg is Dictionary) or not bool(prompt_cfg.get("enabled", false)):
+		return
+	var key := str(prompt_cfg.get("prompt_key", ""))
+	if key == "" or not _prompts.has(key):
+		push_warning("Unbekannter Prompt-Key '%s'; es wird kein Ersatztext angezeigt." % key)
 
 func _setup_station_monitor() -> void:
 	var monitor_cfg = _station.get("monitor", {})
@@ -169,13 +186,12 @@ func _setup_station_monitor() -> void:
 	if str(monitor_cfg.get("mode", "facade_preview")) != "facade_preview":
 		push_warning("Unbekannter Monitor-Modus; Monitor bleibt aus.")
 		return
-	if bool(monitor_cfg.get("show_camera_image", false)):
-		push_warning("show_camera_image=true wird im Publikumsrenderer ignoriert; Kamerabild bleibt verborgen.")
 
 	_monitor_window = Window.new()
 	_monitor_window.title = str(monitor_cfg.get("title", "WIRKLICHT – Resonanz"))
 	_monitor_window.size = Vector2i(int(monitor_cfg.get("width", 960)), int(monitor_cfg.get("height", 540)))
 	_monitor_window.unresizable = false
+	_monitor_window.close_requested.connect(_on_monitor_close_requested)
 	add_child(_monitor_window)
 
 	var preview := TextureRect.new()
@@ -198,7 +214,7 @@ func _setup_station_monitor() -> void:
 	_update_monitor_prompt()
 
 func _update_monitor_prompt() -> void:
-	if _monitor_prompt == null:
+	if _monitor_prompt == null or _monitor_closed:
 		return
 	var prompt_cfg = _station.get("prompt", {})
 	if not (prompt_cfg is Dictionary) or not bool(prompt_cfg.get("enabled", false)):
@@ -213,6 +229,13 @@ func _update_monitor_prompt() -> void:
 	# The invitation belongs to the idle threshold. As soon as resonance is
 	# present, the preview itself takes over instead of competing with the text.
 	_monitor_prompt.visible = _bodies.is_empty()
+
+func _on_monitor_close_requested() -> void:
+	if _monitor_window == null:
+		return
+	_monitor_closed = true
+	_monitor_window.hide()
+	print("WIRKLICHT Nahraum-Monitor geschlossen; Hauptausgabe läuft weiter.")
 
 func _resolve_effect_modes(effects: Dictionary) -> Dictionary:
 	var resolved := effects.duplicate(true)
@@ -269,6 +292,10 @@ func _default_station() -> Dictionary:
 			"enabled": false,
 			"mode": "facade_preview",
 			"show_camera_image": false,
+			"title": "WIRKLICHT – Resonanz",
+			"width": 960,
+			"height": 540,
+			"prompt_font_size": 38,
 		},
 		"prompt": {
 			"enabled": false,
@@ -276,6 +303,61 @@ func _default_station() -> Dictionary:
 			"prompt_key": "stay_question",
 		},
 	}
+
+func _normalize_station(configured_station) -> Dictionary:
+	var resolved := _default_station()
+	if not configured_station is Dictionary:
+		if configured_station != null:
+			push_warning("station-Konfiguration ist kein Objekt; Renderer nutzt sichere Defaults.")
+		return resolved
+
+	for section in ["monitor", "prompt"]:
+		var configured_section = configured_station.get(section, {})
+		if configured_section == null:
+			continue
+		if not configured_section is Dictionary:
+			push_warning("station.%s ist kein Objekt; Renderer nutzt sichere Defaults." % section)
+			continue
+		for key in configured_section.keys():
+			resolved[section][key] = configured_section[key]
+
+	var monitor: Dictionary = resolved["monitor"]
+	monitor["enabled"] = _safe_bool(monitor.get("enabled"), false, "station.monitor.enabled")
+	monitor["show_camera_image"] = _safe_bool(monitor.get("show_camera_image"), false, "station.monitor.show_camera_image")
+	if monitor["show_camera_image"]:
+		push_warning("show_camera_image=true wird im Publikumsrenderer ignoriert; Kamerabild bleibt verborgen.")
+	monitor["width"] = _safe_positive_int(monitor.get("width"), 960, "station.monitor.width")
+	monitor["height"] = _safe_positive_int(monitor.get("height"), 540, "station.monitor.height")
+	monitor["prompt_font_size"] = _safe_positive_int(monitor.get("prompt_font_size"), 38, "station.monitor.prompt_font_size")
+	if typeof(monitor.get("mode")) != TYPE_STRING or str(monitor.get("mode")) == "":
+		push_warning("station.monitor.mode ist ungültig; verwende facade_preview.")
+		monitor["mode"] = "facade_preview"
+	if typeof(monitor.get("title")) != TYPE_STRING or str(monitor.get("title")) == "":
+		monitor["title"] = "WIRKLICHT – Resonanz"
+
+	var prompt: Dictionary = resolved["prompt"]
+	prompt["enabled"] = _safe_bool(prompt.get("enabled"), false, "station.prompt.enabled")
+	if typeof(prompt.get("source")) != TYPE_STRING or str(prompt.get("source")) == "":
+		push_warning("station.prompt.source ist ungültig; verwende config/prompts.json.")
+		prompt["source"] = "config/prompts.json"
+	if typeof(prompt.get("prompt_key")) != TYPE_STRING:
+		push_warning("station.prompt.prompt_key ist ungültig; es wird kein Ersatztext angezeigt.")
+		prompt["prompt_key"] = ""
+	return resolved
+
+func _safe_bool(value, default_value: bool, label: String) -> bool:
+	if typeof(value) == TYPE_BOOL:
+		return value
+	push_warning("%s muss true oder false sein; verwende sicheren Default." % label)
+	return default_value
+
+func _safe_positive_int(value, default_value: int, label: String) -> int:
+	if typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT:
+		var number := int(value)
+		if number > 0:
+			return number
+	push_warning("%s muss eine positive Zahl sein; verwende sicheren Default." % label)
+	return default_value
 
 func _print_effect_state() -> void:
 	var states: Array[String] = []

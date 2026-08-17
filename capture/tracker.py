@@ -34,7 +34,7 @@ def build_frame(bodies, pairs, energy, t) -> dict:
 
 
 def run_sim(cfg: dict) -> None:
-    from .sim import make_sim_persons
+    from .sim import make_phase44_persons
 
     fcfg = cfg["features"]
     tracker = BodyTracker(
@@ -49,7 +49,7 @@ def run_sim(cfg: dict) -> None:
     try:
         while True:
             t = time.time() - start
-            persons = make_sim_persons(t)
+            persons = make_phase44_persons(t)
             bodies = tracker.update(persons, t)
             pairs = compute_pairs(bodies, fcfg["proximity_threshold"])
             sender.send(build_frame(bodies, pairs, crowd_energy(bodies), t))

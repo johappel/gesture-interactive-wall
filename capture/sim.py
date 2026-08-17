@@ -46,3 +46,23 @@ def make_sim_persons(t: float) -> list[list[tuple[float, float, float]]]:
         0.5 + 0.5 * math.sin(t * 1.7 + 1.0),
     )
     return [a, b]
+
+
+def make_phase44_persons(t: float) -> list[list[tuple[float, float, float]]]:
+    """Return a repeatable idle -> one -> two -> idle acceptance sequence.
+
+    This only exercises the existing body/intensity/openness pipeline. It does
+    not add any Phase-4.5 signals or departure semantics.
+    """
+    phase = t % 14.0
+    if phase < 2.0 or phase >= 10.0:
+        return []
+    if phase < 6.0:
+        return [
+            _person(
+                0.5 + 0.12 * math.sin(t * 0.7),
+                0.5 + 0.08 * math.sin(t * 1.1),
+                0.5 + 0.5 * math.sin(t * 2.3),
+            )
+        ]
+    return make_sim_persons(t)
