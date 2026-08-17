@@ -22,6 +22,18 @@
     "track_max_dist": 0.25,
     "track_timeout": 0.6
   },
+  "station": {
+    "monitor": {
+      "enabled": true,
+      "mode": "facade_preview",
+      "show_camera_image": false
+    },
+    "prompt": {
+      "enabled": true,
+      "source": "config/prompts.json",
+      "prompt_key": "stay_question"
+    }
+  },
   "effects": {
     "enabled": true,
     "minimal_mode": false,
