@@ -29,6 +29,8 @@ Der Installer richtet Python 3.11, Godot, WIRKLICHT, MediaPipe/OpenCV, das
 Pose-Modell, die Kameraauswahl und Desktop-Verknuepfungen ein. Git ist nicht
 erforderlich. Nach erfolgreicher Installation genuegt ein Doppelklick auf
 **WIRKLICHT starten**. Der normale Betrieb funktioniert danach ohne Internet.
+Ist bei der Installation noch keine Kamera angeschlossen, wird die Einrichtung
+trotzdem abgeschlossen und die Kamera beim ersten Start erneut gesucht.
 
 ### Erstinstallation
 
@@ -42,7 +44,11 @@ Desktop -> **WIRKLICHT starten**. Das Fenster bleibt waehrend des Betriebs offen
 ### Kamera wechseln
 
 Wenn die bisherige Kamera fehlt, listet WIRKLICHT die erkannten Kameras auf und
-speichert die Auswahl wieder in `C:\WIRKLICHT\config\config.json`.
+speichert die Auswahl wieder in `C:\WIRKLICHT\config\config.json`. Gespeichert
+werden Kameraname, lokaler Gerätepfad und USB-VID/PID. Dadurch bleibt die Wahl
+auch erhalten, wenn Windows nach einem USB-Portwechsel einen anderen Index
+vergibt. Virtuelle Kameras von OBS, Animaze oder Logi Capture werden namentlich
+gekennzeichnet.
 
 ### Update
 
@@ -237,14 +243,16 @@ Zuerst die richtige Kamera finden (Windows zeigt oft auch **virtuelle** Kameras)
 python -m capture.tracker --list-cameras
 ```
 
-Dann mit dem passenden Index starten (Index 0 ist häufig eine virtuelle Kamera):
+Dann mit dem ausgegebenen Index starten (die dreistelligen Windows-Indizes sind
+absichtlich backend-codiert und stabiler als ein roher Index wie `1`):
 
 ```powershell
-python -m capture.tracker --camera 1
+python -m capture.tracker --camera 701 --backend any
 ```
 
-Ohne `--camera` gilt `camera.index` aus `config/config.json`. Backend bei Bedarf
-mit `--backend dshow` (Windows) wählen. Mit `q` im Vorschaufenster beenden.
+Ohne `--camera` sucht WIRKLICHT die in `config/config.json` gespeicherte Kamera
+zuerst über Gerätepfad, dann USB-VID/PID und Namen; der Index ist nur noch der
+Rückfall. Mit `q` im Vorschaufenster beenden.
 
 Für den späteren Veranstaltungsbetrieb ist eine gute, gleichmäßige Beleuchtung des
 Interaktionsbereichs wichtiger als die Erfassung eines großen Straßenraums.

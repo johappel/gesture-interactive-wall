@@ -16,13 +16,16 @@ if (Test-Path -LiteralPath $venv) {
     $cameras = @(Get-WirklichtAvailableCameras -VenvPython $venv -Backend $backend)
 }
 $cameraIndex = if ($null -ne $config) { $config.camera.index } else { "unbekannt" }
-$cameraOpen = $cameras | Where-Object { [int]$_.index -eq [int]$cameraIndex } | Select-Object -First 1
+$cameraBackend = if ($null -ne $config -and $config.camera.backend) { [string]$config.camera.backend } else { "any" }
+$cameraOpen = if ($null -ne $config -and (Test-Path -LiteralPath $venv)) {
+    Test-WirklichtCameraSelection -VenvPython $venv -Index ([int]$cameraIndex) -Backend $cameraBackend
+} else { $false }
 $os = Get-CimInstance Win32_OperatingSystem
 $computer = Get-CimInstance Win32_ComputerSystem
 $cpu = (Get-CimInstance Win32_Processor | Select-Object -First 1).Name
 $gpu = (Get-CimInstance Win32_VideoController | Select-Object -First 1).Name
 $godotVersion = if (Test-Path -LiteralPath $godot) { (& $godot --version 2>&1 | Out-String).Trim() } else { "nicht gefunden" }
-$relevantPackages = if (Test-Path -LiteralPath $venv) { (& $venv -m pip list 2>&1 | Select-String "opencv|mediapipe|numpy" | Out-String).Trim() } else { "nicht vorhanden" }
+$relevantPackages = if (Test-Path -LiteralPath $venv) { (& $venv -m pip list 2>&1 | Select-String "opencv|cv2[-_]enumerate|mediapipe|numpy" | Out-String).Trim() } else { "nicht vorhanden" }
 $configSummary = if ($null -ne $config) { ($config | ConvertTo-Json -Depth 10) } else { "CONFIG NICHT LESBAR" }
 $lastErrors = @()
 foreach ($logName in @("start.log", "capture-error.log", "renderer.log")) {
@@ -48,9 +51,10 @@ $lines = @(
     "Godot-Pfad: $godot",
     "Godot-Version: $godotVersion",
     "Pose-Modell vorhanden: $(Test-Path -LiteralPath (Get-WirklichtModelPath))",
-    "Erkannte Kameras: $(if ($cameras.Count -eq 0) { 'keine' } else { ($cameras | ForEach-Object { "[$($_.index)] $($_.width)x$($_.height)" }) -join ', ' })",
+    "Erkannte Kameras: $(if ($cameras.Count -eq 0) { 'keine' } else { ($cameras | ForEach-Object { "[$($_.index)] $($_.name) ($($_.source_backend), VID:PID $($_.vid):$($_.pid))" }) -join ', ' })",
+    "Konfigurierte Kamera: $(if ($null -ne $config -and $config.camera.name) { $config.camera.name } else { 'unbekannt' })",
     "Konfigurierter Kameraindex: $cameraIndex",
-    "Konfigurierte Kamera oeffnbar: $([bool]($null -ne $cameraOpen))",
+    "Konfigurierte Kamera oeffnbar: $cameraOpen",
     "Godot-Projekt vorhanden: $(Test-Path -LiteralPath (Join-Path $script:WirklichtRoot 'renderer\project.godot'))",
     "",
     "Wichtige Config-Werte:", $configSummary,

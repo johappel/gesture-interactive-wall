@@ -4,7 +4,11 @@
     "width": 1280,
     "height": 720,
     "flip": true,
-    "backend": "any"
+    "backend": "any",
+    "name": "",
+    "device_path": "",
+    "vid": "",
+    "pid": ""
   },
   "network": {
     "host": "127.0.0.1",

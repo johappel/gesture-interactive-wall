@@ -1,12 +1,15 @@
 """Tests for CLI parsing, config overrides and frame building (no camera/ML deps)."""
 
+import io
 import os
 import sys
 import unittest
+from types import ModuleType, SimpleNamespace
+from unittest.mock import patch
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from capture.camera import _backend_id  # noqa: E402
+from capture.camera import _backend_id, _enumerated_windows_cameras, choose_camera  # noqa: E402
 from capture.tracker import apply_overrides, build_frame, build_parser, load_config  # noqa: E402
 
 
@@ -66,11 +69,89 @@ class BackendIdTest(unittest.TestCase):
             _backend_id(_FakeCv2, "nope")
 
 
+class CameraSelectionTest(unittest.TestCase):
+    def setUp(self):
+        self.streamcam = {
+            "index": 701,
+            "backend": "any",
+            "name": "Logitech StreamCam",
+            "path": r"\\?\usb#streamcam-port-2",
+            "vid": "046D",
+            "pid": "0893",
+        }
+        self.c920 = {
+            "index": 702,
+            "backend": "any",
+            "name": "HD Pro Webcam C920",
+            "path": r"\\?\usb#c920-port-1",
+            "vid": "046D",
+            "pid": "082D",
+        }
+        self.cameras = [self.streamcam, self.c920]
+
+    def test_path_is_preferred(self):
+        config = {
+            "device_path": self.c920["path"],
+            "vid": "046D",
+            "pid": "0893",
+            "name": "Logitech StreamCam",
+        }
+        self.assertIs(choose_camera(config, self.cameras), self.c920)
+
+    def test_vid_pid_survive_changed_usb_path_and_index(self):
+        config = {
+            "device_path": r"\\?\usb#old-port",
+            "vid": "0x046d",
+            "pid": "0893",
+            "name": "Logitech StreamCam",
+            "index": 1,
+        }
+        self.assertIs(choose_camera(config, self.cameras), self.streamcam)
+
+    def test_name_and_legacy_index_fallbacks(self):
+        self.assertIs(choose_camera({"name": "logitech streamcam"}, self.cameras), self.streamcam)
+        self.assertIs(
+            choose_camera({"index": 702, "backend": "any"}, self.cameras), self.c920
+        )
+
+    def test_windows_enumeration_encodes_backend_and_deduplicates(self):
+        module = ModuleType("cv2_enumerate_cameras")
+
+        def enumerate_cameras(api):
+            if api == 700:
+                return [
+                    SimpleNamespace(index=1, name="StreamCam A", path="usb#instance-a#{dshow}", vid=0x046D, pid=0x0893),
+                    SimpleNamespace(index=2, name="StreamCam B", path="usb#instance-b#{dshow}", vid=0x046D, pid=0x0893),
+                ]
+            return [
+                SimpleNamespace(index=2, name="StreamCam A", path="usb#instance-a#{msmf}", vid=0x046D, pid=0x0893)
+            ]
+
+        module.enumerate_cameras = enumerate_cameras
+        with patch.dict(sys.modules, {"cv2_enumerate_cameras": module}):
+            cameras = _enumerated_windows_cameras(_FakeCv2, "any")
+        self.assertEqual(len(cameras), 2)
+        self.assertEqual({camera["index"] for camera in cameras}, {701, 702})
+        self.assertEqual(cameras[0]["source_backend"], "dshow")
+        self.assertEqual(cameras[0]["backend"], "any")
+
+
 class ConfigTest(unittest.TestCase):
     def test_config_has_camera_backend_key(self):
         cfg = load_config()
         self.assertIn("backend", cfg["camera"])
         self.assertIn(cfg["camera"]["backend"], ("any", "dshow", "msmf"))
+        for key in ("name", "device_path", "vid", "pid"):
+            self.assertIn(key, cfg["camera"])
+
+    def test_config_loader_accepts_windows_utf8_bom(self):
+        data = b'\xef\xbb\xbf{"camera":{"index":701}}'
+
+        def fake_open(*_args, **kwargs):
+            return io.TextIOWrapper(io.BytesIO(data), encoding=kwargs["encoding"])
+
+        with patch("builtins.open", side_effect=fake_open):
+            self.assertEqual(load_config("config.json")["camera"]["index"], 701)
 
 
 class FrameTest(unittest.TestCase):

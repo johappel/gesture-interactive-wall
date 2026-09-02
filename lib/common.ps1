@@ -4,7 +4,9 @@
 $script:WirklichtRoot = Split-Path -Parent $PSScriptRoot
 $script:WirklichtRepoZipUrl = "https://github.com/johappel/gesture-interactive-wall/archive/refs/heads/main.zip"
 $script:WirklichtGodotVersion = "4.7.1-stable"
-$script:WirklichtGodotUrl = "https://github.com/godotengine/godot/releases/download/4.7.1-stable/Godot_v4.7.1-stable_win64.exe"
+$script:WirklichtGodotUrl = "https://github.com/godotengine/godot/releases/download/4.7.1-stable/Godot_v4.7.1-stable_win64.exe.zip"
+$script:WirklichtPythonVersion = "3.11.9"
+$script:WirklichtPythonInstallerUrl = "https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe"
 $script:WirklichtMinimumFreeSpaceGB = 5
 
 function Set-WirklichtRoot {
@@ -70,7 +72,9 @@ function Write-WirklichtJson {
     $directory = Split-Path -Parent $Path
     New-Item -ItemType Directory -Force -Path $directory | Out-Null
     $temporary = "$Path.tmp"
-    $Value | ConvertTo-Json -Depth 20 | Set-Content -LiteralPath $temporary -Encoding UTF8
+    $json = $Value | ConvertTo-Json -Depth 20
+    $utf8WithoutBom = New-Object System.Text.UTF8Encoding($false)
+    [IO.File]::WriteAllText($temporary, $json, $utf8WithoutBom)
     Move-Item -LiteralPath $temporary -Destination $Path -Force
 }
 
@@ -123,19 +127,38 @@ function Restore-WirklichtProgramFiles {
 
 function Get-WirklichtPythonCandidates {
     $paths = New-Object System.Collections.Generic.List[string]
-    $commands = @("py", "python")
-    foreach ($commandName in $commands) {
-        $command = Get-Command $commandName -ErrorAction SilentlyContinue
-        if ($null -ne $command -and $command.Source -notlike "*WindowsApps*") {
-            [void]$paths.Add($command.Source)
-        }
+    $launcher = Get-Command py -ErrorAction SilentlyContinue
+    if ($null -ne $launcher -and $launcher.Source -notlike "*WindowsApps*") {
+        try {
+            $launcherPython = (& $launcher.Source -3.11 -c "import sys; print(sys.executable)" 2>$null | Out-String).Trim()
+            if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $launcherPython)) {
+                [void]$paths.Add($launcherPython)
+            }
+        } catch { }
+    }
+    $pythonCommand = Get-Command python -ErrorAction SilentlyContinue
+    if ($null -ne $pythonCommand -and $pythonCommand.Source -notlike "*WindowsApps*") {
+        [void]$paths.Add($pythonCommand.Source)
+    }
+    foreach ($registryPath in @(
+        "HKCU:\Software\Python\PythonCore\3.11\InstallPath",
+        "HKLM:\Software\Python\PythonCore\3.11\InstallPath"
+    )) {
+        try {
+            $installPath = (Get-ItemProperty -LiteralPath $registryPath -ErrorAction Stop).ExecutablePath
+            if ($installPath -and (Test-Path -LiteralPath $installPath)) {
+                [void]$paths.Add($installPath)
+            }
+        } catch { }
     }
     foreach ($path in @(
         (Join-Path $env:LOCALAPPDATA "Programs\Python\Python311\python.exe"),
         "C:\Program Files\Python311\python.exe",
         "C:\Python311\python.exe"
     )) {
-        if (Test-Path -LiteralPath $path) { [void]$paths.Add($path) }
+        if (Test-Path -LiteralPath $path) {
+            [void]$paths.Add($path)
+        }
     }
     return @($paths | Select-Object -Unique)
 }
@@ -157,6 +180,15 @@ function Get-WirklichtPythonInfo {
     return $null
 }
 
+function Test-WirklichtWinget {
+    $winget = Get-Command winget -ErrorAction SilentlyContinue
+    if ($null -eq $winget) { return $false }
+    try {
+        & $winget.Source --version 2>$null | Out-Null
+        return ($LASTEXITCODE -eq 0)
+    } catch { return $false }
+}
+
 function Ensure-WirklichtPython {
     $info = Get-WirklichtPythonInfo
     if ($null -ne $info -and $info.Major -eq 3 -and $info.Minor -eq 11) {
@@ -164,15 +196,39 @@ function Ensure-WirklichtPython {
     }
 
     $winget = Get-Command winget -ErrorAction SilentlyContinue
-    if ($null -eq $winget) {
-        throw "Python 3.11 wurde nicht gefunden und winget ist auf diesem Rechner nicht verfuegbar. Bitte Python 3.11 x64 installieren und erneut starten."
+    $wingetWorked = $false
+    if ($null -ne $winget) {
+        if (Test-WirklichtWinget) {
+            Write-Host "Python 3.11 wird ueber winget installiert. Ein Windows-Dialog kann erscheinen ..."
+            $previousErrorActionPreference = $ErrorActionPreference
+            try {
+                $ErrorActionPreference = "Continue"
+                & $winget.Source install --id Python.Python.3.11 --exact --scope user --accept-source-agreements --accept-package-agreements --disable-interactivity
+                $wingetWorked = ($LASTEXITCODE -eq 0)
+            } finally {
+                $ErrorActionPreference = $previousErrorActionPreference
+            }
+        }
     }
-    Write-Host "Python 3.11 wird installiert. Ein Windows-Dialog kann erscheinen ..."
-    & $winget.Source install --id Python.Python.3.11 --exact --scope user --accept-source-agreements --accept-package-agreements
-    if ($LASTEXITCODE -ne 0) { throw "Python konnte nicht installiert werden. Bitte den Installationsdialog pruefen." }
+    if (-not $wingetWorked) {
+        Write-Host "winget ist nicht nutzbar. Der offizielle Python-Installer wird verwendet ..."
+        $temporaryInstaller = Join-Path ([IO.Path]::GetTempPath()) ("python-" + $script:WirklichtPythonVersion + "-amd64.exe")
+        try {
+            Invoke-WirklichtDownload -Uri $script:WirklichtPythonInstallerUrl -OutFile $temporaryInstaller
+            $process = Start-Process -FilePath $temporaryInstaller -ArgumentList @(
+                "/quiet", "InstallAllUsers=0", "PrependPath=0", "Include_launcher=1",
+                "Include_test=0", "SimpleInstall=1", "Shortcuts=0"
+            ) -Wait -PassThru
+            if ($process.ExitCode -ne 0) {
+                throw ("Der offizielle Python-Installer meldet Fehlercode {0}." -f $process.ExitCode)
+            }
+        } finally {
+            Remove-Item -LiteralPath $temporaryInstaller -Force -ErrorAction SilentlyContinue
+        }
+    }
     $info = Get-WirklichtPythonInfo
     if ($null -eq $info -or $info.Major -ne 3 -or $info.Minor -ne 11) {
-        throw "Python wurde installiert, ist aber noch nicht auffindbar. Bitte WIRKLICHT erneut starten."
+        throw "Python 3.11 wurde installiert, konnte aber nicht gestartet werden. Bitte WIRKLICHT Hilfe & Diagnose oeffnen."
     }
     return $info
 }
@@ -183,8 +239,38 @@ function Get-WirklichtVenvPython {
 
 function Invoke-WirklichtPython {
     param([string]$PythonPath, [string[]]$Arguments)
-    & $PythonPath @Arguments
-    if ($LASTEXITCODE -ne 0) { throw "Ein Python-Schritt ist fehlgeschlagen. Details stehen im Log." }
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $output = @(& $PythonPath @Arguments 2>&1)
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+    foreach ($line in $output) { Write-Host ([string]$line) }
+    if ($exitCode -ne 0) {
+        $details = ($output | Select-Object -Last 8 | ForEach-Object { [string]$_ }) -join " | "
+        throw ("Ein Python-Schritt ist fehlgeschlagen (Exit-Code {0}). {1}" -f $exitCode, $details)
+    }
+}
+
+function Test-WirklichtPythonDependencies {
+    param([string]$PythonPath)
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $check = "import cv2,cv2_enumerate_cameras,mediapipe,numpy,importlib.metadata as m,sys; p={d.metadata['Name'].lower().replace('_','-'):d.version for d in m.distributions()}; sys.exit(0 if p.get('opencv-contrib-python')=='4.11.0.86' and p.get('cv2-enumerate-cameras')=='1.3.3' and p.get('mediapipe')=='0.10.21' and p.get('numpy')=='1.26.4' and 'opencv-python' not in p else 1)"
+        & $PythonPath "-c" $check 2>$null | Out-Null
+        return ($LASTEXITCODE -eq 0)
+    } finally {
+        $ErrorActionPreference = $previousErrorActionPreference
+    }
+}
+
+function Get-WirklichtRequirementsHash {
+    $requirements = Join-Path $script:WirklichtRoot "capture\requirements.txt"
+    if (-not (Test-Path -LiteralPath $requirements)) { return "" }
+    return (Get-FileHash -LiteralPath $requirements -Algorithm SHA256).Hash
 }
 
 function Ensure-WirklichtPythonEnvironment {
@@ -202,13 +288,44 @@ function Ensure-WirklichtPythonEnvironment {
         Invoke-WirklichtPython -PythonPath $PythonInfo.Path -Arguments @("-m", "venv", (Join-Path $script:WirklichtRoot ".venv"))
     }
 
-    $imports = "import cv2, mediapipe, numpy"
-    & $venvPython "-c" $imports 2>$null
-    if ($LASTEXITCODE -ne 0) {
+    $requirementsHash = Get-WirklichtRequirementsHash
+    $requirementsStamp = Join-Path $script:WirklichtRoot ".venv\.wirklicht-requirements.sha256"
+    $installedHash = if (Test-Path -LiteralPath $requirementsStamp) { (Get-Content -LiteralPath $requirementsStamp -Raw).Trim() } else { "" }
+    if (-not (Test-WirklichtPythonDependencies -PythonPath $venvPython) -or $installedHash -ne $requirementsHash) {
         Write-Host "Python-Pakete fehlen. Sie werden eingerichtet ..."
+        Invoke-WirklichtPython -PythonPath $venvPython -Arguments @("-m", "pip", "uninstall", "-y", "opencv-python", "opencv-contrib-python")
         Invoke-WirklichtPython -PythonPath $venvPython -Arguments @("-m", "pip", "install", "-r", (Join-Path $script:WirklichtRoot "capture\requirements.txt"))
+        Set-Content -LiteralPath $requirementsStamp -Value $requirementsHash -Encoding ASCII
     }
     return $venvPython
+}
+
+function Invoke-WirklichtDownload {
+    param([string]$Uri, [string]$OutFile, [int]$Attempts = 3)
+    for ($attempt = 1; $attempt -le $Attempts; $attempt++) {
+        try {
+            Remove-Item -LiteralPath $OutFile -Force -ErrorAction SilentlyContinue
+            Invoke-WebRequest -Uri $Uri -OutFile $OutFile -UseBasicParsing
+            if ((Test-Path -LiteralPath $OutFile) -and (Get-Item -LiteralPath $OutFile).Length -gt 0) { return }
+        } catch {
+            if ($attempt -lt $Attempts) {
+                Write-Host ("Download unterbrochen. Neuer Versuch {0} von {1} ..." -f ($attempt + 1), $Attempts)
+                Start-Sleep -Seconds 2
+            }
+        }
+    }
+    $curl = Get-Command curl.exe -ErrorAction SilentlyContinue
+    if ($null -ne $curl) {
+        $previousErrorActionPreference = $ErrorActionPreference
+        try {
+            $ErrorActionPreference = "Continue"
+            & $curl.Source --fail --location --retry 3 --retry-delay 2 --output $OutFile $Uri
+            if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $OutFile) -and (Get-Item -LiteralPath $OutFile).Length -gt 0) { return }
+        } finally {
+            $ErrorActionPreference = $previousErrorActionPreference
+        }
+    }
+    throw "Der Download konnte nach mehreren Versuchen nicht abgeschlossen werden. Bitte Internetverbindung pruefen und erneut starten."
 }
 
 function Get-WirklichtModelPath {
@@ -241,14 +358,36 @@ function Get-WirklichtGodotPath {
     return $portable
 }
 
+function Test-WirklichtGodotExecutable {
+    param([string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return $false }
+    if ((Get-Item -LiteralPath $Path).Length -lt 10MB) { return $false }
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        & $Path --version 2>$null | Out-Null
+        return ($LASTEXITCODE -eq 0)
+    } catch { return $false }
+    finally { $ErrorActionPreference = $previousErrorActionPreference }
+}
+
 function Ensure-WirklichtGodot {
     $godotPath = Get-WirklichtGodotPath
-    if (-not (Test-Path -LiteralPath $godotPath)) {
+    if (-not (Test-WirklichtGodotExecutable -Path $godotPath)) {
         Write-Host "Godot wird bereitgestellt (portable Version, kein Projektmanager erforderlich) ..."
-        New-Item -ItemType Directory -Force -Path (Split-Path -Parent $godotPath) | Out-Null
-        Invoke-WebRequest -Uri $script:WirklichtGodotUrl -OutFile $godotPath -UseBasicParsing
+        $godotPath = Join-Path $script:WirklichtRoot ("tools\Godot_v{0}_win64.exe" -f $script:WirklichtGodotVersion)
+        $toolsDirectory = Split-Path -Parent $godotPath
+        $archivePath = Join-Path $toolsDirectory "godot-download.zip"
+        New-Item -ItemType Directory -Force -Path $toolsDirectory | Out-Null
+        Remove-Item -LiteralPath $godotPath -Force -ErrorAction SilentlyContinue
+        try {
+            Invoke-WirklichtDownload -Uri $script:WirklichtGodotUrl -OutFile $archivePath
+            Expand-Archive -LiteralPath $archivePath -DestinationPath $toolsDirectory -Force
+        } finally {
+            Remove-Item -LiteralPath $archivePath -Force -ErrorAction SilentlyContinue
+        }
     }
-    if (-not (Test-Path -LiteralPath $godotPath)) { throw "Godot konnte nicht bereitgestellt werden." }
+    if (-not (Test-WirklichtGodotExecutable -Path $godotPath)) { throw "Godot konnte nicht vollstaendig bereitgestellt oder gestartet werden." }
     return $godotPath
 }
 
@@ -275,18 +414,48 @@ function Test-WirklichtSystem {
 function Get-WirklichtAvailableCameras {
     param([string]$VenvPython, [string]$Backend = "any")
     $code = "import json; from capture.camera import list_cameras; print(json.dumps(list_cameras(backend='$Backend')))"
+    $previousErrorActionPreference = $ErrorActionPreference
     try {
+        $ErrorActionPreference = "Continue"
         $raw = (& $VenvPython "-c" $code 2>$null | Out-String).Trim()
         if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($raw)) { return @() }
         return @(($raw | ConvertFrom-Json))
     } catch { return @() }
+    finally { $ErrorActionPreference = $previousErrorActionPreference }
 }
 
-function Save-WirklichtCameraIndex {
-    param([int]$Index)
+function Test-WirklichtCameraSelection {
+    param([string]$VenvPython, [int]$Index, [string]$Backend = "any")
+    $code = "from capture.camera import camera_works; raise SystemExit(0 if camera_works($Index, '$Backend') else 1)"
+    $previousErrorActionPreference = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        & $VenvPython "-c" $code 2>$null | Out-Null
+        return ($LASTEXITCODE -eq 0)
+    } catch { return $false }
+    finally { $ErrorActionPreference = $previousErrorActionPreference }
+}
+
+function Save-WirklichtCameraSelection {
+    param([object]$Camera)
     $configPath = Join-Path $script:WirklichtRoot "config\config.json"
     $config = Read-WirklichtJson $configPath
-    $config.camera.index = $Index
+    $values = @{
+        index = [int]$Camera.index
+        backend = [string]$Camera.backend
+        name = [string]$Camera.name
+        device_path = [string]$Camera.path
+        vid = [string]$Camera.vid
+        pid = [string]$Camera.pid
+    }
+    foreach ($key in $values.Keys) {
+        $property = $config.camera.PSObject.Properties[$key]
+        if ($null -eq $property) {
+            $config.camera | Add-Member -MemberType NoteProperty -Name $key -Value $values[$key]
+        } else {
+            $property.Value = $values[$key]
+        }
+    }
     Write-WirklichtJson -Path $configPath -Value $config
 }
 
@@ -296,26 +465,58 @@ function Select-WirklichtCamera {
     $config = Read-WirklichtJson $configPath
     $backend = if ($config.camera.backend) { [string]$config.camera.backend } else { "any" }
     $cameras = @(Get-WirklichtAvailableCameras -VenvPython $VenvPython -Backend $backend)
-    $configured = [int]$config.camera.index
-    $selected = $cameras | Where-Object { [int]$_.index -eq $configured } | Select-Object -First 1
-    if ($null -ne $selected) { return $configured }
     if ($cameras.Count -eq 0) { throw "Keine Kamera gefunden. Bitte USB-Kamera anschliessen und Zoom, Teams oder OBS schliessen." }
+
+    $selected = $null
+    if ($config.camera.device_path) {
+        $selected = $cameras | Where-Object { [string]$_.path -eq [string]$config.camera.device_path } | Select-Object -First 1
+    }
+    if ($null -eq $selected -and $config.camera.vid -and $config.camera.pid) {
+        $selected = $cameras | Where-Object {
+            [string]$_.vid -eq [string]$config.camera.vid -and [string]$_.pid -eq [string]$config.camera.pid
+        } | Select-Object -First 1
+    }
+    if ($null -eq $selected -and $config.camera.name) {
+        $selected = $cameras | Where-Object { [string]$_.name -eq [string]$config.camera.name } | Select-Object -First 1
+    }
+    if ($null -eq $selected) {
+        $configured = [int]$config.camera.index
+        $selected = $cameras | Where-Object {
+            [int]$_.index -eq $configured -and [string]$_.backend -eq $backend
+        } | Select-Object -First 1
+    }
+    if ($null -ne $selected -and (Test-WirklichtCameraSelection -VenvPython $VenvPython -Index ([int]$selected.index) -Backend ([string]$selected.backend))) {
+        Save-WirklichtCameraSelection -Camera $selected
+        return [string]$selected.name
+    }
+
     Write-Host "Die bisher verwendete Kamera wurde nicht gefunden."
     Write-Host "Gefundene Kameras:"
-    foreach ($camera in $cameras) { Write-Host ("  [{0}] Kamera {0} ({1}x{2})" -f $camera.index, $camera.width, $camera.height) }
+    for ($position = 0; $position -lt $cameras.Count; $position++) {
+        $camera = $cameras[$position]
+        $kind = if ([bool]$camera.physical) { "USB $($camera.vid):$($camera.pid)" } else { "virtuell/unklar" }
+        Write-Host ("  [{0}] {1} ({2}, {3})" -f ($position + 1), $camera.name, $camera.source_backend, $kind)
+    }
     if ($cameras.Count -eq 1 -or $NonInteractive) {
-        $choice = [int]$cameras[0].index
-        Write-Host ("Kamera {0} wird verwendet." -f $choice)
+        $selected = $cameras | Where-Object { [bool]$_.physical } | Select-Object -First 1
+        if ($null -eq $selected) { $selected = $cameras[0] }
+        Write-Host ("{0} wird verwendet." -f $selected.name)
     } else {
         do {
             $answer = Read-Host "Nummer"
-            $valid = $cameras | Where-Object { [string]$_.index -eq $answer } | Select-Object -First 1
-            if ($null -eq $valid) { Write-Host "Bitte eine Nummer aus der Liste eingeben." -ForegroundColor Yellow }
-        } while ($null -eq $valid)
-        $choice = [int]$valid.index
+            $choice = 0
+            $validNumber = [int]::TryParse($answer, [ref]$choice)
+            if (-not $validNumber -or $choice -lt 1 -or $choice -gt $cameras.Count) {
+                Write-Host "Bitte eine Nummer aus der Liste eingeben." -ForegroundColor Yellow
+            }
+        } while (-not $validNumber -or $choice -lt 1 -or $choice -gt $cameras.Count)
+        $selected = $cameras[$choice - 1]
     }
-    Save-WirklichtCameraIndex -Index $choice
-    return $choice
+    if (-not (Test-WirklichtCameraSelection -VenvPython $VenvPython -Index ([int]$selected.index) -Backend ([string]$selected.backend))) {
+        throw ("{0} wurde erkannt, liefert WIRKLICHT aber kein Bild. Bitte Zoom, Teams, Discord und OBS schliessen und erneut starten." -f $selected.name)
+    }
+    Save-WirklichtCameraSelection -Camera $selected
+    return [string]$selected.name
 }
 
 function New-WirklichtShortcut {
@@ -385,7 +586,7 @@ function Invoke-WirklichtInstallation {
         Write-WirklichtHeader "WIRKLICHT INSTALLATION"
         Test-WirklichtSystem | Out-Null
         Write-WirklichtStep "Windows und Speicher" "OK" Green
-        $wingetState = if ($null -ne (Get-Command winget -ErrorAction SilentlyContinue)) { "vorhanden" } else { "nicht vorhanden (nur bei Bedarf)" }
+        $wingetState = if (Test-WirklichtWinget) { "nutzbar" } else { "nicht nutzbar (Fallback aktiv)" }
         Write-WirklichtStep "winget" $wingetState
         if (-not (Test-WirklichtNetwork)) { throw "Es besteht keine Internetverbindung. Bitte Verbindung herstellen und erneut starten." }
         Write-WirklichtStep "Internetverbindung" "OK" Green
@@ -406,8 +607,14 @@ function Invoke-WirklichtInstallation {
         Write-WirklichtStep "Pose-Modell" "OK" Green
         Ensure-WirklichtGodot | Out-Null
         Write-WirklichtStep "Godot" "OK" Green
-        Select-WirklichtCamera -VenvPython $venv -NonInteractive:$NonInteractive | Out-Null
-        Write-WirklichtStep "Kamera" "gespeichert" Green
+        try {
+            Select-WirklichtCamera -VenvPython $venv -NonInteractive:$NonInteractive | Out-Null
+            Write-WirklichtStep "Kamera" "gespeichert" Green
+        } catch {
+            Write-WirklichtStep "Kamera" "noch nicht gefunden" Yellow
+            Write-Host "Die Installation wird trotzdem abgeschlossen. Kamera anschliessen; beim ersten Start wird sie erneut gesucht."
+            Write-WirklichtLog -Path $log -Message ("Kamera noch nicht eingerichtet: " + $_.Exception.Message)
+        }
         New-WirklichtShortcut -Name "WIRKLICHT starten" -ScriptName "start.ps1" -Description "WIRKLICHT starten"
         New-WirklichtShortcut -Name "WIRKLICHT Hilfe & Diagnose" -ScriptName "diagnose.ps1" -Description "WIRKLICHT Hilfe und Diagnose"
         Write-WirklichtStep "Desktop-Verknuepfungen" "OK" Green

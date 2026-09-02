@@ -20,7 +20,9 @@ _CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config", "config.j
 
 
 def load_config(path: str = _CONFIG_PATH) -> dict:
-    with open(os.path.abspath(path), "r", encoding="utf-8") as fh:
+    # Windows PowerShell 5.1 may have written an existing local config with a
+    # UTF-8 BOM. utf-8-sig accepts both BOM and BOM-less UTF-8.
+    with open(os.path.abspath(path), "r", encoding="utf-8-sig") as fh:
         return json.load(fh)
 
 
@@ -63,15 +65,25 @@ def run_sim(cfg: dict) -> None:
 def run_camera(cfg: dict) -> None:
     import cv2
 
-    from .camera import Camera
+    from .camera import Camera, choose_camera, list_cameras
     from .pose import PoseTracker
 
     fcfg = cfg["features"]
     ccfg = cfg["camera"]
     pcfg = cfg["pose"]
 
+    selected = choose_camera(ccfg, list_cameras(backend=ccfg.get("backend", "any")))
+    if selected is not None:
+        ccfg["index"] = selected["index"]
+        ccfg["backend"] = selected["backend"]
+        print(
+            f"Kamera: {selected['name']} "
+            f"({selected['source_backend']}, Geräteindex {selected['source_index']})."
+        )
+
     model_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", pcfg["model_path"]))
-    print(f"Kamera-Index {ccfg['index']} (backend={ccfg.get('backend', 'any')}).")
+    if selected is None:
+        print(f"Kamera-Index {ccfg['index']} (backend={ccfg.get('backend', 'any')}).")
     camera = Camera(
         ccfg["index"], ccfg["width"], ccfg["height"], ccfg["flip"], ccfg.get("backend", "any")
     )
@@ -161,6 +173,8 @@ def apply_overrides(cfg: dict, args: argparse.Namespace) -> dict:
     """Merge CLI overrides into the camera config (returns the same dict)."""
     if getattr(args, "camera", None) is not None:
         cfg["camera"]["index"] = args.camera
+        for key in ("name", "device_path", "vid", "pid"):
+            cfg["camera"].pop(key, None)
     if getattr(args, "backend", None) is not None:
         cfg["camera"]["backend"] = args.backend
     return cfg
@@ -174,10 +188,14 @@ def print_cameras(backend: str = "any") -> None:
         print("Keine Kamera gefunden. Ist eine Webcam angeschlossen / von anderer App belegt?")
         print("Tipp (Windows): --backend dshow ausprobieren.")
         return
-    print("Gefundene Kameras (Index: Auflösung):")
+    print("Gefundene Kameras:")
     for c in cams:
-        print(f"  {c['index']}: {c['width']}x{c['height']}")
-    print("Auswahl z. B.: python -m capture.tracker --camera 1")
+        usb = f" USB {c['vid']}:{c['pid']}" if c.get("physical") else " virtuell/unklar"
+        print(
+            f"  {c['index']}: {c['name']} "
+            f"({c.get('source_backend', c.get('backend', 'any'))},{usb})"
+        )
+    print("Auswahl z. B.: python -m capture.tracker --camera 701 --backend any")
 
 
 def main() -> None:

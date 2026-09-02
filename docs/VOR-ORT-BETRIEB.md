@@ -15,7 +15,9 @@ kein rohes Kamerabild.
 
 Beim Start wird die bisher gespeicherte Kamera automatisch versucht. Wird sie
 nicht gefunden, zeigt WIRKLICHT eine kurze Liste und speichert die Auswahl fuer
-die naechsten Starts.
+die naechsten Starts. Die Auswahl verwendet Kameraname und USB-Kennung und
+bleibt deshalb normalerweise auch nach einem Wechsel des USB-Ports erhalten.
+Virtuelle Kameras wie OBS werden in der Liste namentlich angezeigt.
 
 ## Bewusstes Update
 
