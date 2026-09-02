@@ -2,7 +2,7 @@
 
 Eigentlich ist die Idee ziemlich einfach:
 
-**Du bist da – und das macht einen Unterschied.**
+**Du bist da - und das macht einen Unterschied.**
 
 Die Fassade reagiert auf Menschen. Aber nicht wie ein Computerspiel nach dem Motto: „Heb den Arm, dann kommt der Feuerball.“
 
