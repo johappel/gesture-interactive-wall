@@ -43,12 +43,17 @@ Desktop -> **WIRKLICHT starten**. Das Fenster bleibt waehrend des Betriebs offen
 
 ### Kamera wechseln
 
-Wenn die bisherige Kamera fehlt, listet WIRKLICHT die erkannten Kameras auf und
-speichert die Auswahl wieder in `C:\WIRKLICHT\config\config.json`. Gespeichert
+Desktop -> **WIRKLICHT Kamera waehlen** öffnet einen Auswahldialog mit echten
+Kameranamen. Die gewählte Kamera wird kurz getestet und erst bei einem
+erfolgreichen Bild gespeichert. Wenn die bisherige Kamera fehlt, bietet
+WIRKLICHT ebenfalls eine Neuauswahl an. Gespeichert
 werden Kameraname, lokaler Gerätepfad und USB-VID/PID. Dadurch bleibt die Wahl
 auch erhalten, wenn Windows nach einem USB-Portwechsel einen anderen Index
 vergibt. Virtuelle Kameras von OBS, Animaze oder Logi Capture werden namentlich
 gekennzeichnet.
+
+Der Renderer startet unter Windows im Godot-Kompatibilitätsmodus (OpenGL 3),
+damit installierte OBS-/Bandicam-Vulkan-Hooks den Start nicht blockieren.
 
 ### Update
 

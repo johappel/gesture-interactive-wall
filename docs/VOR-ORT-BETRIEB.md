@@ -19,6 +19,9 @@ die naechsten Starts. Die Auswahl verwendet Kameraname und USB-Kennung und
 bleibt deshalb normalerweise auch nach einem Wechsel des USB-Ports erhalten.
 Virtuelle Kameras wie OBS werden in der Liste namentlich angezeigt.
 
+Eine andere Kamera kann jederzeit über **WIRKLICHT Kamera waehlen** auf dem
+Desktop ausgewählt werden. Der Dialog testet die Kamera vor dem Speichern.
+
 ## Bewusstes Update
 
 Updates nur vor oder nach einer Veranstaltung ausfuehren. In PowerShell im

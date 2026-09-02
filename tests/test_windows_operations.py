@@ -17,7 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 class WindowsScriptContractTest(unittest.TestCase):
     def test_operator_scripts_exist(self):
-        for name in ("install.ps1", "start.ps1", "update.ps1", "diagnose.ps1"):
+        for name in ("install.ps1", "start.ps1", "camera-select.ps1", "update.ps1", "diagnose.ps1"):
             self.assertTrue((ROOT / name).is_file(), name)
         self.assertTrue((ROOT / "lib" / "common.ps1").is_file())
 
@@ -26,6 +26,7 @@ class WindowsScriptContractTest(unittest.TestCase):
         install = (ROOT / "install.ps1").read_text(encoding="utf-8")
         start = (ROOT / "start.ps1").read_text(encoding="utf-8")
         diagnose = (ROOT / "diagnose.ps1").read_text(encoding="utf-8")
+        camera_select = (ROOT / "camera-select.ps1").read_text(encoding="utf-8")
         self.assertIn("config\\config.json", common)
         self.assertIn("Backup-WirklichtLocalState", common)
         self.assertIn("Restore-WirklichtProgramFiles", common)
@@ -47,11 +48,18 @@ class WindowsScriptContractTest(unittest.TestCase):
         self.assertIn('"updates"', (ROOT / "config" / "config.json").read_text(encoding="utf-8"))
         self.assertIn("$SkipProjectDownload = $true", install)
         self.assertIn("WIRKLICHT IST BEREIT", start)
+        self.assertIn('"gl_compatibility"', start)
+        self.assertIn("Die Kamera wurde erfolgreich geprueft", start)
+        self.assertIn("camera-select.ps1", start)
+        self.assertIn("[switch]$NoPrompt", common)
+        self.assertIn("System.Windows.Forms", camera_select)
+        self.assertIn("Testen & speichern", camera_select)
+        self.assertIn('New-WirklichtShortcut -Name "WIRKLICHT Kamera waehlen"', common)
         self.assertIn("WIRKLICHT-DIAGNOSE.txt", diagnose)
 
     @unittest.skipUnless(shutil.which("powershell"), "Windows PowerShell nicht verfuegbar")
     def test_powershell_scripts_parse(self):
-        files = ["install.ps1", "start.ps1", "update.ps1", "diagnose.ps1", "lib\\common.ps1"]
+        files = ["install.ps1", "start.ps1", "camera-select.ps1", "update.ps1", "diagnose.ps1", "lib\\common.ps1"]
         command = ""
         for name in files:
             path = str(ROOT / name).replace("'", "''")

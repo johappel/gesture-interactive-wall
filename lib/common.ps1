@@ -460,7 +460,7 @@ function Save-WirklichtCameraSelection {
 }
 
 function Select-WirklichtCamera {
-    param([string]$VenvPython, [switch]$NonInteractive)
+    param([string]$VenvPython, [switch]$NonInteractive, [switch]$NoPrompt)
     $configPath = Join-Path $script:WirklichtRoot "config\config.json"
     $config = Read-WirklichtJson $configPath
     $backend = if ($config.camera.backend) { [string]$config.camera.backend } else { "any" }
@@ -488,6 +488,10 @@ function Select-WirklichtCamera {
     if ($null -ne $selected -and (Test-WirklichtCameraSelection -VenvPython $VenvPython -Index ([int]$selected.index) -Backend ([string]$selected.backend))) {
         Save-WirklichtCameraSelection -Camera $selected
         return [string]$selected.name
+    }
+
+    if ($NoPrompt) {
+        throw "Die gespeicherte Kamera ist nicht verfügbar oder liefert kein Bild."
     }
 
     Write-Host "Die bisher verwendete Kamera wurde nicht gefunden."
@@ -616,6 +620,7 @@ function Invoke-WirklichtInstallation {
             Write-WirklichtLog -Path $log -Message ("Kamera noch nicht eingerichtet: " + $_.Exception.Message)
         }
         New-WirklichtShortcut -Name "WIRKLICHT starten" -ScriptName "start.ps1" -Description "WIRKLICHT starten"
+        New-WirklichtShortcut -Name "WIRKLICHT Kamera waehlen" -ScriptName "camera-select.ps1" -Description "WIRKLICHT Kamera auswaehlen und testen"
         New-WirklichtShortcut -Name "WIRKLICHT Hilfe & Diagnose" -ScriptName "diagnose.ps1" -Description "WIRKLICHT Hilfe und Diagnose"
         Write-WirklichtStep "Desktop-Verknuepfungen" "OK" Green
         Write-WirklichtLog -Path $log -Message "Installation erfolgreich. Version $(Get-WirklichtVersion)."
