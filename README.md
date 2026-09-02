@@ -40,6 +40,10 @@ Python anzeigen. Das Projekt wird nach `C:\WIRKLICHT` installiert.
 ### Start
 
 Desktop -> **WIRKLICHT starten**. Das Fenster bleibt waehrend des Betriebs offen.
+Der Installer legt die Verknüpfung auf dem von Windows gemeldeten Desktop,
+gegebenenfalls zusätzlich auf dem OneDrive-Desktop und im Startmenü unter
+**WIRKLICHT** an. Falls eine Desktop-Verknüpfung nicht sichtbar ist, funktioniert
+auch ein Doppelklick auf `C:\WIRKLICHT\WIRKLICHT starten.cmd`.
 
 ### Kamera wechseln
 

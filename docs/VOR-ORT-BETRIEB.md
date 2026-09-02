@@ -7,6 +7,9 @@
 5. Bei einem Fehler **WIRKLICHT Hilfe & Diagnose** oeffnen.
 6. `WIRKLICHT-DIAGNOSE.txt` an Joachim schicken.
 
+Wenn die Desktop-Verknüpfung nicht sichtbar ist: Im Windows-Startmenü nach
+**WIRKLICHT** suchen oder `C:\WIRKLICHT\WIRKLICHT starten.cmd` doppelklicken.
+
 Die normale Veranstaltung benoetigt kein Internet. Das Kamerabild wird lokal
 verarbeitet und nicht gespeichert oder hochgeladen. Der Publikumsmonitor zeigt
 kein rohes Kamerabild.

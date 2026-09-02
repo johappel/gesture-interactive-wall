@@ -523,17 +523,37 @@ function Select-WirklichtCamera {
     return [string]$selected.name
 }
 
+function Get-WirklichtShortcutDirectories {
+    $directories = New-Object System.Collections.Generic.List[string]
+    $desktop = [Environment]::GetFolderPath("Desktop")
+    if (-not [string]::IsNullOrWhiteSpace($desktop)) { [void]$directories.Add($desktop) }
+    if (-not [string]::IsNullOrWhiteSpace($env:OneDrive)) {
+        $oneDriveDesktop = Join-Path $env:OneDrive "Desktop"
+        if ((Test-Path -LiteralPath $oneDriveDesktop) -and $oneDriveDesktop -ne $desktop) {
+            [void]$directories.Add($oneDriveDesktop)
+        }
+    }
+    $programs = [Environment]::GetFolderPath("Programs")
+    if (-not [string]::IsNullOrWhiteSpace($programs)) {
+        [void]$directories.Add((Join-Path $programs "WIRKLICHT"))
+    }
+    return @($directories | Select-Object -Unique)
+}
+
 function New-WirklichtShortcut {
     param([string]$Name, [string]$ScriptName, [string]$Description)
-    $desktop = [Environment]::GetFolderPath("Desktop")
-    $shortcutPath = Join-Path $desktop ("{0}.lnk" -f $Name)
-    $shell = New-Object -ComObject WScript.Shell
-    $shortcut = $shell.CreateShortcut($shortcutPath)
-    $shortcut.TargetPath = (Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe")
-    $shortcut.Arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}"' -f (Join-Path $script:WirklichtRoot $ScriptName)
-    $shortcut.WorkingDirectory = $script:WirklichtRoot
-    $shortcut.Description = $Description
-    $shortcut.Save()
+    foreach ($directory in Get-WirklichtShortcutDirectories) {
+        New-Item -ItemType Directory -Force -Path $directory | Out-Null
+        $shortcutPath = Join-Path $directory ("{0}.lnk" -f $Name)
+        $shell = New-Object -ComObject WScript.Shell
+        $shortcut = $shell.CreateShortcut($shortcutPath)
+        $shortcut.TargetPath = (Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe")
+        $shortcut.Arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}"' -f (Join-Path $script:WirklichtRoot $ScriptName)
+        $shortcut.WorkingDirectory = $script:WirklichtRoot
+        $shortcut.Description = $Description
+        $shortcut.Save()
+        Write-Output $shortcutPath
+    }
 }
 
 function Download-WirklichtArchive {
@@ -619,10 +639,12 @@ function Invoke-WirklichtInstallation {
             Write-Host "Die Installation wird trotzdem abgeschlossen. Kamera anschliessen; beim ersten Start wird sie erneut gesucht."
             Write-WirklichtLog -Path $log -Message ("Kamera noch nicht eingerichtet: " + $_.Exception.Message)
         }
-        New-WirklichtShortcut -Name "WIRKLICHT starten" -ScriptName "start.ps1" -Description "WIRKLICHT starten"
-        New-WirklichtShortcut -Name "WIRKLICHT Kamera waehlen" -ScriptName "camera-select.ps1" -Description "WIRKLICHT Kamera auswaehlen und testen"
-        New-WirklichtShortcut -Name "WIRKLICHT Hilfe & Diagnose" -ScriptName "diagnose.ps1" -Description "WIRKLICHT Hilfe und Diagnose"
+        New-WirklichtShortcut -Name "WIRKLICHT starten" -ScriptName "start.ps1" -Description "WIRKLICHT starten" | Out-Null
+        New-WirklichtShortcut -Name "WIRKLICHT Kamera waehlen" -ScriptName "camera-select.ps1" -Description "WIRKLICHT Kamera auswaehlen und testen" | Out-Null
+        New-WirklichtShortcut -Name "WIRKLICHT Hilfe & Diagnose" -ScriptName "diagnose.ps1" -Description "WIRKLICHT Hilfe und Diagnose" | Out-Null
         Write-WirklichtStep "Desktop-Verknuepfungen" "OK" Green
+        Write-Host ("Start-Verknuepfungen: " + ((Get-WirklichtShortcutDirectories) -join ", "))
+        Write-Host ("Direkter Doppelklick: " + (Join-Path $script:WirklichtRoot "WIRKLICHT starten.cmd"))
         Write-WirklichtLog -Path $log -Message "Installation erfolgreich. Version $(Get-WirklichtVersion)."
         Write-WirklichtHeader "INSTALLATION ERFOLGREICH"
         Write-Host "Danach genuegt ein Doppelklick auf: WIRKLICHT starten"

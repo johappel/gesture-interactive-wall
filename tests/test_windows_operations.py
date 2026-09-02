@@ -19,6 +19,8 @@ class WindowsScriptContractTest(unittest.TestCase):
     def test_operator_scripts_exist(self):
         for name in ("install.ps1", "start.ps1", "camera-select.ps1", "update.ps1", "diagnose.ps1"):
             self.assertTrue((ROOT / name).is_file(), name)
+        for name in ("WIRKLICHT starten.cmd", "WIRKLICHT Kamera waehlen.cmd", "WIRKLICHT Diagnose.cmd"):
+            self.assertTrue((ROOT / name).is_file(), name)
         self.assertTrue((ROOT / "lib" / "common.ps1").is_file())
 
     def test_scripts_keep_operator_guarantees(self):
@@ -55,6 +57,9 @@ class WindowsScriptContractTest(unittest.TestCase):
         self.assertIn("System.Windows.Forms", camera_select)
         self.assertIn("Testen & speichern", camera_select)
         self.assertIn('New-WirklichtShortcut -Name "WIRKLICHT Kamera waehlen"', common)
+        self.assertIn("Get-WirklichtShortcutDirectories", common)
+        self.assertIn("Start-Verknuepfungen:", common)
+        self.assertIn("WIRKLICHT starten.cmd", common)
         self.assertIn("WIRKLICHT-DIAGNOSE.txt", diagnose)
 
     @unittest.skipUnless(shutil.which("powershell"), "Windows PowerShell nicht verfuegbar")
