@@ -8,7 +8,7 @@ Die Fassade reagiert auf Menschen. Aber nicht wie ein Computerspiel nach dem Mot
 
 Es geht weniger ums **Steuern** als ums **Wirken**.
 
-Wenn jemand vor der Fassade steht, verändert sich etwas. Wenn er sich bewegt, verändert sich etwas anders. Wenn zwei Menschen da sind, entsteht etwas zwischen ihnen. Und wenn viele zusammenkommen, soll nicht einfach jeder seinen eigenen Spezialeffekt bekommen – dann verändert sich das ganze Bild.
+Wenn jemand vor dem Haus der Kirche steht, verändert sich etwas. Wenn er sich bewegt, verändert sich etwas anders. Wenn zwei Menschen da sind, entsteht etwas zwischen ihnen. Und wenn viele zusammenkommen, soll nicht einfach jeder seinen eigenen Spezialeffekt bekommen – dann verändert sich das ganze Bild.
 
 Dabei ist wildes Herumfuchteln nicht automatisch besser. Auch wer einfach nur dasteht, ist da. Ruhe kann genauso sichtbar werden wie Bewegung.
 
