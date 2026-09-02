@@ -10,6 +10,11 @@ models/
 renderer/.godot/
 renderer/*.import
 
+# Local operator state and portable runtime
+logs/
+backup/
+tools/
+
 # OS
 .DS_Store
 Thumbs.db

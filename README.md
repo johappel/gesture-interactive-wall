@@ -10,6 +10,53 @@ Eingangsbereich des Kirchenamtes wird lokal per Kamera erfasst. Ein Rechner
 > Lichter — ihre Anwesenheit, Bewegung, Nähe und gemeinsame Dynamik hinterlassen
 > sichtbare Resonanz.
 
+## QUICKSTART - Windows
+
+Auf einem Windows-Rechner kann WIRKLICHT mit einem einzigen PowerShell-Befehl
+eingerichtet werden. PowerShell oeffnen, den folgenden Befehl einfuegen und
+ausfuehren:
+
+```powershell
+powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/johappel/gesture-interactive-wall/main/install.ps1 | iex"
+```
+
+> Sicherheit: Dieser Befehl fuehrt bewusst das offizielle Installationsskript
+> direkt von GitHub aus. Vor einem Veranstaltungseinsatz sollte die verwendete
+> Version geprueft und danach nicht mehr kurzfristig automatisch aktualisiert
+> werden.
+
+Der Installer richtet Python 3.11, Godot, WIRKLICHT, MediaPipe/OpenCV, das
+Pose-Modell, die Kameraauswahl und Desktop-Verknuepfungen ein. Git ist nicht
+erforderlich. Nach erfolgreicher Installation genuegt ein Doppelklick auf
+**WIRKLICHT starten**. Der normale Betrieb funktioniert danach ohne Internet.
+
+### Erstinstallation
+
+Die Installation benoetigt Internet und kann Windows-Installationsdialoge fuer
+Python anzeigen. Das Projekt wird nach `C:\WIRKLICHT` installiert.
+
+### Start
+
+Desktop -> **WIRKLICHT starten**. Das Fenster bleibt waehrend des Betriebs offen.
+
+### Kamera wechseln
+
+Wenn die bisherige Kamera fehlt, listet WIRKLICHT die erkannten Kameras auf und
+speichert die Auswahl wieder in `C:\WIRKLICHT\config\config.json`.
+
+### Update
+
+`C:\WIRKLICHT\update.ps1` in PowerShell ausfuehren. Das Update legt vorher ein
+Backup unter `C:\WIRKLICHT\backup` an und behaelt die lokale Config. Es gibt
+keine stillen Updates beim normalen Start. Die vorbereitete Einstellung
+`updates.enabled` steht standardmaessig auf `false`.
+
+### Diagnose
+
+Desktop -> **WIRKLICHT Hilfe & Diagnose**. Die Datei
+`WIRKLICHT-DIAGNOSE.txt` wird auf dem Desktop erzeugt und kann fuer Remote-Support
+weitergegeben werden. Sie enthaelt keine Kamerabilder oder Videos.
+
 ## Leitidee
 
 WIRKLICHT ist **kein berührungsloses Bedieninterface**. Menschen sollen nicht
@@ -147,7 +194,7 @@ Beim Start gibt der Renderer den effektiven On/Off-Zustand der Effektfamilien in
 der Godot-Konsole aus. So ist auch ein versehentlich aktivierter Effekt vor einem
 Live-Test schnell erkennbar.
 
-## Schnellstart
+## Manuelle Installation / Entwicklung
 
 ### 1. Python-Umgebung
 
