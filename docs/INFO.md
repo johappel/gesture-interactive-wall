@@ -18,13 +18,13 @@ Und wenn jemand wieder geht, ist nicht sofort alles weg. Eine Spur, eine Welle o
 
 Das ist vielleicht der theologische Gedanke, der dahintersteckt:
 
-**Wir gehen nicht einfach wirkungslos durch die Welt.**
+**Wir gehen nicht einfach durch die Welt, ohne etwas zu bewirken.**
 
 Wir verändern Räume. Wir wirken auf andere. Begegnungen hinterlassen etwas. Und manches wirkt noch nach, wenn wir längst weitergegangen sind.
 
 Deshalb braucht WIRKLICHT auch kein Kreuz aus Licht, keinen Bibelvers auf der Fassade und keine Erklärung, was man dabei religiös empfinden soll.
 
-Vielleicht ist gerade das Spannende, dass die Theologie nicht **auf der Fassade abgebildet** wird, sondern **in der Art steckt, wie die Installation mit Menschen umgeht**:
+Vielleicht ist gerade das Spannende, dass die Theologie nicht **auf der Fassade abgebildet** wird, Glaube keine Fassade ist, sondern **in der Art steckt, wie die Installation Menschsein sichtbar macht**:
 
 Du musst nichts leisten.  
 Du musst keine richtige Geste kennen.  
