@@ -16,12 +16,14 @@ var _effects: Dictionary = {}
 var _station: Dictionary = {}
 var _prompts: Dictionary = {}
 var _port := DEFAULT_PORT
+var _facade_screen := 0
 var _monitor_window: Window
 var _monitor_prompt: Label
 var _monitor_closed := false
 
 func _ready() -> void:
 	_load_config()
+	_setup_facade_output()
 	_setup_background()
 	_setup_glow()
 	_setup_station_monitor()
@@ -186,6 +188,10 @@ func _setup_station_monitor() -> void:
 	if str(monitor_cfg.get("mode", "facade_preview")) != "facade_preview":
 		push_warning("Unbekannter Monitor-Modus; Monitor bleibt aus.")
 		return
+	var monitor_screen := _resolve_screen(int(monitor_cfg.get("screen", 0)), "station.monitor.screen")
+	if DisplayServer.get_screen_count() < 2 or monitor_screen == _facade_screen:
+		push_warning("Nahraum-Monitor bleibt aus: keine von der Fassade getrennte Anzeige verfuegbar.")
+		return
 
 	_monitor_window = Window.new()
 	_monitor_window.title = str(monitor_cfg.get("title", "WIRKLICHT – Resonanz"))
@@ -193,6 +199,8 @@ func _setup_station_monitor() -> void:
 	_monitor_window.unresizable = false
 	_monitor_window.close_requested.connect(_on_monitor_close_requested)
 	add_child(_monitor_window)
+	_monitor_window.current_screen = monitor_screen
+	_monitor_window.mode = Window.MODE_FULLSCREEN if bool(monitor_cfg.get("fullscreen", true)) else Window.MODE_WINDOWED
 
 	var preview := TextureRect.new()
 	preview.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -212,6 +220,32 @@ func _setup_station_monitor() -> void:
 	_monitor_prompt.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_monitor_window.add_child(_monitor_prompt)
 	_update_monitor_prompt()
+	print("WIRKLICHT Nahraum-Monitor: Bildschirm %d, %s" % [monitor_screen, "Vollbild" if _monitor_window.mode == Window.MODE_FULLSCREEN else "Fenster"])
+
+func _setup_facade_output() -> void:
+	var facade_cfg = _station.get("facade", {})
+	if not (facade_cfg is Dictionary):
+		return
+	_print_available_screens()
+	_facade_screen = _resolve_screen(int(facade_cfg.get("screen", 0)), "station.facade.screen")
+	var facade_window := get_window()
+	facade_window.current_screen = _facade_screen
+	facade_window.mode = Window.MODE_FULLSCREEN if bool(facade_cfg.get("fullscreen", true)) else Window.MODE_WINDOWED
+	print("WIRKLICHT Fassade: Bildschirm %d, %s" % [_facade_screen, "Vollbild" if facade_window.mode == Window.MODE_FULLSCREEN else "Fenster"])
+
+func _resolve_screen(requested_screen: int, label: String) -> int:
+	var screen_count := DisplayServer.get_screen_count()
+	if requested_screen >= 0 and requested_screen < screen_count:
+		return requested_screen
+	push_warning("%s=%d ist nicht verfuegbar; verwende Bildschirm 0 von %d." % [label, requested_screen, screen_count])
+	return 0
+
+func _print_available_screens() -> void:
+	var screens: Array[String] = []
+	for screen_index in range(DisplayServer.get_screen_count()):
+		var size := DisplayServer.screen_get_size(screen_index)
+		screens.append("%d=%dx%d" % [screen_index, size.x, size.y])
+	print("WIRKLICHT erkannte Anzeigen: " + ", ".join(screens))
 
 func _update_monitor_prompt() -> void:
 	if _monitor_prompt == null or _monitor_closed:
@@ -288,11 +322,17 @@ func _default_effects() -> Dictionary:
 
 func _default_station() -> Dictionary:
 	return {
+		"facade": {
+			"screen": 0,
+			"fullscreen": true,
+		},
 		"monitor": {
 			"enabled": false,
 			"mode": "facade_preview",
 			"show_camera_image": false,
 			"title": "WIRKLICHT – Resonanz",
+			"screen": 1,
+			"fullscreen": true,
 			"width": 960,
 			"height": 540,
 			"prompt_font_size": 38,
@@ -311,7 +351,7 @@ func _normalize_station(configured_station) -> Dictionary:
 			push_warning("station-Konfiguration ist kein Objekt; Renderer nutzt sichere Defaults.")
 		return resolved
 
-	for section in ["monitor", "prompt"]:
+	for section in ["facade", "monitor", "prompt"]:
 		var configured_section = configured_station.get(section, {})
 		if configured_section == null:
 			continue
@@ -321,6 +361,10 @@ func _normalize_station(configured_station) -> Dictionary:
 		for key in configured_section.keys():
 			resolved[section][key] = configured_section[key]
 
+	var facade: Dictionary = resolved["facade"]
+	facade["screen"] = _safe_nonnegative_int(facade.get("screen"), 0, "station.facade.screen")
+	facade["fullscreen"] = _safe_bool(facade.get("fullscreen"), true, "station.facade.fullscreen")
+
 	var monitor: Dictionary = resolved["monitor"]
 	monitor["enabled"] = _safe_bool(monitor.get("enabled"), false, "station.monitor.enabled")
 	monitor["show_camera_image"] = _safe_bool(monitor.get("show_camera_image"), false, "station.monitor.show_camera_image")
@@ -329,6 +373,8 @@ func _normalize_station(configured_station) -> Dictionary:
 	monitor["width"] = _safe_positive_int(monitor.get("width"), 960, "station.monitor.width")
 	monitor["height"] = _safe_positive_int(monitor.get("height"), 540, "station.monitor.height")
 	monitor["prompt_font_size"] = _safe_positive_int(monitor.get("prompt_font_size"), 38, "station.monitor.prompt_font_size")
+	monitor["screen"] = _safe_nonnegative_int(monitor.get("screen"), 1, "station.monitor.screen")
+	monitor["fullscreen"] = _safe_bool(monitor.get("fullscreen"), true, "station.monitor.fullscreen")
 	if typeof(monitor.get("mode")) != TYPE_STRING or str(monitor.get("mode")) == "":
 		push_warning("station.monitor.mode ist ungültig; verwende facade_preview.")
 		monitor["mode"] = "facade_preview"
@@ -359,6 +405,14 @@ func _safe_positive_int(value, default_value: int, label: String) -> int:
 	push_warning("%s muss eine positive Zahl sein; verwende sicheren Default." % label)
 	return default_value
 
+func _safe_nonnegative_int(value, default_value: int, label: String) -> int:
+	if typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT:
+		var number := int(value)
+		if number >= 0:
+			return number
+	push_warning("%s muss eine nichtnegative Zahl sein; verwende sicheren Default." % label)
+	return default_value
+
 func _print_effect_state() -> void:
 	var states: Array[String] = []
 	for name in _effect_names():
@@ -366,11 +420,14 @@ func _print_effect_state() -> void:
 	print("WIRKLICHT Effekte: " + ", ".join(states))
 
 func _print_station_state() -> void:
+	var facade_cfg = _station.get("facade", {})
 	var monitor_cfg = _station.get("monitor", {})
 	var prompt_cfg = _station.get("prompt", {})
 	var monitor_on := monitor_cfg is Dictionary and bool(monitor_cfg.get("enabled", false))
 	var prompt_on := prompt_cfg is Dictionary and bool(prompt_cfg.get("enabled", false))
-	print("WIRKLICHT Stand: monitor=%s, prompt=%s" % ["on" if monitor_on else "off", "on" if prompt_on else "off"])
+	var facade_screen := int(facade_cfg.get("screen", 0)) if facade_cfg is Dictionary else 0
+	var monitor_screen := int(monitor_cfg.get("screen", 1)) if monitor_cfg is Dictionary else 1
+	print("WIRKLICHT Stand: fassade=screen-%d, monitor=%s (screen-%d), prompt=%s" % [facade_screen, "on" if monitor_on else "off", monitor_screen, "on" if prompt_on else "off"])
 
 func _setup_background() -> void:
 	var bg := ColorRect.new()

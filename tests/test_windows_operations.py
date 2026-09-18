@@ -6,6 +6,7 @@ PowerShell is available: syncing program files must preserve local config.
 """
 
 import os
+import json
 import shutil
 import subprocess
 import unittest
@@ -16,6 +17,22 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class WindowsScriptContractTest(unittest.TestCase):
+    def test_renderer_output_config_has_separate_fullscreen_displays(self):
+        config = json.loads((ROOT / "config" / "config.json").read_text(encoding="utf-8"))
+        station = config["station"]
+        self.assertEqual(station["facade"]["screen"], 1)
+        self.assertTrue(station["facade"]["fullscreen"])
+        self.assertEqual(station["monitor"]["screen"], 0)
+        self.assertTrue(station["monitor"]["fullscreen"])
+        self.assertFalse(station["monitor"]["show_camera_image"])
+
+    def test_renderer_assigns_outputs_and_guards_single_display(self):
+        renderer = (ROOT / "renderer" / "scripts" / "main.gd").read_text(encoding="utf-8")
+        self.assertIn("func _setup_facade_output()", renderer)
+        self.assertIn("Window.MODE_FULLSCREEN", renderer)
+        self.assertIn("DisplayServer.get_screen_count() < 2", renderer)
+        self.assertIn("monitor_screen == _facade_screen", renderer)
+
     def test_operator_scripts_exist(self):
         for name in ("install.ps1", "start.ps1", "camera-select.ps1", "update.ps1", "diagnose.ps1"):
             self.assertTrue((ROOT / name).is_file(), name)

@@ -27,11 +27,17 @@
                      "track_timeout":  1.5
                  },
     "station":  {
+                    "facade":  {
+                                   "screen":  1,
+                                   "fullscreen":  true
+                               },
                     "monitor":  {
                                     "enabled":  true,
                                     "mode":  "facade_preview",
                                     "show_camera_image":  false,
                                     "title":  "WIRKLICHT – Resonanz",
+                                    "screen":  0,
+                                    "fullscreen":  true,
                                     "width":  960,
                                     "height":  540,
                                     "prompt_font_size":  38

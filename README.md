@@ -244,6 +244,25 @@ python -m capture.tracker --sim
 
 Es sollten Lichtgestalten über die Godot-Ausgabe wandern.
 
+### 3.1 Beamer und Nahraum-Monitor im Vollbild
+
+Die Ausgaben werden in `config/config.json` unter `station` festgelegt. Als
+Voreinstellung ist Monitor = Godot-Anzeige 0 und Beamer = Godot-Anzeige 1
+konfiguriert:
+
+```json
+"facade": { "screen": 1, "fullscreen": true },
+"monitor": { "screen": 0, "fullscreen": true }
+```
+
+Beim Renderer-Neustart erscheint die Fassade rahmenlos auf dem Beamer; der
+Nahraum-Monitor zeigt die Resonanz-Vorschau samt Leerlaufimpuls ebenfalls ohne
+Fensterrahmen. Beim Start nennt die Godot-Konsole die erkannten Anzeigeindizes
+und Auflösungen; diese Zuordnung am Aufbau prüfen und bei Bedarf die beiden
+`screen`-Werte tauschen, dann den Renderer neu starten. Bei nur einer
+erkannten Anzeige bleibt die Nahraum-Vorschau bewusst aus, damit sie die
+Fassadenausgabe nicht überlagert.
+
 ### 4. Mit echter Webcam
 
 Zuerst die richtige Kamera finden (Windows zeigt oft auch **virtuelle** Kameras):

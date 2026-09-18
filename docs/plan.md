@@ -72,6 +72,8 @@ Jede eigenständige Effektfamilie benötigt einen `enabled`-Schalter unter `effe
       "enabled": true,
       "mode": "facade_preview",
       "show_camera_image": false,
+      "screen": 0,
+      "fullscreen": true,
       "width": 960,
       "height": 540,
       "prompt_font_size": 38
@@ -84,6 +86,15 @@ Jede eigenständige Effektfamilie benötigt einen `enabled`-Schalter unter `effe
   }
 }
 ```
+
+Die Fassade wird getrennt davon unter `station.facade` konfiguriert. Die
+Voreinstellung für den Zwei-Ausgaben-Betrieb ist `facade.screen: 1` (Beamer)
+und `monitor.screen: 0` (Nahraum-Monitor), jeweils mit `fullscreen: true`.
+Die Bildschirmnummern sind Godots Anzeigeindizes, beginnend bei 0, und müssen
+am konkreten Aufbau anhand der Startmeldung geprüft werden.
+Fehlt die konfigurierte Beamer-Ausgabe, nutzt der Renderer Bildschirm 0;
+fehlt eine von der Fassade getrennte Ausgabe, bleibt die Nahraum-Vorschau aus,
+statt beide Inhalte auf einem Bildschirm zu überlagern.
 
 Die Config entscheidet, **ob und welcher** Sprachimpuls aktiv ist; `config/prompts.json` ist die kuratierte Inhaltsquelle.
 
