@@ -1,89 +1,89 @@
 {
-  "camera": {
-    "index": 1,
-    "width": 1280,
-    "height": 720,
-    "flip": true,
-    "backend": "any",
-    "name": "",
-    "device_path": "",
-    "vid": "",
-    "pid": ""
-  },
-  "network": {
-    "host": "127.0.0.1",
-    "port": 4242
-  },
-  "pose": {
-    "model_path": "models/pose_landmarker_full.task",
-    "num_poses": 4,
-    "min_detection_confidence": 0.5
-  },
-  "features": {
-    "intensity_scale": 1.5,
-    "intensity_smoothing": 0.4,
-    "proximity_threshold": 0.35,
-    "track_max_dist": 0.25,
-    "track_timeout": 0.6
-  },
-  "station": {
-    "monitor": {
-      "enabled": true,
-      "mode": "facade_preview",
-      "show_camera_image": false,
-      "title": "WIRKLICHT – Resonanz",
-      "width": 960,
-      "height": 540,
-      "prompt_font_size": 38
-    },
-    "prompt": {
-      "enabled": true,
-      "source": "config/prompts.json",
-      "prompt_key": "stay_question"
-    }
-  },
-  "effects": {
-    "enabled": true,
-    "minimal_mode": false,
-    "body_glow": {
-      "enabled": true
-    },
-    "trails": {
-      "enabled": true,
-      "max_points": 48,
-      "width": 10.0
-    },
-    "sparks": {
-      "enabled": true,
-      "amount_min": 24,
-      "amount_max": 112,
-      "lifetime": 1.4,
-      "velocity_min": 20.0,
-      "velocity_max": 300.0
-    },
-    "proximity_bridges": {
-      "enabled": true
-    },
-    "mist": {
-      "enabled": false
-    },
-    "waves": {
-      "enabled": false
-    },
-    "floating_bodies": {
-      "enabled": false
-    },
-    "aftereffect_waves": {
-      "enabled": false
-    },
-    "crowd_field": {
-      "enabled": false
-    }
-  },
-  "debug": {
-    "preview": true
-  },
-  "updates": {
-    "enabled": false
-  }
+    "camera":  {
+                   "index":  702,
+                   "width":  1920,
+                   "height":  1080,
+                   "flip":  true,
+                   "backend":  "any",
+                   "name":  "HD Pro Webcam C920",
+                   "device_path":  "\\\\?\\usb#vid_046d\u0026pid_082d\u0026mi_00#7\u002612cd2aed\u00260\u00260000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\\global",
+                   "vid":  "046D",
+                   "pid":  "082D"
+               },
+    "network":  {
+                    "host":  "127.0.0.1",
+                    "port":  4242
+                },
+    "pose":  {
+                 "model_path":  "models/pose_landmarker_full.task",
+                 "num_poses":  12,
+                 "min_detection_confidence":  0.22
+             },
+    "features":  {
+                     "intensity_scale":  1.5,
+                     "intensity_smoothing":  0.4,
+                     "proximity_threshold":  0.35,
+                     "track_max_dist":  0.35,
+                     "track_timeout":  1.5
+                 },
+    "station":  {
+                    "monitor":  {
+                                    "enabled":  true,
+                                    "mode":  "facade_preview",
+                                    "show_camera_image":  false,
+                                    "title":  "WIRKLICHT – Resonanz",
+                                    "width":  960,
+                                    "height":  540,
+                                    "prompt_font_size":  38
+                                },
+                    "prompt":  {
+                                   "enabled":  true,
+                                   "source":  "config/prompts.json",
+                                   "prompt_key":  "stay_question"
+                               }
+                },
+    "effects":  {
+                    "enabled":  true,
+                    "minimal_mode":  false,
+                    "body_glow":  {
+                                      "enabled":  true
+                                  },
+                    "trails":  {
+                                   "enabled":  true,
+                                   "max_points":  10,
+                                   "width":  20.0
+                               },
+                    "sparks":  {
+                                   "enabled":  true,
+                                   "amount_min":  24,
+                                   "amount_max":  112,
+                                   "lifetime":  1.4,
+                                   "velocity_min":  20.0,
+                                   "velocity_max":  300.0
+                               },
+                    "proximity_bridges":  {
+                                              "enabled":  true
+                                          },
+                    "mist":  {
+                                 "enabled":  false
+                             },
+                    "waves":  {
+                                  "enabled":  false
+                              },
+                    "floating_bodies":  {
+                                            "enabled":  false
+                                        },
+                    "aftereffect_waves":  {
+                                              "enabled":  false
+                                          },
+                    "crowd_field":  {
+                                        "enabled":  false
+                                    }
+                },
+    "debug":  {
+                  "preview":  true
+              },
+    "updates":  {
+                    "enabled":  false
+                }
 }
