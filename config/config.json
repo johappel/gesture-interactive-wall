@@ -1,14 +1,14 @@
 {
     "camera":  {
-                   "index":  702,
+                   "index":  701,
                    "width":  1920,
                    "height":  1080,
                    "flip":  true,
                    "backend":  "any",
-                   "name":  "HD Pro Webcam C920",
-                   "device_path":  "\\\\?\\usb#vid_046d\u0026pid_082d\u0026mi_00#7\u002612cd2aed\u00260\u00260000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\\global",
+                   "name":  "Logitech StreamCam",
+                   "device_path":  "\\\\?\\usb#vid_046d\u0026pid_0893\u0026mi_00#9\u002696a87e7\u00260\u00260000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\\global",
                    "vid":  "046D",
-                   "pid":  "082D"
+                   "pid":  "0893"
                },
     "network":  {
                     "host":  "127.0.0.1",
@@ -17,19 +17,43 @@
     "pose":  {
                  "model_path":  "models/pose_landmarker_full.task",
                  "num_poses":  12,
-                 "min_detection_confidence":  0.22
+                 "min_detection_confidence":  0.5,
+                 "min_torso_visibility":  0.6,
+                 "active_region":  {
+                                       "enabled":  false,
+                                       "x_min":  0.0,
+                                       "x_max":  1.0,
+                                       "y_min":  0.0,
+                                       "y_max":  1.0
+                                   }
              },
     "features":  {
                      "intensity_scale":  1.5,
                      "intensity_smoothing":  0.4,
                      "proximity_threshold":  0.35,
                      "track_max_dist":  0.35,
-                     "track_timeout":  1.5
+                     "track_timeout":  1.5,
+                     "track_grace_period":  1.0,
+                     "departure_edge_margin":  0.08,
+                     "departure_min_speed":  0.05,
+                     "track_confirmation_frames":  8,
+                     "stillness_speed_threshold":  0.08,
+                     "stillness_rise_seconds":  2.5,
+                     "stillness_fall_seconds":  0.8
                  },
     "station":  {
                     "facade":  {
                                    "screen":  1,
-                                   "fullscreen":  true
+                                   "fullscreen":  true,
+                                   "display":  {
+                                                   "x":  1920,
+                                                   "y":  0,
+                                                   "width":  1920,
+                                                   "height":  1200,
+                                                   "primary":  false,
+                                                   "relative_x":  1920,
+                                                   "relative_y":  0
+                                               }
                                },
                     "monitor":  {
                                     "enabled":  true,
@@ -40,12 +64,31 @@
                                     "fullscreen":  true,
                                     "width":  960,
                                     "height":  540,
-                                    "prompt_font_size":  38
+                                    "prompt_font_size":  38,
+                                    "display":  {
+                                                    "x":  0,
+                                                    "y":  0,
+                                                    "width":  1920,
+                                                    "height":  1200,
+                                                    "primary":  true,
+                                                    "relative_x":  0,
+                                                    "relative_y":  0
+                                                }
                                 },
                     "prompt":  {
                                    "enabled":  true,
                                    "source":  "config/prompts.json",
-                                   "prompt_key":  "stay_question"
+                                   "prompt_key":  "stay_question",
+                                   "prompt_keys":  [
+                                                       "stay_question",
+                                                       "stay_invitation",
+                                                       "trace_hint"
+                                                   ],
+                                   "fade_in_seconds":  4.3,
+                                   "fade_out_seconds":  1.4,
+                                   "underline_seconds":  2.0,
+                                   "star_tail_fade_seconds":  3.0,
+                                   "idle_cycle_seconds":  11.0
                                }
                 },
     "effects":  {
@@ -56,7 +99,7 @@
                                   },
                     "trails":  {
                                    "enabled":  true,
-                                   "max_points":  10,
+                                   "max_points":  15,
                                    "width":  20.0
                                },
                     "sparks":  {
@@ -65,11 +108,18 @@
                                    "amount_max":  112,
                                    "lifetime":  1.4,
                                    "velocity_min":  20.0,
-                                   "velocity_max":  300.0
+                                   "velocity_max":  300.0,
+                                   "activation_intensity":  0.09
                                },
                     "proximity_bridges":  {
                                               "enabled":  true
                                           },
+                    "stillness_resonance":  {
+                                                "enabled":  true,
+                                                "min_presence_seconds":  3.0,
+                                                "pulse_seconds":  6.0,
+                                                "max_scale":  1.3
+                                            },
                     "mist":  {
                                  "enabled":  false
                              },
@@ -80,7 +130,26 @@
                                             "enabled":  false
                                         },
                     "aftereffect_waves":  {
-                                              "enabled":  false
+                                              "enabled":  true,
+                                              "group_window_seconds":  0.22,
+                                              "group_distance":  0.18,
+                                              "group_width_per_departure":  0.10,
+                                              "duration_seconds":  4.8,
+                                              "initial_origin_outset":  0.03,
+                                              "origin_escape_distance":  0.5,
+                                              "start_radius":  0.03,
+                                              "propagation_speed":  0.35,
+                                              "band_width":  0.09,
+                                              "source_glow_radius":  0.26,
+                                              "echo_spacing":  0.15,
+                                              "echo_strength":  0.058,
+                                              "max_alpha":  0.26,
+                                              "fade_start_progress":  0.15,
+                                              "fade_end_progress":  0.99,
+                                              "glow_strength":  1.55,
+                                              "warm_color":  "#ffcd79",
+                                              "blue_color":  "#164155",
+                                              "dedupe_seconds":  5.0
                                           },
                     "crowd_field":  {
                                         "enabled":  false

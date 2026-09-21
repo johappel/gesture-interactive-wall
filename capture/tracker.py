@@ -14,6 +14,7 @@ import os
 import time
 
 from .features import BodyTracker, compute_pairs, crowd_energy
+from .sim import LIFECYCLE_SCENARIOS
 from .net import UdpJsonSender
 
 _CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config", "config.json")
@@ -26,35 +27,53 @@ def load_config(path: str = _CONFIG_PATH) -> dict:
         return json.load(fh)
 
 
-def build_frame(bodies, pairs, energy, t) -> dict:
+def build_frame(bodies, pairs, energy, t, departures=None, temporarily_missing=None) -> dict:
     return {
         "t": round(t, 3),
         "bodies": bodies,
         "pairs": pairs,
         "crowd": {"count": len(bodies), "energy": energy},
+        "events": {"departures": departures or []},
+        "tracking": {"temporarily_missing": temporarily_missing or []},
     }
 
 
-def run_sim(cfg: dict) -> None:
-    from .sim import make_phase44_persons
-
-    fcfg = cfg["features"]
-    tracker = BodyTracker(
+def _make_body_tracker(fcfg: dict) -> BodyTracker:
+    return BodyTracker(
         max_dist=fcfg["track_max_dist"],
         timeout=fcfg["track_timeout"],
         intensity_scale=fcfg["intensity_scale"],
         smoothing=fcfg["intensity_smoothing"],
+        grace_period=fcfg.get("track_grace_period", fcfg["track_timeout"]),
+        departure_edge_margin=fcfg.get("departure_edge_margin", 0.08),
+        departure_min_speed=fcfg.get("departure_min_speed", 0.05),
+        confirmation_frames=fcfg.get("track_confirmation_frames", 1),
+        stillness_speed_threshold=fcfg.get("stillness_speed_threshold", 0.08),
+        stillness_rise_seconds=fcfg.get("stillness_rise_seconds", 2.5),
+        stillness_fall_seconds=fcfg.get("stillness_fall_seconds", 0.8),
     )
+
+
+def run_sim(cfg: dict, scenario: str = "phase44") -> None:
+    from .sim import make_simulation_persons
+
+    fcfg = cfg["features"]
+    tracker = _make_body_tracker(fcfg)
     sender = UdpJsonSender(cfg["network"]["host"], cfg["network"]["port"])
     print("Simulator läuft (Strg+C zum Beenden) ...")
     start = time.time()
     try:
         while True:
             t = time.time() - start
-            persons = make_phase44_persons(t)
+            persons = make_simulation_persons(scenario, t)
             bodies = tracker.update(persons, t)
             pairs = compute_pairs(bodies, fcfg["proximity_threshold"])
-            sender.send(build_frame(bodies, pairs, crowd_energy(bodies), t))
+            sender.send(
+                build_frame(
+                    bodies, pairs, crowd_energy(bodies), t, tracker.take_departures(),
+                    tracker.temporarily_missing_ids(),
+                )
+            )
             time.sleep(1.0 / 60.0)
     except KeyboardInterrupt:
         pass
@@ -87,13 +106,14 @@ def run_camera(cfg: dict) -> None:
     camera = Camera(
         ccfg["index"], ccfg["width"], ccfg["height"], ccfg["flip"], ccfg.get("backend", "any")
     )
-    pose = PoseTracker(model_path, pcfg["num_poses"], pcfg["min_detection_confidence"])
-    tracker = BodyTracker(
-        max_dist=fcfg["track_max_dist"],
-        timeout=fcfg["track_timeout"],
-        intensity_scale=fcfg["intensity_scale"],
-        smoothing=fcfg["intensity_smoothing"],
+    pose = PoseTracker(
+        model_path,
+        pcfg["num_poses"],
+        pcfg["min_detection_confidence"],
+        pcfg.get("min_torso_visibility", 0.5),
+        pcfg.get("active_region"),
     )
+    tracker = _make_body_tracker(fcfg)
     sender = UdpJsonSender(cfg["network"]["host"], cfg["network"]["port"])
     preview = cfg["debug"]["preview"]
 
@@ -108,7 +128,12 @@ def run_camera(cfg: dict) -> None:
             persons = pose.process(frame, int(t * 1000))
             bodies = tracker.update(persons, t)
             pairs = compute_pairs(bodies, fcfg["proximity_threshold"])
-            sender.send(build_frame(bodies, pairs, crowd_energy(bodies), t))
+            sender.send(
+                build_frame(
+                    bodies, pairs, crowd_energy(bodies), t, tracker.take_departures(),
+                    tracker.temporarily_missing_ids(),
+                )
+            )
 
             if preview:
                 _draw_overlay(cv2, frame, bodies)
@@ -152,6 +177,12 @@ def _draw_overlay(cv2, frame, bodies) -> None:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="WIRKLICHT gesture capture")
     parser.add_argument("--sim", action="store_true", help="Ohne Kamera, synthetische Daten senden")
+    parser.add_argument(
+        "--sim-scenario",
+        default="phase44",
+        choices=("phase44", *LIFECYCLE_SCENARIOS),
+        help="Deterministisches Simulator-Szenario (nur mit --sim; Standard: phase44)",
+    )
     parser.add_argument(
         "--list-cameras",
         action="store_true",
@@ -206,7 +237,7 @@ def main() -> None:
         print_cameras(cfg["camera"].get("backend", "any"))
         return
     if args.sim:
-        run_sim(cfg)
+        run_sim(cfg, args.sim_scenario)
     else:
         run_camera(cfg)
 

@@ -1,4 +1,4 @@
-param([switch]$NonInteractive)
+﻿param([switch]$NonInteractive)
 
 $ErrorActionPreference = "Stop"
 . (Join-Path $PSScriptRoot "lib\common.ps1")
@@ -43,6 +43,36 @@ try {
     }
     Write-WirklichtStep ("Kamera {0}" -f $camera) "OK" Green
 
+    $failureArea = "Bildschirm"
+    try {
+        $facadeScreen = Select-WirklichtFacadeScreen -NonInteractive:$NonInteractive -NoPrompt
+    } catch {
+        if ($NonInteractive) { throw }
+        Write-Host "Die Fassaden-Ausgabe wird ausgewählt ..." -ForegroundColor Yellow
+        $picker = Start-Process -FilePath (Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe") -ArgumentList @(
+            "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", ('"{0}"' -f (Join-Path $script:WirklichtRoot "monitor-select.ps1")), "-Target", "facade"
+        ) -Wait -PassThru
+        if ($picker.ExitCode -ne 0) { throw "Es wurde kein Bildschirm für die Fassade ausgewählt." }
+        $facadeScreen = Select-WirklichtFacadeScreen -NoPrompt
+    }
+    Write-WirklichtStep ("Fassade Bildschirm {0}" -f $facadeScreen.index) "OK" Green
+    Write-WirklichtLog -Path $log -Message ("Fassade Bildschirm {0}: Position {1},{2}; Größe {3}x{4}; primary={5}." -f $facadeScreen.index, $facadeScreen.x, $facadeScreen.y, $facadeScreen.width, $facadeScreen.height, $facadeScreen.primary)
+    try {
+        $monitorScreen = Select-WirklichtMonitorScreen -FacadeScreen $facadeScreen -NonInteractive:$NonInteractive -NoPrompt
+    } catch {
+        if ($NonInteractive) { throw }
+        Write-Host "Der Nahraum-Monitor wird ausgewählt ..." -ForegroundColor Yellow
+        $picker = Start-Process -FilePath (Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe") -ArgumentList @(
+            "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", ('"{0}"' -f (Join-Path $script:WirklichtRoot "monitor-select.ps1")), "-Target", "monitor"
+        ) -Wait -PassThru
+        if ($picker.ExitCode -ne 0) { throw "Es wurde kein Nahraum-Monitor ausgewählt." }
+        $monitorScreen = Select-WirklichtMonitorScreen -FacadeScreen $facadeScreen -NoPrompt
+    }
+    if ($null -ne $monitorScreen) {
+        Write-WirklichtStep ("Nahraum-Monitor Bildschirm {0}" -f $monitorScreen.index) "OK" Green
+        Write-WirklichtLog -Path $log -Message ("Nahraum-Monitor Bildschirm {0}: Position {1},{2}; Größe {3}x{4}; primary={5}." -f $monitorScreen.index, $monitorScreen.x, $monitorScreen.y, $monitorScreen.width, $monitorScreen.height, $monitorScreen.primary)
+    }
+
     $failureArea = "Renderer"
     $rendererLog = Get-WirklichtLogPath "renderer.log"
     $captureLog = Get-WirklichtLogPath "capture.log"
@@ -76,6 +106,8 @@ try {
     Write-Host $_.Exception.Message -ForegroundColor Red
     if ($failureArea -eq "Kamera") {
         Write-Host "Bitte auf dem Desktop WIRKLICHT Kamera waehlen oeffnen."
+    } elseif ($failureArea -eq "Bildschirm") {
+        Write-Host "Bitte auf dem Desktop WIRKLICHT Bildschirm waehlen oeffnen."
     } elseif ($failureArea -eq "Renderer") {
         Write-Host "Die Kamera wurde erfolgreich geprueft. Das Problem liegt bei der Grafikausgabe."
         Write-Host "Bitte WIRKLICHT Hilfe & Diagnose oeffnen."

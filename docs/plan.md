@@ -223,10 +223,15 @@ Diese sechs sichtbaren Varianten sowie die echte Fensterplatzierung auf zwei
 Displays wurden hier nicht als visuelle Hardware-Abnahme ausgeführt.
 
 Die verbindlichen Tracking-Lifecycle-Kriterien in
-`docs/Track-Lifecycle-Abnahme.md` bleiben ein Gate für Phase 4.5. Diese Phase
-4.4 führt weder `active`/`temporarily_missing`/`departed` als neue
-Produktionslogik noch `departure`, `stillness`, `presence_time`, `rhythm`,
-Nachwirkungswellen oder neue Effektfamilien ein.
+`docs/Track-Lifecycle-Abnahme.md` waren das Gate für Phase 4.5A und sind dort
+jetzt als Pure-Python-Szenarien automatisiert abgedeckt: explizites
+`active`/`temporarily_missing`, begrenzte Wiederaufnahme derselben anonymen
+Anwesenheitsepisode sowie ein einmaliges `departure` nur bei plausibler
+Randbewegung. Verlust in der Bildmitte endet technisch ohne Ereignis. Dies ist
+keine reale Kamera- oder Vor-Ort-Abnahme.
+
+Phase 4.5A führt weder `stillness`, `presence_time`, `rhythm`,
+Nachwirkungswellen noch neue Effektfamilien ein.
 
 ## 7. Resonanzgrammatik
 
@@ -279,15 +284,88 @@ Zieldramaturgie:
 
 ## 9. Phase 4.5 — Resonanzgrammatik und Nachwirkung
 
-Erst nach Integration von 4.4:
+### 9.1 Erreichter Zwischenstand: Phase 4.5A (technisch implementiert, automatisiert getestet)
+
+- Track-Lifecycle mit `active` und `temporarily_missing` sowie begrenzter
+  Reassociation ohne biometrische Identifizierung;
+- finale Unterscheidung `lost != departed`: Ein Trackverlust im Feld wird ohne
+  bedeutungsvolles Ereignis bereinigt;
+- `departure` wird einmalig als UDP-Ereignis mit Rand, letzter Position und
+  letzter Geschwindigkeit gesendet, sofern Randnähe und Auswärtsbewegung
+  zusammenpassen;
+- deterministische Simulator-Szenarien für Stabilität, Verdeckung, Flackern,
+  Kreuzung, Verlust, links/rechts und Gruppen-Austritt, Rückkehr sowie Langlauf.
+- zusätzliche nicht-biometrische Qualitätsgates gegen Objekt-Fehlalarme:
+  MediaPipe-Konfidenz, sichtbarer Torso und optional kalibrierte Resonanzzone;
+  neue Tracks werden erst nach mehreren konsistenten Frames sichtbar.
+
+Automatisierte Tests belegen die Software-Invarianten, nicht jedoch Qualität
+und Robustheit mit realer Kamera, Beleuchtung, Verdeckung oder Publikum.
+
+### 9.2 Phase 4.5B: Bleiben → Resonanz (implementiert, automatisiert getestet)
+
+- Capture sendet für jeden sichtbaren, bestätigten anonymen Track
+  `presence_time` und `stillness` als kontinuierliche Werte. Ein kurzer
+  Detection-Ausfall innerhalb der Grace-Period behält Episode, Anwesenheitszeit
+  und erreichte Stillness bei. Der Renderer hält während dieser begrenzten
+  Zeit allein den bereits sichtbaren Lichtzustand; der fehlende Track bleibt
+  dabei aus Bodies, Paaren und Crowd-Daten heraus.
+- `stillness` ist keine Geste, Emotion oder Bewertung, sondern eine geglättete
+  beobachtete Bewegungsruhe. Sie wächst und löst sich zeitlich allmählich.
+- Die neue, separat schaltbare Effektfamilie
+  `effects.stillness_resonance` bildet länger ruhige Anwesenheit als dezentes,
+  langsam pulsierendes Feld um den Lichtkörper ab. Sie friert vorhandene
+  Bewegungseffekte nicht ein. Bei `enabled: false` wird sie weder angelegt noch
+  simuliert. Die Nahraum-Vorschau bleibt dieselbe Renderer-Ausgabe wie die
+  Fassade und zeigt kein Kamerabild.
+- Deterministische Pure-Python-Tests decken Aufbau, graduelles Lösen und einen
+  kurzen Detection-Ausfall ab. Das Simulator-Szenario `stay_resonance` zeigt
+  ruhiges Bleiben, eine kurze Lücke und danach Bewegung.
+
+Automatisierte Tests und Simulator belegen Signal- und Ablauf-Invarianten, aber
+nicht die Sichtbarkeit, Latenz oder Wirkung auf echter Fassade bzw. bei
+Publikum. Diese Punkte bleiben Teil der Realwelt-Abnahme in Phase 5.
+
+### 9.3 Phase 4.5C: Fortgehen → Nachwirkung (technisch implementiert, automatisiert getestet)
+
+Die Default-Form ist eine breite, weiche Lichtresonanz ohne sichtbare Linie.
+Ihr virtueller Mittelpunkt verlässt die Fassade weiter über den Austrittsrand
+hinaus. Vom warmen Quellglühen am Rand kehrt nur ein zunehmend bläuliches,
+diffuses Lichtfeld in die Fassade zurück und wird allmählich mit ihrer dunklen
+Oberfläche eins.
+
+- Der Godot-Renderer verarbeitet `events.departures[]` ausschließlich in der
+  neuen Effektfamilie `effects.aftereffect_waves`. Gültige Ereignisse erzeugen
+  wenige breite, shader-basierte Lichtfelder. Der unsichtbare Mittelpunkt
+  wandert weiter nach außen; der sichtbare Resonanzanteil reicht weich zurück
+  in die Fassade. Er liegt hinter Körpern, Trails, Funken und Lichtbrücken.
+- Die anonyme Episode-ID dient ausschließlich einer auf `dedupe_seconds`
+  begrenzten Arbeitsspeicher-Sperre gegen wiederholte UDP-Frames. Alte Frames
+  sowie ungültige oder unvollständige Events werden ignoriert; die Wellenlogik
+  selbst erhält und speichert nur Rand und Position.
+- Nahe Austritte am gleichen Rand werden in `group_window_seconds` zu einer
+  breiteren gemeinsamen Nachwirkung aggregiert. Es entsteht keine individuelle
+  Personendarstellung, keine Gestenlogik und keine Ereignis-Historie.
+- `enabled: false` legt die Welleninstanz nicht an und simuliert daher keine
+  Wellen. `minimal_mode` lässt die Familie ebenfalls aus.
+- Der deterministische Simulatorfall `aftereffect_waves` zeigt erst einen
+  einzelnen linken und anschließend einen nahen gemeinsamen rechten Austritt;
+  er ist mit `python -m capture.tracker --sim --sim-scenario aftereffect_waves`
+  ausführbar.
+
+Automatisiert geprüft sind Config- und Renderer-Verträge, die sichere
+Event-Validierung, zeitlich rückläufige Frames, Duplikat-Schutz und die
+anonyme Gruppenaggregation im Quellvertrag sowie der Capture-Simulatorablauf.
+Ein sichtbarer Godot-Simulatorlauf und die reale Fassadenabnahme bleiben
+separate Schritte: insbesondere Helligkeit, Distanzlesbarkeit, Latenz und die
+Wirkung bei mehreren Menschen sind nicht durch Unit-Tests belegt.
+
+### 9.4 Noch offen: weitere Phase 4.5
 
 ### Capture / Features
 
-1. `stillness`
-2. `presence_time`
-3. `verticality` bzw. `contraction`
-4. einfacher zeitlicher `rhythm`
-5. robuste Rand-Austritts-Erkennung (`departure`)
+1. `verticality` bzw. `contraction`
+2. einfacher zeitlicher `rhythm`
 
 Bestehende Signale `intensity`, `openness` und `proximity` weiterverwenden.
 
@@ -296,22 +374,17 @@ Bestehende Signale `intensity`, `openness` und `proximity` weiterverwenden.
 Mindestens simulieren:
 
 - lebendige Bewegung;
-- Ruhe / Verweilen;
+- Ruhe / Verweilen (Phase 4.5B: `stay_resonance`);
 - Öffnung / Verdichtung;
 - zwei Personen kommen zusammen;
 - größere Gruppe;
-- einzelne Person verlässt links/rechts;
-- mehrere Personen verlassen gemeinsam einen Randbereich.
 
 ### Renderer
 
-1. Funken / Aufstieg;
-2. Ruhe als Verdichtung statt Dunkelwerden;
-3. Nähe als Feld / Dunst zusätzlich zur Linie;
-4. rhythmische Bewegung als dezente Wellenmodulation;
-5. `departure` als zurücklaufende Wasser-/Lichtwelle;
-6. Interaktion der Wellen mit vorhandenen Partikeln/Feldern;
-7. Config-Schalter für jede neue Effektfamilie.
+1. Nähe als Feld / Dunst zusätzlich zur Linie;
+2. rhythmische Bewegung als dezente Wellenmodulation;
+3. Interaktion der Wellen mit vorhandenen Partikeln/Feldern;
+4. Config-Schalter für jede neue Effektfamilie.
 
 ## 10. Nachwirkung / Echo
 

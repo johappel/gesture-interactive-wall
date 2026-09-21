@@ -4,10 +4,12 @@ extends Node2D
 
 const GOLD := Color(1.0, 0.78, 0.38)
 const INTENSE := Color(1.0, 0.36, 0.14)
+const StillnessResonanceScript := preload("res://scripts/stillness_resonance.gd")
 
 var _sprite: Sprite2D
 var _particles: GPUParticles2D
 var _trail: Line2D
+var _stillness_resonance
 var _alpha := 1.0
 var _effects: Dictionary = {}
 
@@ -42,7 +44,7 @@ func configure_effects(effects: Dictionary) -> void:
 	if is_node_ready():
 		_apply_effect_config()
 
-func update_state(pos: Vector2, intensity: float, openness: float) -> void:
+func update_state(pos: Vector2, intensity: float, openness: float, presence_time: float, stillness: float) -> void:
 	_alpha = 1.0
 	position = pos
 
@@ -61,15 +63,23 @@ func update_state(pos: Vector2, intensity: float, openness: float) -> void:
 		var amount_max: int = max(int(sparks.get("amount_max", 112)), amount_min)
 		var velocity_min: float = float(sparks.get("velocity_min", 20.0))
 		var velocity_max: float = max(float(sparks.get("velocity_max", 300.0)), velocity_min)
+		# Quiet presence remains a light body; sparks begin only with observed
+		# movement, so a brief camera ghost cannot flash as a particle burst.
+		var activation_intensity: float = clamp(float(sparks.get("activation_intensity", 0.09)), 0.0, 1.0)
+		var should_emit := intensity >= activation_intensity
 		var mat := _particles.process_material as ParticleProcessMaterial
 		mat.color = hdr
 		mat.initial_velocity_min = velocity_min
 		mat.initial_velocity_max = lerp(velocity_min, velocity_max, clamp(intensity, 0.0, 1.0))
 		mat.emission_sphere_radius = 6.0 + openness * 30.0
-		_particles.amount = int(round(lerp(float(amount_min), float(amount_max), clamp(intensity, 0.0, 1.0))))
+		_particles.emitting = should_emit
+		_particles.amount = int(round(lerp(float(amount_min), float(amount_max), clamp(intensity, 0.0, 1.0)))) if should_emit else 0
 
 	if _effect_enabled("trails", true):
 		_push_trail(pos)
+
+	if _stillness_resonance != null:
+		_stillness_resonance.update_state(pos, presence_time, stillness)
 
 func fade(delta: float) -> bool:
 	# Returns true when fully faded and safe to remove.
@@ -97,6 +107,18 @@ func _apply_effect_config() -> void:
 	if sparks_enabled:
 		var sparks := _effect_block("sparks")
 		_particles.lifetime = float(sparks.get("lifetime", 1.4))
+
+	var resonance_enabled := _effect_enabled("stillness_resonance", false)
+	if resonance_enabled and _stillness_resonance == null:
+		_stillness_resonance = StillnessResonanceScript.new()
+		add_child(_stillness_resonance)
+	if resonance_enabled and _stillness_resonance != null:
+		_stillness_resonance.configure(_effect_block("stillness_resonance"))
+	elif not resonance_enabled and _stillness_resonance != null:
+		# Disabled means neither visible nor simulated: remove its process node.
+		_stillness_resonance.set_process(false)
+		_stillness_resonance.queue_free()
+		_stillness_resonance = null
 
 func _push_trail(pos: Vector2) -> void:
 	# Trail lives in world space; keep points in the parent's coordinates.

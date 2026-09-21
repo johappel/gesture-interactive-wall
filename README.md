@@ -246,9 +246,15 @@ Es sollten Lichtgestalten über die Godot-Ausgabe wandern.
 
 ### 3.1 Beamer und Nahraum-Monitor im Vollbild
 
-Die Ausgaben werden in `config/config.json` unter `station` festgelegt. Als
-Voreinstellung ist Monitor = Godot-Anzeige 0 und Beamer = Godot-Anzeige 1
-konfiguriert:
+Die Ausgaben werden in `config/config.json` unter `station` gespeichert. Beim
+ersten normalen Start mit mehreren Bildschirmen öffnet sich die Auswahl für die
+Fassade bzw. den Beamer. Sie zeigt Auflösung, Position und Hauptbildschirm an
+und speichert die Auswahl. Später kann sie über **WIRKLICHT Bildschirm waehlen**
+auf dem Desktop erneut geöffnet werden.
+
+Die Fassade setzt zuerst ihren Bildschirm und wechselt anschließend in Godots
+rahmenloses `Window.MODE_FULLSCREEN`. Der Nahraum-Monitor bleibt eine getrennte,
+ebenfalls konfigurierbare Ausgabe, zum Beispiel:
 
 ```json
 "facade": { "screen": 1, "fullscreen": true },
@@ -257,11 +263,12 @@ konfiguriert:
 
 Beim Renderer-Neustart erscheint die Fassade rahmenlos auf dem Beamer; der
 Nahraum-Monitor zeigt die Resonanz-Vorschau samt Leerlaufimpuls ebenfalls ohne
-Fensterrahmen. Beim Start nennt die Godot-Konsole die erkannten Anzeigeindizes
-und Auflösungen; diese Zuordnung am Aufbau prüfen und bei Bedarf die beiden
-`screen`-Werte tauschen, dann den Renderer neu starten. Bei nur einer
-erkannten Anzeige bleibt die Nahraum-Vorschau bewusst aus, damit sie die
-Fassadenausgabe nicht überlagert.
+Fensterrahmen. Fehlt die gespeicherte Ausgabe, zeigt der normale Start die
+Auswahl erneut; ein manueller Renderer-Start fällt sicher auf den Hauptbildschirm
+zurück. Bei nur einer erkannten Anzeige bleibt die Nahraum-Vorschau bewusst aus,
+damit sie die Fassadenausgabe nicht überlagert. `Alt` + `Enter` schaltet nur für
+Entwicklung und Fehlerbehebung zwischen Fenster und Vollbild um und behält dabei
+den gewählten Fassaden-Bildschirm.
 
 ### 4. Mit echter Webcam
 
@@ -294,7 +301,7 @@ nach einem Realwelt-Test unter Dämmerungs-/Nachtbedingungen.
 - [x] Phase 2 — Renderer-MVP (Godot: Lichtgestalten, Bloom)
 - [x] Phase 3 — Leuchtspuren (Trails)
 - [x] Phase 4 — Multi-Person + Verbundenheit (Lichtbrücken)
-- [ ] Phase 4.5 — Resonanzgrammatik + Nachwirkung (Effektsteuerung bereits umgesetzt)
+- [x] Phase 4.5 — Resonanzgrammatik + Nachwirkung (Effektsteuerung bereits umgesetzt)
 - [ ] Phase 5 — Realwelt-Test (Beleuchtung, Distanz, 2–20 Personen)
 - [ ] Phase 6 — Projektion & Kalibrierung
 - [ ] Phase 7 — Hardware-Entscheidung / Robustheit

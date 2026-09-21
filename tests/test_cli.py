@@ -32,6 +32,10 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(args.camera, 2)
         self.assertEqual(args.backend, "dshow")
 
+    def test_known_sim_scenario(self):
+        args = build_parser().parse_args(["--sim", "--sim-scenario", "left_departure"])
+        self.assertEqual(args.sim_scenario, "left_departure")
+
     def test_rejects_unknown_backend(self):
         with self.assertRaises(SystemExit):
             build_parser().parse_args(["--backend", "webrtc"])
@@ -143,6 +147,19 @@ class ConfigTest(unittest.TestCase):
         self.assertIn(cfg["camera"]["backend"], ("any", "dshow", "msmf"))
         for key in ("name", "device_path", "vid", "pid"):
             self.assertIn(key, cfg["camera"])
+        for key in (
+            "track_max_dist",
+            "track_grace_period",
+            "departure_edge_margin",
+            "departure_min_speed",
+            "track_confirmation_frames",
+            "stillness_speed_threshold",
+            "stillness_rise_seconds",
+            "stillness_fall_seconds",
+        ):
+            self.assertIn(key, cfg["features"])
+        for key in ("min_torso_visibility", "active_region"):
+            self.assertIn(key, cfg["pose"])
 
     def test_config_loader_accepts_windows_utf8_bom(self):
         data = b'\xef\xbb\xbf{"camera":{"index":701}}'
@@ -161,6 +178,25 @@ class FrameTest(unittest.TestCase):
         self.assertEqual(frame["crowd"], {"count": 1, "energy": 0.5})
         self.assertEqual(frame["bodies"], [{"id": 0}])
         self.assertEqual(frame["pairs"], [])
+        self.assertEqual(frame["events"], {"departures": []})
+        self.assertEqual(frame["tracking"], {"temporarily_missing": []})
+
+    def test_frame_includes_one_shot_departures(self):
+        departure = {"id": 7, "edge": "left", "x": 0.01, "y": 0.54}
+        frame = build_frame(bodies=[], pairs=[], energy=0.0, t=2.0, departures=[departure])
+        self.assertEqual(frame["events"], {"departures": [departure]})
+
+    def test_frame_keeps_presence_and_stillness_body_fields(self):
+        body = {"id": 2, "presence_time": 3.5, "stillness": 0.82}
+        frame = build_frame(bodies=[body], pairs=[], energy=0.0, t=3.5)
+        self.assertEqual(frame["bodies"][0], body)
+
+    def test_frame_includes_temporary_missing_metadata_without_a_body(self):
+        frame = build_frame(
+            bodies=[], pairs=[], energy=0.0, t=2.0, temporarily_missing=[4]
+        )
+        self.assertEqual(frame["bodies"], [])
+        self.assertEqual(frame["tracking"], {"temporarily_missing": [4]})
 
 
 if __name__ == "__main__":

@@ -11,15 +11,26 @@ from __future__ import annotations
 
 import os
 
+from .features import filter_plausible_persons
+
 
 class PoseTracker:
-    def __init__(self, model_path: str, num_poses: int = 4, min_confidence: float = 0.5) -> None:
+    def __init__(
+        self,
+        model_path: str,
+        num_poses: int = 4,
+        min_confidence: float = 0.5,
+        min_torso_visibility: float = 0.5,
+        active_region: dict | None = None,
+    ) -> None:
         import mediapipe as mp
 
         self._mp = mp
         self._mode = None
         self._landmarker = None
         self._legacy = None
+        self._min_torso_visibility = min_torso_visibility
+        self._active_region = active_region
 
         if os.path.exists(model_path):
             self._init_tasks(model_path, num_poses, min_confidence)
@@ -62,12 +73,15 @@ class PoseTracker:
             persons = []
             for landmarks in result.pose_landmarks:
                 persons.append([(lm.x, lm.y, lm.visibility) for lm in landmarks])
-            return persons
+            return filter_plausible_persons(
+                persons, self._min_torso_visibility, self._active_region
+            )
 
         result = self._legacy.process(rgb)
         if not result.pose_landmarks:
             return []
-        return [[(lm.x, lm.y, lm.visibility) for lm in result.pose_landmarks.landmark]]
+        persons = [[(lm.x, lm.y, lm.visibility) for lm in result.pose_landmarks.landmark]]
+        return filter_plausible_persons(persons, self._min_torso_visibility, self._active_region)
 
     def close(self) -> None:
         if self._landmarker is not None:

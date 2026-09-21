@@ -1,4 +1,4 @@
-# Shared, operator-facing helpers for the WIRKLICHT Windows scripts.
+﻿# Shared, operator-facing helpers for the WIRKLICHT Windows scripts.
 # The script intentionally uses only Windows PowerShell 5.1 features.
 
 $script:WirklichtRoot = Split-Path -Parent $PSScriptRoot
@@ -459,6 +459,143 @@ function Save-WirklichtCameraSelection {
     Write-WirklichtJson -Path $configPath -Value $config
 }
 
+function Get-WirklichtAvailableScreens {
+    # Windows supplies the operator-facing screen list. The stored geometry is
+    # also read by Godot, so the renderer is not coupled to this enumeration order.
+    try {
+        Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop
+        $screens = @([System.Windows.Forms.Screen]::AllScreens)
+        $result = New-Object System.Collections.Generic.List[object]
+        for ($index = 0; $index -lt $screens.Count; $index++) {
+            $bounds = $screens[$index].Bounds
+            [void]$result.Add([pscustomobject]@{
+                index = $index
+                x = [int]$bounds.X
+                y = [int]$bounds.Y
+                width = [int]$bounds.Width
+                height = [int]$bounds.Height
+                primary = [bool]$screens[$index].Primary
+            })
+        }
+        return $result.ToArray()
+    } catch {
+        throw ("Die verfügbaren Bildschirme konnten nicht abgefragt werden: {0}" -f $_.Exception.Message)
+    }
+}
+
+function Find-WirklichtConfiguredScreen {
+    param([object[]]$Screens, [object]$Facade)
+    if ($null -eq $Facade) { return $null }
+    $signature = $Facade.display
+    if ($null -ne $signature) {
+        $required = @("x", "y", "width", "height")
+        $complete = $true
+        foreach ($key in $required) {
+            if ($null -eq $signature.PSObject.Properties[$key]) { $complete = $false; break }
+        }
+        if ($complete) {
+            $match = $Screens | Where-Object {
+                $_.x -eq [int]$signature.x -and $_.y -eq [int]$signature.y -and
+                $_.width -eq [int]$signature.width -and $_.height -eq [int]$signature.height
+            } | Select-Object -First 1
+            if ($null -ne $match) { return $match }
+            return $null
+        }
+    }
+    return $null
+}
+
+function Save-WirklichtStationScreenSelection {
+    param([ValidateSet("facade", "monitor")][string]$Section, [object]$Screen, [object[]]$Screens)
+    $configPath = Join-Path $script:WirklichtRoot "config\config.json"
+    $config = Read-WirklichtJson $configPath
+    if ($null -eq $config.station) { $config | Add-Member -MemberType NoteProperty -Name "station" -Value ([pscustomobject]@{}) }
+    $sectionProperty = $config.station.PSObject.Properties[$Section]
+    if ($null -eq $sectionProperty) {
+        $config.station | Add-Member -MemberType NoteProperty -Name $Section -Value ([pscustomobject]@{})
+        $sectionProperty = $config.station.PSObject.Properties[$Section]
+    }
+    $output = $sectionProperty.Value
+    $screenProperty = $output.PSObject.Properties["screen"]
+    if ($null -eq $screenProperty) { $output | Add-Member -MemberType NoteProperty -Name "screen" -Value ([int]$Screen.index) }
+    else { $screenProperty.Value = [int]$Screen.index }
+    $primary = $Screens | Where-Object { $_.primary } | Select-Object -First 1
+    if ($null -eq $primary) { $primary = $Screens[0] }
+    $signature = [pscustomobject]@{
+        x = [int]$Screen.x
+        y = [int]$Screen.y
+        width = [int]$Screen.width
+        height = [int]$Screen.height
+        primary = [bool]$Screen.primary
+        relative_x = [int]$Screen.x - [int]$primary.x
+        relative_y = [int]$Screen.y - [int]$primary.y
+    }
+    $displayProperty = $output.PSObject.Properties["display"]
+    if ($null -eq $displayProperty) { $output | Add-Member -MemberType NoteProperty -Name "display" -Value $signature }
+    else { $displayProperty.Value = $signature }
+    Write-WirklichtJson -Path $configPath -Value $config
+}
+
+function Save-WirklichtFacadeScreenSelection {
+    param([object]$Screen, [object[]]$Screens = @(Get-WirklichtAvailableScreens))
+    Save-WirklichtStationScreenSelection -Section "facade" -Screen $Screen -Screens $Screens
+}
+
+function Save-WirklichtMonitorScreenSelection {
+    param([object]$Screen, [object[]]$Screens = @(Get-WirklichtAvailableScreens))
+    Save-WirklichtStationScreenSelection -Section "monitor" -Screen $Screen -Screens $Screens
+}
+
+function Select-WirklichtFacadeScreen {
+    param([switch]$NonInteractive, [switch]$NoPrompt)
+    $configPath = Join-Path $script:WirklichtRoot "config\config.json"
+    $config = Read-WirklichtJson $configPath
+    $screens = @(Get-WirklichtAvailableScreens)
+    if ($screens.Count -eq 0) { throw "Kein Bildschirm wurde von Windows erkannt." }
+    $facade = if ($config.station) { $config.station.facade } else { $null }
+    $selected = Find-WirklichtConfiguredScreen -Screens $screens -Facade $facade
+    if ($null -ne $selected) {
+        Save-WirklichtFacadeScreenSelection -Screen $selected -Screens $screens
+        return $selected
+    }
+    if ($screens.Count -eq 1) {
+        Save-WirklichtFacadeScreenSelection -Screen $screens[0] -Screens $screens
+        return $screens[0]
+    }
+    if ($NonInteractive) {
+        $primary = $screens | Where-Object { $_.primary } | Select-Object -First 1
+        if ($null -eq $primary) { $primary = $screens[0] }
+        Save-WirklichtFacadeScreenSelection -Screen $primary -Screens $screens
+        return $primary
+    }
+    if ($NoPrompt) {
+        throw "Für mehrere Bildschirme ist noch keine Fassaden-Ausgabe gespeichert oder der gespeicherte Bildschirm fehlt."
+    }
+    throw "Bitte zuerst einen Bildschirm für die Fassade auswählen."
+}
+
+function Select-WirklichtMonitorScreen {
+    param([object]$FacadeScreen, [switch]$NonInteractive, [switch]$NoPrompt)
+    $configPath = Join-Path $script:WirklichtRoot "config\config.json"
+    $config = Read-WirklichtJson $configPath
+    $monitor = if ($config.station) { $config.station.monitor } else { $null }
+    if ($null -eq $monitor -or -not [bool]$monitor.enabled) { return $null }
+    $screens = @(Get-WirklichtAvailableScreens)
+    if ($screens.Count -lt 2) { return $null }
+    $selected = Find-WirklichtConfiguredScreen -Screens $screens -Facade $monitor
+    if ($null -ne $selected -and $selected.index -ne $FacadeScreen.index) {
+        Save-WirklichtMonitorScreenSelection -Screen $selected -Screens $screens
+        return $selected
+    }
+    if ($NonInteractive) {
+        $selected = $screens | Where-Object { $_.index -ne $FacadeScreen.index } | Select-Object -First 1
+        if ($null -ne $selected) { Save-WirklichtMonitorScreenSelection -Screen $selected -Screens $screens }
+        return $selected
+    }
+    if ($NoPrompt) { throw "Für den Nahraum-Monitor ist noch keine von der Fassade getrennte Ausgabe gespeichert." }
+    throw "Bitte einen vom Fassaden-Bildschirm getrennten Nahraum-Monitor auswählen."
+}
+
 function Select-WirklichtCamera {
     param([string]$VenvPython, [switch]$NonInteractive, [switch]$NoPrompt)
     $configPath = Join-Path $script:WirklichtRoot "config\config.json"
@@ -541,14 +678,14 @@ function Get-WirklichtShortcutDirectories {
 }
 
 function New-WirklichtShortcut {
-    param([string]$Name, [string]$ScriptName, [string]$Description)
+    param([string]$Name, [string]$ScriptName, [string]$Description, [string]$ScriptArguments = "")
     foreach ($directory in Get-WirklichtShortcutDirectories) {
         New-Item -ItemType Directory -Force -Path $directory | Out-Null
         $shortcutPath = Join-Path $directory ("{0}.lnk" -f $Name)
         $shell = New-Object -ComObject WScript.Shell
         $shortcut = $shell.CreateShortcut($shortcutPath)
         $shortcut.TargetPath = (Join-Path $env:SystemRoot "System32\WindowsPowerShell\v1.0\powershell.exe")
-        $shortcut.Arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}"' -f (Join-Path $script:WirklichtRoot $ScriptName)
+        $shortcut.Arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}" {1}' -f (Join-Path $script:WirklichtRoot $ScriptName), $ScriptArguments
         $shortcut.WorkingDirectory = $script:WirklichtRoot
         $shortcut.Description = $Description
         $shortcut.Save()
@@ -641,6 +778,8 @@ function Invoke-WirklichtInstallation {
         }
         New-WirklichtShortcut -Name "WIRKLICHT starten" -ScriptName "start.ps1" -Description "WIRKLICHT starten" | Out-Null
         New-WirklichtShortcut -Name "WIRKLICHT Kamera waehlen" -ScriptName "camera-select.ps1" -Description "WIRKLICHT Kamera auswaehlen und testen" | Out-Null
+        New-WirklichtShortcut -Name "WIRKLICHT Bildschirm waehlen" -ScriptName "monitor-select.ps1" -Description "Fassaden-Bildschirm auswählen" | Out-Null
+        New-WirklichtShortcut -Name "WIRKLICHT Nahraum-Monitor waehlen" -ScriptName "monitor-select.ps1" -Description "Nahraum-Monitor auswählen" -ScriptArguments "-Target monitor" | Out-Null
         New-WirklichtShortcut -Name "WIRKLICHT Hilfe & Diagnose" -ScriptName "diagnose.ps1" -Description "WIRKLICHT Hilfe und Diagnose" | Out-Null
         Write-WirklichtStep "Desktop-Verknuepfungen" "OK" Green
         Write-Host ("Start-Verknuepfungen: " + ((Get-WirklichtShortcutDirectories) -join ", "))
