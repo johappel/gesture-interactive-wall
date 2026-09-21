@@ -63,12 +63,17 @@ func update_state(pos: Vector2, intensity: float, openness: float, presence_time
 		var amount_max: int = max(int(sparks.get("amount_max", 112)), amount_min)
 		var velocity_min: float = float(sparks.get("velocity_min", 20.0))
 		var velocity_max: float = max(float(sparks.get("velocity_max", 300.0)), velocity_min)
+		# Quiet presence remains a light body; sparks begin only with observed
+		# movement, so a brief camera ghost cannot flash as a particle burst.
+		var activation_intensity: float = clamp(float(sparks.get("activation_intensity", 0.09)), 0.0, 1.0)
+		var should_emit := intensity >= activation_intensity
 		var mat := _particles.process_material as ParticleProcessMaterial
 		mat.color = hdr
 		mat.initial_velocity_min = velocity_min
 		mat.initial_velocity_max = lerp(velocity_min, velocity_max, clamp(intensity, 0.0, 1.0))
 		mat.emission_sphere_radius = 6.0 + openness * 30.0
-		_particles.amount = int(round(lerp(float(amount_min), float(amount_max), clamp(intensity, 0.0, 1.0))))
+		_particles.emitting = should_emit
+		_particles.amount = int(round(lerp(float(amount_min), float(amount_max), clamp(intensity, 0.0, 1.0)))) if should_emit else 0
 
 	if _effect_enabled("trails", true):
 		_push_trail(pos)

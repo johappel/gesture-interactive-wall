@@ -36,7 +36,7 @@
                      "track_grace_period":  1.0,
                      "departure_edge_margin":  0.08,
                      "departure_min_speed":  0.05,
-                     "track_confirmation_frames":  3,
+                     "track_confirmation_frames":  8,
                      "stillness_speed_threshold":  0.08,
                      "stillness_rise_seconds":  2.5,
                      "stillness_fall_seconds":  0.8
@@ -60,7 +60,17 @@
                     "prompt":  {
                                    "enabled":  true,
                                    "source":  "config/prompts.json",
-                                   "prompt_key":  "stay_question"
+                                   "prompt_key":  "stay_question",
+                                   "prompt_keys":  [
+                                                       "stay_question",
+                                                       "stay_invitation",
+                                                       "trace_hint"
+                                                   ],
+                                   "fade_in_seconds":  4.3,
+                                   "fade_out_seconds":  1.4,
+                                   "underline_seconds":  2.0,
+                                   "star_tail_fade_seconds":  3.0,
+                                   "idle_cycle_seconds":  11.0
                                }
                 },
     "effects":  {
@@ -80,7 +90,8 @@
                                    "amount_max":  112,
                                    "lifetime":  1.4,
                                    "velocity_min":  20.0,
-                                   "velocity_max":  300.0
+                                   "velocity_max":  300.0,
+                                   "activation_intensity":  0.09
                                },
                     "proximity_bridges":  {
                                               "enabled":  true

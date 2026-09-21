@@ -112,6 +112,13 @@ class TrackerTest(unittest.TestCase):
         visible = tr.update([person(0.52, 0.5)], t=0.2)
         self.assertEqual([body["id"] for body in visible], [0])
 
+    def test_short_lived_ghost_candidate_never_becomes_a_body_or_departure(self):
+        tracker = BodyTracker(confirmation_frames=8, grace_period=0.5)
+        for frame in range(4):
+            self.assertEqual(tracker.update([person(0.5, 0.5)], t=frame * 0.033), [])
+        self.assertEqual(tracker.update([], t=1.0), [])
+        self.assertEqual(tracker.take_departures(), [])
+
 
 class TrackLifecycleTest(unittest.TestCase):
     def _tracker(self):
