@@ -294,7 +294,7 @@ nach einem Realwelt-Test unter Dämmerungs-/Nachtbedingungen.
 - [x] Phase 2 — Renderer-MVP (Godot: Lichtgestalten, Bloom)
 - [x] Phase 3 — Leuchtspuren (Trails)
 - [x] Phase 4 — Multi-Person + Verbundenheit (Lichtbrücken)
-- [ ] Phase 4.5 — Resonanzgrammatik + Nachwirkung (Effektsteuerung bereits umgesetzt)
+- [x] Phase 4.5 — Resonanzgrammatik + Nachwirkung (Effektsteuerung bereits umgesetzt)
 - [ ] Phase 5 — Realwelt-Test (Beleuchtung, Distanz, 2–20 Personen)
 - [ ] Phase 6 — Projektion & Kalibrierung
 - [ ] Phase 7 — Hardware-Entscheidung / Robustheit
