@@ -45,9 +45,13 @@ jobs:
           # fuer den Namen des Releases, die VERSION-Datei fuer den Inhalt; beide
           # muessen denselben Stand bezeichnen.
           if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne $expectedTag) {
-            throw ("Tag '{0}' passt nicht zur VERSION-Datei ('{1}'). Entweder VERSION auf '{2}' setzen " +
-                   "oder den Tag '{3}' verwenden." -f $env:GITHUB_REF_NAME, $version,
-                   ($env:GITHUB_REF_NAME -replace '^v', ''), $expectedTag)
+            # Die Formatierung muss den vollstaendigen Text umfassen: -f bindet
+            # staerker als +, sonst blieben die Platzhalter im ersten Teil
+            # unersetzt stehen.
+            $message = ("Tag '{0}' passt nicht zur VERSION-Datei ('{1}'). " +
+                        "Entweder VERSION auf '{2}' setzen oder den Tag '{3}' verwenden.") -f `
+                        $env:GITHUB_REF_NAME, $version, ($env:GITHUB_REF_NAME -replace '^v', ''), $expectedTag
+            throw $message
           }
 
           "version=$version" >> $env:GITHUB_OUTPUT
