@@ -110,13 +110,21 @@ einem Tag `v*` und haengt es an das Release.
 > der Version `0.5.4` — der Workflow bricht deshalb ab, statt ein solches
 > Release zu erzeugen.
 >
-> Vor einem Release also `VERSION` anheben und erst danach den Tag setzen:
+> **Setze den Tag deshalb nicht von Hand**, sondern ueber `release.ps1`. Das
+> Skript leitet den Tag aus `VERSION` ab, sodass beide nicht mehr auseinander
+> laufen koennen:
 >
 > ```powershell
-> # VERSION auf den neuen Stand bringen, committen, dann:
-> git tag v0.5.5
-> git push origin v0.5.5
+> # VERSION bleibt wie sie ist; Tag daraus ableiten:
+> powershell -ExecutionPolicy Bypass -File release.ps1
+>
+> # VERSION erhoehen (patch/minor/major) und direkt veroeffentlichen:
+> powershell -ExecutionPolicy Bypass -File release.ps1 -Bump patch
 > ```
+>
+> Das Skript prueft vor jeder Aenderung, ob der Arbeitsbaum sauber ist, ob der
+> Tag schon existiert und ob der Commit gepusht ist. Es fragt vor dem Push nach
+> Bestaetigung (`-Yes` ueberspringt die Rueckfrage).
 
 Der Installer richtet Python 3.11, Godot, WIRKLICHT, MediaPipe/OpenCV, das
 Pose-Modell, die Kameraauswahl und Desktop-Verknuepfungen ein. Git ist nicht

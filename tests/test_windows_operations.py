@@ -215,6 +215,65 @@ class InstallerContractTest(unittest.TestCase):
         version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
         self.assertRegex(version, r"^\d+\.\d+\.\d+([.\-+].*)?$")
 
+
+class ReleaseScriptContractTest(unittest.TestCase):
+    """Das Release ist der einzige Weg, der Tag und VERSION-Datei koppelt.
+
+    Von Hand gesetzte Tags liefen wiederholt gegen die VERSION-Datei
+    (v0.0.2 bei VERSION 0.5.4). release.ps1 leitet den Tag deshalb aus der
+    Datei ab und prueft den Stand vor jeder Aenderung.
+    """
+
+    def test_release_script_exists(self):
+        self.assertTrue((ROOT / "release.ps1").is_file())
+
+    def test_release_script_derives_tag_from_version_file(self):
+        script = (ROOT / "release.ps1").read_text(encoding="utf-8")
+        # Der Tag wird abgeleitet, nicht eingegeben.
+        self.assertIn('$targetTag = "v$targetVersion"', script)
+        self.assertIn("Get-VersionFromFile", script)
+        self.assertIn("Add-VersionBump", script)
+        # Der Parameterblock des Skripts darf keinen Tag entgegennehmen; sonst
+        # waere ein von Hand abweichender Tag wieder moeglich. Geprueft wird nur
+        # der Kopf bis zum ersten Ausfuehrungscode, damit der Tag-Parameter der
+        # Hilfsfunktion Get-RemoteTagLine nicht faelschlich anschlaegt.
+        header = script.split('$ErrorActionPreference = "Stop"')[0]
+        self.assertIn('ValidateSet("none", "major", "minor", "patch")', header)
+        self.assertNotIn("[string]$Tag", header)
+        self.assertNotIn("$Tag =", header)
+
+    def test_release_script_checks_before_writing(self):
+        script = (ROOT / "release.ps1").read_text(encoding="utf-8")
+        status_pos = script.index('Invoke-Git @("status", "--porcelain")')
+        write_pos = script.index("WriteAllText")
+        # Die Pruefung des Arbeitsbaums muss VOR dem Schreiben der VERSION
+        # liegen: sonst scheitert das Skript an der eigenen Aenderung.
+        self.assertLess(status_pos, write_pos)
+
+    def test_release_script_handles_git_stderr(self):
+        script = (ROOT / "release.ps1").read_text(encoding="utf-8")
+        # git push schreibt Fortschritt nach stderr; mit ErrorActionPreference
+        # "Stop" wuerde das als Fehler geworfen, obwohl der Push gelingt.
+        self.assertIn('$ErrorActionPreference = "Continue"', script)
+        self.assertIn("$LASTEXITCODE", script)
+        self.assertIn("$exitCode", script)
+
+    @unittest.skipUnless(shutil.which("powershell"), "Windows PowerShell nicht verfuegbar")
+    def test_release_script_parses(self):
+        script = str(ROOT / "release.ps1").replace("'", "''")
+        command = (
+            f"$t=$null;$e=$null;"
+            f"[System.Management.Automation.Language.Parser]::ParseFile('{script}',[ref]$t,[ref]$e)|Out-Null;"
+            f"if($e.Count){{throw 'Syntaxfehler in release.ps1'}}"
+        )
+        result = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", command],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr or result.stdout)
+
     @unittest.skipUnless(shutil.which("powershell"), "Windows PowerShell nicht verfuegbar")
     def test_local_config_initialisation_preserves_existing_config(self):
         common = str(ROOT / "lib" / "common.ps1").replace("'", "''")
