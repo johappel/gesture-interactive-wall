@@ -93,8 +93,10 @@ if ($Bump -eq "none") {
     if ($remoteLine) {
         $remoteHead = ($remoteLine -join " " -split '\s+')[0]
         if ($localHead -ne $remoteHead) {
-            throw ("HEAD ({0}) ist nicht auf origin/{1} gepusht. Erst pushen, damit der Tag " +
-                   "einen veroeffentlichten Stand bezeichnet." -f $commit, $branch)
+            # Bewusst Zeichenketten-Interpolation statt -f: der -f-Operator bindet
+            # staerker als +, wodurch Platzhalter in zusammengesetzten Texten
+            # unersetzt bleiben koennen.
+            throw "HEAD ($commit) ist nicht auf origin/$branch gepusht. Erst pushen, damit der Tag einen veroeffentlichten Stand bezeichnet."
         }
     }
 }
