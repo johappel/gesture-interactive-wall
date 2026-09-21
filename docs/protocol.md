@@ -17,7 +17,9 @@ Standard: `127.0.0.1:4242`. Es werden ausschließlich abstrakte Zahlenwerte
       "vx": 0.12,
       "vy": -0.03,
       "intensity": 0.31,
-      "openness": 0.62
+      "openness": 0.62,
+      "presence_time": 8.4,
+      "stillness": 0.73
     }
   ],
   "pairs": [
@@ -49,6 +51,8 @@ Standard: `127.0.0.1:4242`. Es werden ausschließlich abstrakte Zahlenwerte
 | `bodies[].vx/vy`   | ~-1..1    | Geschwindigkeit (Einheiten/s, normiert) |
 | `bodies[].intensity` | 0..1    | Geglättete Bewegungsintensität |
 | `bodies[].openness`  | 0..1    | Armöffnung (0 = geschlossen, 1 = weit) |
+| `bodies[].presence_time` | Sekunden | Dauer der aktuellen anonymen Anwesenheitsepisode; zählt auch über einen begrenzten Detection-Ausfall weiter |
+| `bodies[].stillness` | 0..1 | Geglättete, beobachtete Bewegungsruhe; 0 = zuletzt bewegt, 1 = über Zeit ruhig |
 | `pairs[].a/b`      | int       | IDs der nahen Personen |
 | `pairs[].proximity`| 0..1      | 1 = sehr nah |
 | `pairs[].mx/my`    | 0..1      | Mittelpunkt für die Lichtbrücke |
@@ -83,6 +87,22 @@ eine spätere Rückkehr erhält eine neue Track-ID.
 Der Renderer darf `events` vorerst ignorieren. Phase 4.5A fügt bewusst keine
 Nachwirkungs- oder sonstigen Godot-Effekte hinzu.
 
+## Verweilen-Signale (Phase 4.5B)
+
+`presence_time` und `stillness` werden nur für im jeweiligen Frame sichtbare,
+bestätigte Bodies übertragen. Sie beschreiben weder Identität noch Emotion oder
+eine Geste. `presence_time` beginnt mit der aktuellen anonymen
+Anwesenheitsepisode. Ein Track innerhalb der `track_grace_period` behält seine
+ID und seinen Startzeitpunkt; die Zeit zählt deshalb über einen kurzen
+Detection-Ausfall weiter.
+
+`stillness` entsteht aus der geglätteten beobachteten Torso-/Handbewegung. Der
+Wert steigt und fällt mit Zeitkonstanten, statt ein Zustands-Schalter zu sein.
+Während eines Detection-Ausfalls wird keine nicht beobachtbare Bewegung
+hinzuerfunden: bei Wiederaufnahme bleibt der zuletzt erreichte Stillness-Wert
+erhalten und wird erst mit der nächsten zusammenhängenden Beobachtung erneut
+aktualisiert.
+
 ## Tracking-Konfiguration
 
 Die Schwellenwerte stehen in `config/config.json` unter `features`:
@@ -95,6 +115,9 @@ Die Schwellenwerte stehen in `config/config.json` unter `features`:
 | `departure_min_speed` | Mindestgeschwindigkeit in Auswärtsrichtung für ein `departure` |
 | `track_timeout` | Kompatibilitäts-Fallback, falls `track_grace_period` in älteren Configs fehlt |
 | `track_confirmation_frames` | Zahl konsistenter Erkennungsframes, bevor ein neuer Track sichtbar wird |
+| `stillness_speed_threshold` | Normierte Bewegungsrate, ab der eine Beobachtung nicht mehr als ruhig zählt |
+| `stillness_rise_seconds` | Zeitkonstante, mit der kontinuierliche Ruhe Stillness aufbaut |
+| `stillness_fall_seconds` | Zeitkonstante, mit der neu beobachtete Bewegung Stillness wieder löst |
 
 ## Pose-Qualität und Resonanzraum
 
@@ -116,6 +139,14 @@ mit der echten Kamera erneut geprüft werden.
 - `openness`  → Größe/Ausdehnung der Lichtaura
 - `pairs`     → wachsende Lichtbrücke am Mittelpunkt `mx/my`
 - `crowd.energy` → Gesamtglühen der Fassade
+- `presence_time` + `stillness` → nach einer Mindestdauer ein zurückhaltendes,
+  langsam pulsierendes Resonanzfeld um den vorhandenen Lichtkörper
+
+Die Effektfamilie `effects.stillness_resonance` ist unabhängig schaltbar. Bei
+`enabled: false` wird ihr Feld nicht erzeugt und nicht simuliert. Fassade und
+Nahraum-Monitor nutzen dieselbe Renderer-Ausgabe (`facade_preview`); es wird
+kein Kamerabild übertragen oder angezeigt. Nachwirkungswellen, Rhythmus, Dunst
+und Crowd-Felder sind nicht Teil von Phase 4.5B.
 
 ## OSC (später, Phase 5)
 

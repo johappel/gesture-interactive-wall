@@ -47,6 +47,9 @@ def _make_body_tracker(fcfg: dict) -> BodyTracker:
         departure_edge_margin=fcfg.get("departure_edge_margin", 0.08),
         departure_min_speed=fcfg.get("departure_min_speed", 0.05),
         confirmation_frames=fcfg.get("track_confirmation_frames", 1),
+        stillness_speed_threshold=fcfg.get("stillness_speed_threshold", 0.08),
+        stillness_rise_seconds=fcfg.get("stillness_rise_seconds", 2.5),
+        stillness_fall_seconds=fcfg.get("stillness_fall_seconds", 0.8),
     )
 
 

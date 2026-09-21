@@ -153,6 +153,9 @@ class ConfigTest(unittest.TestCase):
             "departure_edge_margin",
             "departure_min_speed",
             "track_confirmation_frames",
+            "stillness_speed_threshold",
+            "stillness_rise_seconds",
+            "stillness_fall_seconds",
         ):
             self.assertIn(key, cfg["features"])
         for key in ("min_torso_visibility", "active_region"):
@@ -181,6 +184,11 @@ class FrameTest(unittest.TestCase):
         departure = {"id": 7, "edge": "left", "x": 0.01, "y": 0.54}
         frame = build_frame(bodies=[], pairs=[], energy=0.0, t=2.0, departures=[departure])
         self.assertEqual(frame["events"], {"departures": [departure]})
+
+    def test_frame_keeps_presence_and_stillness_body_fields(self):
+        body = {"id": 2, "presence_time": 3.5, "stillness": 0.82}
+        frame = build_frame(bodies=[body], pairs=[], energy=0.0, t=3.5)
+        self.assertEqual(frame["bodies"][0], body)
 
 
 if __name__ == "__main__":

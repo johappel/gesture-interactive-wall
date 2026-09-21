@@ -73,7 +73,13 @@ func _apply(data: Dictionary, delta: float) -> void:
 			add_child(node)
 			_bodies[id] = node
 		node.modulate.a = 1.0
-		node.update_state(pos, float(b.get("intensity", 0.0)), float(b.get("openness", 0.0)))
+		node.update_state(
+			pos,
+			float(b.get("intensity", 0.0)),
+			float(b.get("openness", 0.0)),
+			float(b.get("presence_time", 0.0)),
+			float(b.get("stillness", 0.0)),
+		)
 
 	for id in _bodies.keys():
 		if not seen.has(id):
@@ -297,6 +303,7 @@ func _effect_names() -> Array[String]:
 		"trails",
 		"sparks",
 		"proximity_bridges",
+		"stillness_resonance",
 		"mist",
 		"waves",
 		"floating_bodies",
@@ -318,6 +325,12 @@ func _default_effects() -> Dictionary:
 		"trails": {"enabled": true},
 		"sparks": {"enabled": true},
 		"proximity_bridges": {"enabled": true},
+		"stillness_resonance": {
+			"enabled": true,
+			"min_presence_seconds": 3.0,
+			"pulse_seconds": 6.0,
+			"max_scale": 1.3,
+		},
 	}
 
 func _default_station() -> Dictionary:

@@ -294,3 +294,38 @@ nicht nur die technische Änderung, sondern bei visuellen, sprachlichen oder
 interactionalen Änderungen auch die **sichtbare Wirkung und Resonanzabsicht**.
 Ausgeführte Validierungsbefehle auflisten; bei visuellen Änderungen Screenshot/
 kurzes Video beifügen.
+
+## Subagenten
+
+Delegiere dagegen möglichst an **kostengünstigere Subagents**, sofern verfügbar:
+
+### Geeignet für günstige Subagents
+
+- Repo-Exploration und IST-Analyse einzelner Dateien;
+- Suche nach bisherigen Trackingannahmen;
+- Analyse bestehender Tests;
+- Implementierung klar abgegrenzter Unit-Tests;
+- Ausbau des Simulators nach einer bereits festgelegten Spezifikation;
+- Dokumentationsanpassungen;
+- statische Prüfung auf verwaiste alte Annahmen;
+- Testausführung und Zusammenfassung der Ergebnisse.
+
+### Nicht blind delegieren
+
+Nicht mehrere Agents gleichzeitig dieselbe Kernarchitektur verändern lassen.
+
+Insbesondere folgende Punkte bleiben beim Hauptagenten bzw. müssen von ihm abschließend überprüft werden:
+
+- Track-Lifecycle;
+- Matching-/Reassociation-Logik;
+- `departure`-Entscheidung;
+- Protokolländerung;
+- Referenzintegrität von `bodies`, `pairs`, Crowd-Daten und Events.
+
+Bevorzuge kleine, klar abgegrenzte Subagent-Aufträge.
+
+Wenn ein günstiger Subagent für eine Aufgabe ausreicht, verwende keinen leistungsstärkeren Agenten nur aus Bequemlichkeit.
+
+Parallelisiere nur Arbeit, die sich nicht gegenseitig überschreibt.
+
+---

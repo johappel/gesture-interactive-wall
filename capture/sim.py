@@ -79,6 +79,7 @@ LIFECYCLE_SCENARIOS = (
     "group_left_departure",
     "departure_return",
     "long_run",
+    "stay_resonance",
 )
 
 
@@ -139,6 +140,18 @@ def make_lifecycle_persons(name: str, t: float) -> list[list[tuple[float, float,
         if phase < 2.0:
             return [_person(0.5, 0.5, 0.4)]
         return make_sim_persons(t)
+    if name == "stay_resonance":
+        # A long, quiet episode with a brief detection gap.  It makes the
+        # Phase-4.5B presence/stillness response inspectable without a camera.
+        if t < 4.0:
+            return [_person(0.5, 0.5, 0.25)]
+        if t < 4.2:
+            return []
+        if t < 8.0:
+            return [_person(0.5, 0.5, 0.25)]
+        if t < 9.0:
+            return [_person(0.5 + (t - 8.0) * 0.25, 0.5, 0.7)]
+        return []
     raise ValueError(f"Unknown lifecycle scenario: {name}")
 
 

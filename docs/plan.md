@@ -302,15 +302,34 @@ Zieldramaturgie:
 Automatisierte Tests belegen die Software-Invarianten, nicht jedoch Qualität
 und Robustheit mit realer Kamera, Beleuchtung, Verdeckung oder Publikum.
 
-### 9.2 Noch offen: weitere Phase 4.5
+### 9.2 Phase 4.5B: Bleiben → Resonanz (implementiert, automatisiert getestet)
+
+- Capture sendet für jeden sichtbaren, bestätigten anonymen Track
+  `presence_time` und `stillness` als kontinuierliche Werte. Ein kurzer
+  Detection-Ausfall innerhalb der Grace-Period behält Episode, Anwesenheitszeit
+  und erreichte Stillness bei.
+- `stillness` ist keine Geste, Emotion oder Bewertung, sondern eine geglättete
+  beobachtete Bewegungsruhe. Sie wächst und löst sich zeitlich allmählich.
+- Die neue, separat schaltbare Effektfamilie
+  `effects.stillness_resonance` bildet länger ruhige Anwesenheit als dezentes,
+  langsam pulsierendes Feld um den Lichtkörper ab. Sie friert vorhandene
+  Bewegungseffekte nicht ein. Bei `enabled: false` wird sie weder angelegt noch
+  simuliert. Die Nahraum-Vorschau bleibt dieselbe Renderer-Ausgabe wie die
+  Fassade und zeigt kein Kamerabild.
+- Deterministische Pure-Python-Tests decken Aufbau, graduelles Lösen und einen
+  kurzen Detection-Ausfall ab. Das Simulator-Szenario `stay_resonance` zeigt
+  ruhiges Bleiben, eine kurze Lücke und danach Bewegung.
+
+Automatisierte Tests und Simulator belegen Signal- und Ablauf-Invarianten, aber
+nicht die Sichtbarkeit, Latenz oder Wirkung auf echter Fassade bzw. bei
+Publikum. Diese Punkte bleiben Teil der Realwelt-Abnahme in Phase 5.
+
+### 9.3 Noch offen: weitere Phase 4.5
 
 ### Capture / Features
 
-1. `stillness`
-2. `presence_time`
-3. `verticality` bzw. `contraction`
-4. einfacher zeitlicher `rhythm`
-5. robuste Rand-Austritts-Erkennung (`departure`)
+1. `verticality` bzw. `contraction`
+2. einfacher zeitlicher `rhythm`
 
 Bestehende Signale `intensity`, `openness` und `proximity` weiterverwenden.
 
@@ -319,7 +338,7 @@ Bestehende Signale `intensity`, `openness` und `proximity` weiterverwenden.
 Mindestens simulieren:
 
 - lebendige Bewegung;
-- Ruhe / Verweilen;
+- Ruhe / Verweilen (Phase 4.5B: `stay_resonance`);
 - Öffnung / Verdichtung;
 - zwei Personen kommen zusammen;
 - größere Gruppe;
@@ -328,13 +347,11 @@ Mindestens simulieren:
 
 ### Renderer
 
-1. Funken / Aufstieg;
-2. Ruhe als Verdichtung statt Dunkelwerden;
-3. Nähe als Feld / Dunst zusätzlich zur Linie;
-4. rhythmische Bewegung als dezente Wellenmodulation;
-5. `departure` als zurücklaufende Wasser-/Lichtwelle;
-6. Interaktion der Wellen mit vorhandenen Partikeln/Feldern;
-7. Config-Schalter für jede neue Effektfamilie.
+1. Nähe als Feld / Dunst zusätzlich zur Linie;
+2. rhythmische Bewegung als dezente Wellenmodulation;
+3. `departure` als zurücklaufende Wasser-/Lichtwelle;
+4. Interaktion der Wellen mit vorhandenen Partikeln/Feldern;
+5. Config-Schalter für jede neue Effektfamilie.
 
 ## 10. Nachwirkung / Echo
 

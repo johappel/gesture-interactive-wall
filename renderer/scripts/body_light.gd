@@ -4,10 +4,12 @@ extends Node2D
 
 const GOLD := Color(1.0, 0.78, 0.38)
 const INTENSE := Color(1.0, 0.36, 0.14)
+const StillnessResonanceScript := preload("res://scripts/stillness_resonance.gd")
 
 var _sprite: Sprite2D
 var _particles: GPUParticles2D
 var _trail: Line2D
+var _stillness_resonance
 var _alpha := 1.0
 var _effects: Dictionary = {}
 
@@ -42,7 +44,7 @@ func configure_effects(effects: Dictionary) -> void:
 	if is_node_ready():
 		_apply_effect_config()
 
-func update_state(pos: Vector2, intensity: float, openness: float) -> void:
+func update_state(pos: Vector2, intensity: float, openness: float, presence_time: float, stillness: float) -> void:
 	_alpha = 1.0
 	position = pos
 
@@ -71,6 +73,9 @@ func update_state(pos: Vector2, intensity: float, openness: float) -> void:
 	if _effect_enabled("trails", true):
 		_push_trail(pos)
 
+	if _stillness_resonance != null:
+		_stillness_resonance.update_state(pos, presence_time, stillness)
+
 func fade(delta: float) -> bool:
 	# Returns true when fully faded and safe to remove.
 	_alpha = max(_alpha - delta * 1.2, 0.0)
@@ -97,6 +102,18 @@ func _apply_effect_config() -> void:
 	if sparks_enabled:
 		var sparks := _effect_block("sparks")
 		_particles.lifetime = float(sparks.get("lifetime", 1.4))
+
+	var resonance_enabled := _effect_enabled("stillness_resonance", false)
+	if resonance_enabled and _stillness_resonance == null:
+		_stillness_resonance = StillnessResonanceScript.new()
+		add_child(_stillness_resonance)
+	if resonance_enabled and _stillness_resonance != null:
+		_stillness_resonance.configure(_effect_block("stillness_resonance"))
+	elif not resonance_enabled and _stillness_resonance != null:
+		# Disabled means neither visible nor simulated: remove its process node.
+		_stillness_resonance.set_process(false)
+		_stillness_resonance.queue_free()
+		_stillness_resonance = null
 
 func _push_trail(pos: Vector2) -> void:
 	# Trail lives in world space; keep points in the parent's coordinates.

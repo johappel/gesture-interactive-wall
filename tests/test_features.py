@@ -221,6 +221,44 @@ class TrackLifecycleTest(unittest.TestCase):
         self.assertEqual(tracker.track_count, 0)
 
 
+class PresenceAndStillnessTest(unittest.TestCase):
+    def _tracker(self):
+        return BodyTracker(
+            max_dist=0.3,
+            grace_period=0.5,
+            stillness_speed_threshold=0.08,
+            stillness_rise_seconds=0.5,
+            stillness_fall_seconds=0.5,
+        )
+
+    def test_quiet_presence_accumulates_continuously(self):
+        tracker = self._tracker()
+        tracker.update([person(0.5, 0.5)], 0.0)
+        tracker.update([person(0.5, 0.5)], 0.25)
+        settled = tracker.update([person(0.5, 0.5)], 0.5)[0]
+        self.assertAlmostEqual(settled["presence_time"], 0.5)
+        self.assertGreater(settled["stillness"], 0.6)
+
+    def test_short_detection_gap_preserves_presence_time_and_stillness(self):
+        tracker = self._tracker()
+        tracker.update([person(0.5, 0.5)], 0.0)
+        before_gap = tracker.update([person(0.5, 0.5)], 0.5)[0]
+        tracker.update([], 0.6)
+        recovered = tracker.update([person(0.5, 0.5)], 0.9)[0]
+        self.assertEqual(recovered["id"], before_gap["id"])
+        self.assertAlmostEqual(recovered["presence_time"], 0.9)
+        self.assertAlmostEqual(recovered["stillness"], before_gap["stillness"])
+
+    def test_new_observed_motion_releases_stillness_gradually(self):
+        tracker = self._tracker()
+        tracker.update([person(0.5, 0.5)], 0.0)
+        tracker.update([person(0.5, 0.5)], 0.25)
+        quiet = tracker.update([person(0.5, 0.5)], 0.5)[0]
+        moving = tracker.update([person(0.7, 0.5)], 0.6)[0]
+        self.assertLess(moving["stillness"], quiet["stillness"])
+        self.assertGreater(moving["stillness"], 0.0)
+
+
 class PairsTest(unittest.TestCase):
     def _bodies(self, x_a, x_b):
         return [
@@ -269,12 +307,38 @@ class SimTest(unittest.TestCase):
         self.assertEqual(len(make_phase44_persons(11.0)), 0)
 
     def test_lifecycle_scenarios_are_available_and_deterministic(self):
-        self.assertEqual(len(LIFECYCLE_SCENARIOS), 10)
+        self.assertEqual(len(LIFECYCLE_SCENARIOS), 11)
         for scenario in LIFECYCLE_SCENARIOS:
             self.assertEqual(
                 make_lifecycle_persons(scenario, 0.1),
                 make_lifecycle_persons(scenario, 0.1),
             )
+
+    def test_stay_resonance_scenario_has_a_brief_gap_and_later_movement(self):
+        self.assertEqual(len(make_lifecycle_persons("stay_resonance", 3.9)), 1)
+        self.assertEqual(make_lifecycle_persons("stay_resonance", 4.1), [])
+        self.assertEqual(len(make_lifecycle_persons("stay_resonance", 4.3)), 1)
+        self.assertNotEqual(
+            make_lifecycle_persons("stay_resonance", 8.0),
+            make_lifecycle_persons("stay_resonance", 8.8),
+        )
+
+    def test_stay_resonance_preserves_signals_through_its_detection_gap(self):
+        tracker = BodyTracker(
+            max_dist=0.3,
+            grace_period=0.5,
+            stillness_speed_threshold=0.08,
+            stillness_rise_seconds=0.5,
+            stillness_fall_seconds=0.5,
+        )
+        for t in (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 3.9):
+            body = tracker.update(make_lifecycle_persons("stay_resonance", t), t)[0]
+        before_gap = body
+        self.assertEqual(tracker.update(make_lifecycle_persons("stay_resonance", 4.1), 4.1), [])
+        recovered = tracker.update(make_lifecycle_persons("stay_resonance", 4.3), 4.3)[0]
+        self.assertEqual(recovered["id"], before_gap["id"])
+        self.assertAlmostEqual(recovered["presence_time"], 4.3)
+        self.assertAlmostEqual(recovered["stillness"], before_gap["stillness"])
 
 
 if __name__ == "__main__":

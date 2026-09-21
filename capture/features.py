@@ -112,6 +112,8 @@ class _Track:
         "state",
         "missing_since",
         "seen_frames",
+        "presence_started_at",
+        "stillness",
     )
 
     def __init__(self, tid: int, c: tuple[float, float], wrists, t: float) -> None:
@@ -125,6 +127,10 @@ class _Track:
         self.state = "active"
         self.missing_since: float | None = None
         self.seen_frames = 1
+        # This is an anonymous presence episode, not an identity.  Its clock
+        # deliberately survives a short missing-detection grace period.
+        self.presence_started_at = t
+        self.stillness = 0.0
 
 
 class BodyTracker:
@@ -145,6 +151,9 @@ class BodyTracker:
         departure_edge_margin: float = 0.08,
         departure_min_speed: float = 0.05,
         confirmation_frames: int = 1,
+        stillness_speed_threshold: float = 0.08,
+        stillness_rise_seconds: float = 2.5,
+        stillness_fall_seconds: float = 0.8,
     ) -> None:
         self.max_dist = max_dist
         # ``timeout`` remains accepted for existing callers.  New configs use
@@ -156,6 +165,9 @@ class BodyTracker:
         self.departure_edge_margin = departure_edge_margin
         self.departure_min_speed = departure_min_speed
         self.confirmation_frames = max(int(confirmation_frames), 1)
+        self.stillness_speed_threshold = max(float(stillness_speed_threshold), 1e-6)
+        self.stillness_rise_seconds = max(float(stillness_rise_seconds), 1e-3)
+        self.stillness_fall_seconds = max(float(stillness_fall_seconds), 1e-3)
         self._tracks: dict[int, _Track] = {}
         self._next_id = 0
         self._departures: list[dict] = []
@@ -214,6 +226,15 @@ class BodyTracker:
             "vy": round(tr.vy, 4),
         }
 
+    def _update_stillness(self, tr: _Track, speed: float, dt: float) -> None:
+        """Blend observed movement into a continuous, non-semantic calmness value."""
+        target = min(max(1.0 - speed / self.stillness_speed_threshold, 0.0), 1.0)
+        time_constant = (
+            self.stillness_rise_seconds if target >= tr.stillness else self.stillness_fall_seconds
+        )
+        alpha = 1.0 - math.exp(-max(dt, 0.0) / time_constant)
+        tr.stillness += (target - tr.stillness) * alpha
+
     def update(self, persons: list[Person], t: float) -> list[dict]:
         cents = [centroid(p) for p in persons]
         wrists = [(_pt(p, L_WRIST), _pt(p, R_WRIST)) for p in persons]
@@ -247,6 +268,7 @@ class BodyTracker:
             if i in assigned:
                 tr = self._tracks[assigned[i]]
                 dt = max(t - tr.t, 1e-3)
+                reassociated_after_gap = tr.state == "temporarily_missing"
                 vx = (c[0] - tr.centroid[0]) / dt
                 vy = (c[1] - tr.centroid[1]) / dt
                 wrist_speed = (
@@ -257,6 +279,11 @@ class BodyTracker:
                 raw = min(speed * self.intensity_scale, 1.0)
                 alpha = self.smoothing
                 tr.intensity = tr.intensity * (1.0 - alpha) + raw * alpha
+                # A gap carries no observed movement.  Do not turn the
+                # position delta across it into an artificial stillness reset;
+                # the next contiguous observation resumes the smooth update.
+                if not reassociated_after_gap:
+                    self._update_stillness(tr, speed, dt)
                 tr.centroid, tr.wrists, tr.t = c, wrists[i], t
                 tr.vx, tr.vy = vx, vy
                 tr.state = "active"
@@ -280,6 +307,8 @@ class BodyTracker:
                         "vy": round(vy, 4),
                         "intensity": round(tr.intensity, 4),
                         "openness": round(openness(p), 4),
+                        "presence_time": round(max(t - tr.presence_started_at, 0.0), 4),
+                        "stillness": round(tr.stillness, 4),
                     }
                 )
 
