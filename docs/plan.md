@@ -111,8 +111,8 @@ Bevorzugter Impuls:
 | 2 | Renderer-MVP: Lichtgestalten, Bloom | ✅ |
 | 3 | Leuchtspuren (Trails) | ✅ |
 | 4 | Multi-Person + Lichtbrücken (Nähe) | ✅ |
-| **4.4** | **Nahraum-Monitor + Sprachimpuls + technische Rückkopplung** | ✅ **technisch integriert; bereit für Abnahme** |
-| **4.5** | **Resonanzgrammatik + Nachwirkung + Effektsteuerung** | danach |
+| 4.4 | **Nahraum-Monitor + Sprachimpuls + technische Rückkopplung** | ✅ **technisch integriert; bereit für Abnahme** |
+| 4.5 | **Resonanzgrammatik + Nachwirkung + Effektsteuerung** | danach |
 | 5 | Realwelt-Test: Beleuchtung, Distanz, 2–20 Personen, Verständlichkeit | offen |
 | 6 | Projektion & Kalibrierung | offen |
 | 7 | Hardware / Robustheit | offen |

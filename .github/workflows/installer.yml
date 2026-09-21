@@ -1,0 +1,69 @@
+name: Installer bauen
+
+# Baut WIRKLICHT-Setup-<Version>.exe und legt sie als Artefakt ab.
+#
+# Ausloeser:
+#   - manuell (workflow_dispatch) fuer einen Probelauf
+#   - ein Tag der Form v0.5.4 erzeugt zusaetzlich ein GitHub-Release
+#
+# Bewusst nicht bei jedem Push: der Installer ist ein Betriebsmittel, kein
+# Entwicklungsergebnis. Vor einem Veranstaltungseinsatz wird er gezielt gebaut.
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Projekt auschecken
+        uses: actions/checkout@v4
+
+      - name: Version ermitteln
+        id: version
+        shell: pwsh
+        run: |
+          $version = (Get-Content -LiteralPath VERSION -Raw).Trim()
+          if ([string]::IsNullOrWhiteSpace($version)) { throw "VERSION ist leer." }
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Inno Setup bereitstellen
+        shell: pwsh
+        run: |
+          # Chocolatey ist auf windows-latest vorhanden; winget ist dort nicht
+          # verlaesslich verfuegbar.
+          choco install innosetup --yes --no-progress
+
+      - name: Installer bauen
+        shell: pwsh
+        run: |
+          ./installer/build.ps1 -Version "${{ steps.version.outputs.version }}"
+
+      - name: Setup.exe pruefen
+        shell: pwsh
+        run: |
+          $expected = "dist/WIRKLICHT-Setup-${{ steps.version.outputs.version }}.exe"
+          if (-not (Test-Path -LiteralPath $expected)) { throw "Setup.exe fehlt: $expected" }
+          $size = (Get-Item -LiteralPath $expected).Length
+          if ($size -lt 1MB) { throw "Setup.exe ist unerwartet klein: $size Bytes" }
+          Write-Host ("Setup.exe: {0} ({1} MB)" -f $expected, [math]::Round($size / 1MB, 2))
+
+      - name: Artefakt ablegen
+        uses: actions/upload-artifact@v4
+        with:
+          name: WIRKLICHT-Setup-${{ steps.version.outputs.version }}
+          path: dist/*.exe
+          if-no-files-found: error
+
+      - name: Release anlegen
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.exe
+          generate_release_notes: true

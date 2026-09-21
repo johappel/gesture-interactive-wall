@@ -12,9 +12,28 @@ Eingangsbereich des Kirchenamtes wird lokal per Kamera erfasst. Ein Rechner
 
 ## QUICKSTART - Windows
 
-Auf einem Windows-Rechner kann WIRKLICHT mit einem einzigen PowerShell-Befehl
-eingerichtet werden. PowerShell oeffnen, den folgenden Befehl einfuegen und
-ausfuehren:
+Auf einem Windows-Rechner kann WIRKLICHT auf zwei Wegen eingerichtet werden.
+
+### Empfohlen: Installer herunterladen
+
+Unter [Releases](https://github.com/johappel/gesture-interactive-wall/releases)
+`WIRKLICHT-Setup-<Version>.exe` herunterladen und doppelklicken. Der Installer
+enthaelt den vollstaendigen Projektcode und richtet danach Python 3.11, Godot,
+MediaPipe/OpenCV, das Pose-Modell, die Kameraauswahl und die
+Desktop-Verknuepfungen ein.
+
+Godot, Python und die Python-Pakete werden waehrend der Installation
+nachgeladen. Die Installation dauert daher einige Minuten und benoetigt
+Internet. Das Fenster zeigt dabei den echten Fortschritt.
+
+> Der Installer ist **nicht** code-signiert. Windows SmartScreen zeigt deshalb
+> einmalig „Windows hat den Start dieser App verhindert" bzw. „Unbekannter
+> Herausgeber". Ueber **Weitere Informationen → Trotzdem ausfuehren** fortfahren.
+> Das ist keine Malware-Warnung, sondern die Folge der fehlenden Signatur.
+
+### Alternativ: PowerShell-Befehl
+
+PowerShell oeffnen, den folgenden Befehl einfuegen und ausfuehren:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -Command "& ([scriptblock]::Create((irm https://raw.githubusercontent.com/johappel/gesture-interactive-wall/main/install.ps1)))"
@@ -32,10 +51,10 @@ powershell -ExecutionPolicy Bypass -Command "& ([scriptblock]::Create((irm https
 > Version geprueft und danach nicht mehr kurzfristig automatisch aktualisiert
 > werden.
 
-### Empfohlen: Skript zuerst speichern, dann ausfuehren
+### Ganz ohne Warnung: Skript zuerst speichern
 
-Wer die Warnung vollstaendig vermeiden will, laedt das Skript herunter, sieht es
-sich an und startet es als lokale Datei:
+Wer die Defender- oder SmartScreen-Warnung vollstaendig vermeiden will, laedt
+das Skript herunter, sieht es sich an und startet es als lokale Datei:
 
 ```powershell
 $dir = Join-Path $env:TEMP "wirklicht-setup"
@@ -67,6 +86,21 @@ Remove-MpPreference -ExclusionPath (Join-Path $env:TEMP "wirklicht-setup")
 
 Eine dauerhafte Ausnahme fuer `C:\WIRKLICHT` ist **nicht** noetig und sollte
 vermieden werden.
+
+### Installer selbst bauen
+
+Wer den Installer aus dem Quelltext erzeugen will, braucht
+[Inno Setup 6](https://jrsoftware.org/isdl.php) und ruft auf:
+
+```powershell
+winget install --id JRSoftware.InnoSetup --accept-package-agreements --accept-source-agreements
+powershell -ExecutionPolicy Bypass -File installer\build.ps1
+```
+
+Das Ergebnis landet als `dist\WIRKLICHT-Setup-<Version>.exe`. Die Version kommt
+aus der Datei `VERSION`, damit Installer und Projekt nicht auseinanderlaufen.
+Der GitHub-Workflow `.github/workflows/installer.yml` baut dasselbe Paket bei
+einem Tag `v*` und haengt es an das Release.
 
 Der Installer richtet Python 3.11, Godot, WIRKLICHT, MediaPipe/OpenCV, das
 Pose-Modell, die Kameraauswahl und Desktop-Verknuepfungen ein. Git ist nicht

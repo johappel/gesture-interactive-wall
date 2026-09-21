@@ -710,6 +710,22 @@ function Download-WirklichtArchive {
     }
 }
 
+function Initialize-WirklichtLocalConfig {
+    # Eine bestehende Betriebsconfig wird nie ueberschrieben: sie enthaelt die
+    # gewaehlte Kamera und die Bildschirmzuordnung des Veranstaltungsorts.
+    # Fehlt sie, wird sie aus der mitgelieferten Vorlage angelegt.
+    $configPath = Join-Path $script:WirklichtRoot "config\config.json"
+    if (Test-Path -LiteralPath $configPath) { return $configPath }
+    $templatePath = Join-Path $script:WirklichtRoot "config\config.json.template"
+    if (-not (Test-Path -LiteralPath $templatePath)) {
+        Write-WirklichtLog -Path (Get-WirklichtLogPath "install.log") -Message "Keine Config-Vorlage gefunden; es wird keine lokale Config angelegt."
+        return $null
+    }
+    Copy-Item -LiteralPath $templatePath -Destination $configPath -Force
+    Write-Host "Lokale Konfiguration aus der Vorlage angelegt: config\config.json"
+    return $configPath
+}
+
 function Sync-WirklichtProject {
     param([string]$SourceRoot, [string]$DestinationRoot)
     $existingConfig = Test-Path -LiteralPath (Join-Path $DestinationRoot "config\config.json")
@@ -759,6 +775,12 @@ function Invoke-WirklichtInstallation {
             Sync-WirklichtProject -SourceRoot $archive.Root -DestinationRoot $script:WirklichtRoot | Out-Null
             Remove-Item -LiteralPath $archive.TemporaryDirectory -Recurse -Force -ErrorAction SilentlyContinue
             Write-WirklichtStep "Projektdateien" "OK" Green
+        } else {
+            # Der aufrufende Installer hat die Programmdateien bereits entpackt.
+            # Hier wird nur noch die lokale Betriebsconfig ergaenzt, damit eine
+            # frische Installation sofort startfaehig ist.
+            Write-WirklichtStep "Projektdateien" "bereits vorhanden" Green
+            Initialize-WirklichtLocalConfig
         }
         $python = Ensure-WirklichtPython
         Write-WirklichtStep "Python 3.11" "OK" Green

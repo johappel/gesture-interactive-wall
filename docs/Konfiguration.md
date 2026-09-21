@@ -20,6 +20,21 @@ Architekturregeln stehen in `AGENTS.md`, das Datenformat in `docs/protocol.md`.
 - Die Datei wird als UTF-8 (mit oder ohne BOM) gelesen. Echte Umlaute sind
   erlaubt.
 
+## Woher die Datei kommt
+
+Bei einer Installation über `installer/` oder `install.ps1` entsteht
+`config/config.json` **einmalig** aus der mitgelieferten Vorlage
+`config/config.json.template`. Danach wird sie nie wieder angefasst:
+
+- `install.ps1` schützt sie in `Sync-WirklichtProject` vor jedem Update.
+- Der Installer liefert sie bewusst **nicht** mit, sondern nur die Vorlage.
+- `update.ps1` legt vor jeder Änderung eine Sicherung unter
+  `C:\WIRKLICHT\backup` an.
+
+Kamera-Index, Bildschirmzuordnung und Effektschalter am Veranstaltungsort
+überleben damit Updates. Wer die Vorlage ändert, ändert nur frische
+Installationen — bestehende bleiben unberührt.
+
 ---
 
 ## `camera` — Kameraquelle (Capture)

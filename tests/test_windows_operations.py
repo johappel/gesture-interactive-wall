@@ -149,5 +149,87 @@ Remove-Item -LiteralPath $tmp -Recurse -Force
         self.assertEqual(result.returncode, 0, result.stderr or result.stdout)
 
 
+class InstallerContractTest(unittest.TestCase):
+    """Der Inno-Setup-Installer ist nur eine Huelle um die geprueften Skripte.
+
+    Diese Tests halten die Zusagen fest, die dabei leicht verloren gehen: das
+    Zielverzeichnis wird durchgereicht, die lokale Betriebsconfig bleibt
+    unangetastet und der Installationslauf bleibt sichtbar.
+    """
+
+    def test_installer_artifacts_exist(self):
+        self.assertTrue((ROOT / "installer" / "wirklicht.iss").is_file())
+        self.assertTrue((ROOT / "installer" / "build.ps1").is_file())
+
+    def test_installer_script_keeps_operator_guarantees(self):
+        iss = (ROOT / "installer" / "wirklicht.iss").read_text(encoding="utf-8")
+        # Ohne -InstallPath faellt install.ps1 auf C:\WIRKLICHT zurueck und
+        # wuerde ein abweichend gewaehltes Zielverzeichnis still ignorieren.
+        self.assertIn('-SkipProjectDownload -InstallPath ""{app}""', iss)
+        # Die Betriebsconfig des Veranstaltungsorts darf nie ueberschrieben
+        # werden; fuer frische Installationen gibt es eine Vorlage.
+        self.assertIn('Excludes: "config.json,local.json"', iss)
+        self.assertIn("config.json.template", iss)
+        # Kein stiller Lauf: Python, Godot und die Pakete werden nachgeladen,
+        # ein verstecktes Fenster wirkte ueber Minuten wie ein Haenger. Geprueft
+        # wird die Flags-Zeile selbst, nicht ein Kommentar darueber.
+        install_run = [line for line in iss.splitlines() if line.strip().startswith("Flags:")]
+        self.assertTrue(install_run, "Der Installationslauf fehlt in [Run]")
+        for line in install_run:
+            self.assertNotIn("runhidden", line)
+        # Kein UAC-Dialog, entsprechend dem bisherigen Verhalten.
+        self.assertIn("PrivilegesRequired=lowest", iss)
+        # Laufzeitdateien werden beim Deinstallieren mit entfernt, die
+        # Betriebseinstellungen und Sicherungen aber nicht.
+        self.assertIn("[UninstallDelete]", iss)
+        self.assertNotIn('Name: "{app}\\config"', iss)
+        self.assertNotIn('Name: "{app}\\backup"', iss)
+        # Der Start erfolgt ueber die vorhandene .cmd, nicht ueber einen
+        # zweiten, abweichenden Startweg.
+        self.assertIn("WIRKLICHT starten.cmd", iss)
+
+    def test_build_script_derives_version_from_project(self):
+        build = (ROOT / "installer" / "build.ps1").read_text(encoding="utf-8")
+        # Installer und Projekt duerfen nicht auseinanderlaufen.
+        self.assertIn('Join-Path $root "VERSION"', build)
+        self.assertIn("ConvertTo-FourPartVersion", build)
+        # Inno braucht vier Zahlstellen fuer die Versionsinformationen.
+        self.assertIn("/DVersionNumeric=", build)
+
+    @unittest.skipUnless(shutil.which("powershell"), "Windows PowerShell nicht verfuegbar")
+    def test_local_config_initialisation_preserves_existing_config(self):
+        common = str(ROOT / "lib" / "common.ps1").replace("'", "''")
+        command = """
+$tmp = Join-Path ([IO.Path]::GetTempPath()) ('wirklicht-cfg-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Force -Path (Join-Path $tmp 'config') | Out-Null
+. '__COMMON__'; Set-WirklichtRoot -Path $tmp
+
+# 1. Frische Installation: aus der Vorlage entsteht die lokale Config.
+Set-Content -LiteralPath (Join-Path $tmp 'config\\config.json.template') -Value '{"marker":"vorlage"}'
+[void](Initialize-WirklichtLocalConfig)
+if (-not (Test-Path -LiteralPath (Join-Path $tmp 'config\\config.json'))) { throw 'Config wurde nicht aus der Vorlage angelegt' }
+
+# 2. Eine bestehende Betriebsconfig bleibt unangetastet.
+Set-Content -LiteralPath (Join-Path $tmp 'config\\config.json') -Value '{"marker":"lokal"}'
+[void](Initialize-WirklichtLocalConfig)
+if ((Get-Content (Join-Path $tmp 'config\\config.json') -Raw) -notmatch 'lokal') { throw 'Bestehende Config wurde ueberschrieben' }
+
+# 3. Ohne Vorlage passiert nichts und es gibt keinen Fehler.
+Remove-Item -LiteralPath (Join-Path $tmp 'config\\config.json') -Force
+Remove-Item -LiteralPath (Join-Path $tmp 'config\\config.json.template') -Force
+if ($null -ne (Initialize-WirklichtLocalConfig)) { throw 'Ohne Vorlage darf kein Pfad gemeldet werden' }
+
+Remove-Item -LiteralPath $tmp -Recurse -Force
+"""
+        command = command.replace("__COMMON__", common)
+        result = subprocess.run(
+            ["powershell", "-NoProfile", "-Command", command],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr or result.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()
