@@ -71,7 +71,7 @@
                                   },
                     "trails":  {
                                    "enabled":  true,
-                                   "max_points":  10,
+                                   "max_points":  15,
                                    "width":  20.0
                                },
                     "sparks":  {
@@ -107,19 +107,19 @@
                                               "group_width_per_departure":  0.10,
                                               "duration_seconds":  4.8,
                                               "initial_origin_outset":  0.03,
-                                              "origin_escape_distance":  0.16,
+                                              "origin_escape_distance":  0.15,
                                               "start_radius":  0.03,
-                                              "propagation_speed":  0.20,
+                                              "propagation_speed":  0.15,
                                               "band_width":  0.09,
                                               "source_glow_radius":  0.16,
                                               "echo_spacing":  0.15,
-                                              "echo_strength":  0.28,
-                                              "max_alpha":  0.26,
+                                              "echo_strength":  0.058,
+                                              "max_alpha":  0.16,
                                               "fade_start_progress":  0.15,
-                                              "fade_end_progress":  0.92,
+                                              "fade_end_progress":  0.99,
                                               "glow_strength":  1.55,
-                                              "warm_color":  "#fff0bd",
-                                              "blue_color":  "#5caeff",
+                                              "warm_color":  "#ffcd79",
+                                              "blue_color":  "#164155",
                                               "dedupe_seconds":  5.0
                                           },
                     "crowd_field":  {
