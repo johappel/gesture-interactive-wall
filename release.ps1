@@ -84,6 +84,21 @@ $branch = (Invoke-Git @("rev-parse", "--abbrev-ref", "HEAD")) -join ""
 $commit = (Invoke-Git @("rev-parse", "--short", "HEAD")) -join ""
 $head = (Invoke-Git @("log", "-1", "--pretty=%s")) -join ""
 
+# Der Tag bezeichnet einen Commit, der auch auf origin liegen muss. Sonst zeigt
+# das Release auf einen Stand, den das Remote-Repository nicht kennt. Bei
+# -Bump wird ohnehin gepusht, daher betrifft das nur den reinen Tag-Fall.
+if ($Bump -eq "none") {
+    $localHead = (Invoke-Git @("rev-parse", "HEAD")) -join ""
+    $remoteLine = (& git -C $root ls-remote origin ("refs/heads/" + $branch) 2>$null)
+    if ($remoteLine) {
+        $remoteHead = ($remoteLine -join " " -split '\s+')[0]
+        if ($localHead -ne $remoteHead) {
+            throw ("HEAD ({0}) ist nicht auf origin/{1} gepusht. Erst pushen, damit der Tag " +
+                   "einen veroeffentlichten Stand bezeichnet." -f $commit, $branch)
+        }
+    }
+}
+
 Write-Host ""
 Write-Host "Release wird vorbereitet:" -ForegroundColor Cyan
 Write-Host ("  Version : {0}" -f $targetVersion)
