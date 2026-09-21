@@ -17,13 +17,56 @@ eingerichtet werden. PowerShell oeffnen, den folgenden Befehl einfuegen und
 ausfuehren:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/johappel/gesture-interactive-wall/main/install.ps1 | iex"
+powershell -ExecutionPolicy Bypass -Command "& ([scriptblock]::Create((irm https://raw.githubusercontent.com/johappel/gesture-interactive-wall/main/install.ps1)))"
 ```
+
+> **Warum nicht `| iex`?** Die Kurzform `irm ... | iex` ist das klassische
+> Muster fuer Remote-Code-Ausfuehrung. Windows Defender und andere Scanner
+> melden sie heuristisch als `Trojan:Win32/Commando.A!ml` — ein **Fehlalarm**,
+> kein echter Fund. Der Befehl oben laedt dasselbe offizielle Skript, vermeidet
+> aber das erkannte Muster. Wird trotzdem gewarnt, ist das Skript zuvor lokal
+> zu speichern und auszufuehren (siehe unten).
 
 > Sicherheit: Dieser Befehl fuehrt bewusst das offizielle Installationsskript
 > direkt von GitHub aus. Vor einem Veranstaltungseinsatz sollte die verwendete
 > Version geprueft und danach nicht mehr kurzfristig automatisch aktualisiert
 > werden.
+
+### Empfohlen: Skript zuerst speichern, dann ausfuehren
+
+Wer die Warnung vollstaendig vermeiden will, laedt das Skript herunter, sieht es
+sich an und startet es als lokale Datei:
+
+```powershell
+$dir = Join-Path $env:TEMP "wirklicht-setup"
+New-Item -ItemType Directory -Force -Path $dir | Out-Null
+$file = Join-Path $dir "install.ps1"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/johappel/gesture-interactive-wall/main/install.ps1" -OutFile $file -UseBasicParsing
+Get-Content $file | Select-Object -First 20   # kurz pruefen
+powershell -ExecutionPolicy Bypass -File $file
+```
+
+Alternativ das Repository als ZIP herunterladen, entpacken und
+`install.ps1` per Rechtsklick **Mit PowerShell ausfuehren** starten.
+
+### Falls Defender die Datei blockiert
+
+Wurde die Datei bereits in Quarantaene verschoben, ist sie nach der Pruefung
+wiederherstellbar:
+
+```powershell
+# Nur nach eigener Pruefung des Skripts ausfuehren.
+Add-MpPreference -ExclusionPath (Join-Path $env:TEMP "wirklicht-setup")
+```
+
+Die Ausnahme danach wieder entfernen:
+
+```powershell
+Remove-MpPreference -ExclusionPath (Join-Path $env:TEMP "wirklicht-setup")
+```
+
+Eine dauerhafte Ausnahme fuer `C:\WIRKLICHT` ist **nicht** noetig und sollte
+vermieden werden.
 
 Der Installer richtet Python 3.11, Godot, WIRKLICHT, MediaPipe/OpenCV, das
 Pose-Modell, die Kameraauswahl und Desktop-Verknuepfungen ein. Git ist nicht
