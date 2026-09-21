@@ -47,8 +47,23 @@ function Add-VersionBump {
 
 function Invoke-Git {
     param([string[]]$Arguments)
-    $output = & git -C $root @Arguments 2>&1
-    if ($LASTEXITCODE -ne 0) { throw ("git " + ($Arguments -join " ") + " fehlgeschlagen:`n" + ($output -join "`n")) }
+    # git schreibt Fortschritt (z.B. "To https://..." beim Push) nach stderr.
+    # Mit $ErrorActionPreference = "Stop" wuerde PowerShell das als Fehler
+    # werfen, obwohl der Befehl gelingt. Daher hier gezielt auf Continue
+    # schalten und allein den Exit-Code als Wahrheit verwenden.
+    $previous = $ErrorActionPreference
+    try {
+        $ErrorActionPreference = "Continue"
+        $output = & git -C $root @Arguments 2>&1
+        $exitCode = $LASTEXITCODE
+    } finally {
+        $ErrorActionPreference = $previous
+    }
+    if ($exitCode -ne 0) {
+        # NativeCommandError-Objekte lesbar machen.
+        $text = ($output | ForEach-Object { $_.ToString() }) -join "`n"
+        throw ("git " + ($Arguments -join " ") + " fehlgeschlagen (Exit $exitCode):`n" + $text)
+    }
     return $output
 }
 
