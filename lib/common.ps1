@@ -459,6 +459,103 @@ function Save-WirklichtCameraSelection {
     Write-WirklichtJson -Path $configPath -Value $config
 }
 
+function Get-WirklichtAvailableScreens {
+    # Windows supplies the operator-facing screen list. The stored geometry is
+    # also read by Godot, so the renderer is not coupled to this enumeration order.
+    try {
+        Add-Type -AssemblyName System.Windows.Forms -ErrorAction Stop
+        $screens = @([System.Windows.Forms.Screen]::AllScreens)
+        $result = New-Object System.Collections.Generic.List[object]
+        for ($index = 0; $index -lt $screens.Count; $index++) {
+            $bounds = $screens[$index].Bounds
+            [void]$result.Add([pscustomobject]@{
+                index = $index
+                x = [int]$bounds.X
+                y = [int]$bounds.Y
+                width = [int]$bounds.Width
+                height = [int]$bounds.Height
+                primary = [bool]$screens[$index].Primary
+            })
+        }
+        return @($result)
+    } catch {
+        throw "Die verfügbaren Bildschirme konnten nicht abgefragt werden."
+    }
+}
+
+function Find-WirklichtConfiguredScreen {
+    param([object[]]$Screens, [object]$Facade)
+    if ($null -eq $Facade) { return $null }
+    $signature = $Facade.display
+    if ($null -ne $signature) {
+        $required = @("x", "y", "width", "height")
+        $complete = $true
+        foreach ($key in $required) {
+            if ($null -eq $signature.PSObject.Properties[$key]) { $complete = $false; break }
+        }
+        if ($complete) {
+            $match = $Screens | Where-Object {
+                $_.x -eq [int]$signature.x -and $_.y -eq [int]$signature.y -and
+                $_.width -eq [int]$signature.width -and $_.height -eq [int]$signature.height
+            } | Select-Object -First 1
+            if ($null -ne $match) { return $match }
+            return $null
+        }
+    }
+    return $null
+}
+
+function Save-WirklichtFacadeScreenSelection {
+    param([object]$Screen)
+    $configPath = Join-Path $script:WirklichtRoot "config\config.json"
+    $config = Read-WirklichtJson $configPath
+    if ($null -eq $config.station) { $config | Add-Member -MemberType NoteProperty -Name "station" -Value ([pscustomobject]@{}) }
+    if ($null -eq $config.station.facade) { $config.station | Add-Member -MemberType NoteProperty -Name "facade" -Value ([pscustomobject]@{}) }
+    $facade = $config.station.facade
+    $screenProperty = $facade.PSObject.Properties["screen"]
+    if ($null -eq $screenProperty) { $facade | Add-Member -MemberType NoteProperty -Name "screen" -Value ([int]$Screen.index) }
+    else { $screenProperty.Value = [int]$Screen.index }
+    $signature = [pscustomobject]@{
+        x = [int]$Screen.x
+        y = [int]$Screen.y
+        width = [int]$Screen.width
+        height = [int]$Screen.height
+        primary = [bool]$Screen.primary
+    }
+    $displayProperty = $facade.PSObject.Properties["display"]
+    if ($null -eq $displayProperty) { $facade | Add-Member -MemberType NoteProperty -Name "display" -Value $signature }
+    else { $displayProperty.Value = $signature }
+    Write-WirklichtJson -Path $configPath -Value $config
+}
+
+function Select-WirklichtFacadeScreen {
+    param([switch]$NonInteractive, [switch]$NoPrompt)
+    $configPath = Join-Path $script:WirklichtRoot "config\config.json"
+    $config = Read-WirklichtJson $configPath
+    $screens = @(Get-WirklichtAvailableScreens)
+    if ($screens.Count -eq 0) { throw "Kein Bildschirm wurde von Windows erkannt." }
+    $facade = if ($config.station) { $config.station.facade } else { $null }
+    $selected = Find-WirklichtConfiguredScreen -Screens $screens -Facade $facade
+    if ($null -ne $selected) {
+        Save-WirklichtFacadeScreenSelection -Screen $selected
+        return $selected
+    }
+    if ($screens.Count -eq 1) {
+        Save-WirklichtFacadeScreenSelection -Screen $screens[0]
+        return $screens[0]
+    }
+    if ($NonInteractive) {
+        $primary = $screens | Where-Object { $_.primary } | Select-Object -First 1
+        if ($null -eq $primary) { $primary = $screens[0] }
+        Save-WirklichtFacadeScreenSelection -Screen $primary
+        return $primary
+    }
+    if ($NoPrompt) {
+        throw "Für mehrere Bildschirme ist noch keine Fassaden-Ausgabe gespeichert oder der gespeicherte Bildschirm fehlt."
+    }
+    throw "Bitte zuerst einen Bildschirm für die Fassade auswählen."
+}
+
 function Select-WirklichtCamera {
     param([string]$VenvPython, [switch]$NonInteractive, [switch]$NoPrompt)
     $configPath = Join-Path $script:WirklichtRoot "config\config.json"
@@ -641,6 +738,7 @@ function Invoke-WirklichtInstallation {
         }
         New-WirklichtShortcut -Name "WIRKLICHT starten" -ScriptName "start.ps1" -Description "WIRKLICHT starten" | Out-Null
         New-WirklichtShortcut -Name "WIRKLICHT Kamera waehlen" -ScriptName "camera-select.ps1" -Description "WIRKLICHT Kamera auswaehlen und testen" | Out-Null
+        New-WirklichtShortcut -Name "WIRKLICHT Bildschirm waehlen" -ScriptName "monitor-select.ps1" -Description "Fassaden-Bildschirm auswählen" | Out-Null
         New-WirklichtShortcut -Name "WIRKLICHT Hilfe & Diagnose" -ScriptName "diagnose.ps1" -Description "WIRKLICHT Hilfe und Diagnose" | Out-Null
         Write-WirklichtStep "Desktop-Verknuepfungen" "OK" Green
         Write-Host ("Start-Verknuepfungen: " + ((Get-WirklichtShortcutDirectories) -join ", "))

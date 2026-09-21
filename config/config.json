@@ -43,7 +43,7 @@
                  },
     "station":  {
                     "facade":  {
-                                   "screen":  1,
+                                   "screen":  0,
                                    "fullscreen":  true
                                },
                     "monitor":  {

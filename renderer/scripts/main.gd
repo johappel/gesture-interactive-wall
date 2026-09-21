@@ -73,6 +73,11 @@ func _process(delta: float) -> void:
 			_fade_all(delta)
 
 	_update_monitor_prompt(delta)
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.alt_pressed and event.keycode == KEY_ENTER:
+		_toggle_facade_fullscreen()
+		get_viewport().set_input_as_handled()
 	queue_redraw()
 
 func _apply(data: Dictionary, delta: float) -> void:
@@ -378,25 +383,61 @@ func _setup_facade_output() -> void:
 	if not (facade_cfg is Dictionary):
 		return
 	_print_available_screens()
-	_facade_screen = _resolve_screen(int(facade_cfg.get("screen", 0)), "station.facade.screen")
+	_facade_screen = _resolve_facade_screen(facade_cfg)
 	var facade_window := get_window()
 	facade_window.current_screen = _facade_screen
 	facade_window.mode = Window.MODE_FULLSCREEN if bool(facade_cfg.get("fullscreen", true)) else Window.MODE_WINDOWED
 	print("WIRKLICHT Fassade: Bildschirm %d, %s" % [_facade_screen, "Vollbild" if facade_window.mode == Window.MODE_FULLSCREEN else "Fenster"])
 
+func _resolve_facade_screen(facade_cfg: Dictionary) -> int:
+	var display_signature = facade_cfg.get("display", {})
+	if display_signature is Dictionary:
+		var required_keys := ["x", "y", "width", "height"]
+		var has_signature := true
+		for key in required_keys:
+			if not display_signature.has(key):
+				has_signature = false
+				break
+		if has_signature:
+			for screen_index in range(DisplayServer.get_screen_count()):
+				var position := DisplayServer.screen_get_position(screen_index)
+				var size := DisplayServer.screen_get_size(screen_index)
+				if position.x == int(display_signature["x"]) and position.y == int(display_signature["y"]) and size.x == int(display_signature["width"]) and size.y == int(display_signature["height"]):
+					print("WIRKLICHT gespeicherte Fassaden-Ausgabe: Bildschirm %d" % screen_index)
+					return screen_index
+			push_warning("Die gespeicherte Fassaden-Ausgabe ist nicht verfügbar; verwende Hauptbildschirm.")
+			return _primary_screen()
+	return _resolve_screen(int(facade_cfg.get("screen", 0)), "station.facade.screen")
+
 func _resolve_screen(requested_screen: int, label: String) -> int:
 	var screen_count := DisplayServer.get_screen_count()
 	if requested_screen >= 0 and requested_screen < screen_count:
 		return requested_screen
-	push_warning("%s=%d ist nicht verfuegbar; verwende Bildschirm 0 von %d." % [label, requested_screen, screen_count])
-	return 0
+	push_warning("%s=%d ist nicht verfügbar; verwende Hauptbildschirm von %d." % [label, requested_screen, screen_count])
+	return _primary_screen()
+
+func _primary_screen() -> int:
+	if DisplayServer.get_screen_count() <= 0:
+		return 0
+	return DisplayServer.get_primary_screen()
 
 func _print_available_screens() -> void:
-	var screens: Array[String] = []
+	print("Detected screens: %d" % DisplayServer.get_screen_count())
+	var primary_screen := _primary_screen()
 	for screen_index in range(DisplayServer.get_screen_count()):
 		var size := DisplayServer.screen_get_size(screen_index)
-		screens.append("%d=%dx%d" % [screen_index, size.x, size.y])
-	print("WIRKLICHT erkannte Anzeigen: " + ", ".join(screens))
+		var position := DisplayServer.screen_get_position(screen_index)
+		print("Screen %d: position: %d,%d; size: %dx%d; primary: %s" % [screen_index, position.x, position.y, size.x, size.y, "true" if screen_index == primary_screen else "false"])
+
+func _toggle_facade_fullscreen() -> void:
+	var facade_window := get_window()
+	if facade_window.mode == Window.MODE_FULLSCREEN:
+		facade_window.mode = Window.MODE_WINDOWED
+		print("WIRKLICHT Fassade: Vollbild beendet (Alt+Enter).")
+		return
+	facade_window.current_screen = _facade_screen
+	facade_window.mode = Window.MODE_FULLSCREEN
+	print("WIRKLICHT Fassade: Vollbild auf Bildschirm %d aktiviert (Alt+Enter)." % _facade_screen)
 
 func _update_monitor_prompt(delta: float) -> void:
 	if _monitor_prompt == null or _monitor_closed:
