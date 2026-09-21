@@ -152,8 +152,11 @@ class ConfigTest(unittest.TestCase):
             "track_grace_period",
             "departure_edge_margin",
             "departure_min_speed",
+            "track_confirmation_frames",
         ):
             self.assertIn(key, cfg["features"])
+        for key in ("min_torso_visibility", "active_region"):
+            self.assertIn(key, cfg["pose"])
 
     def test_config_loader_accepts_windows_utf8_bom(self):
         data = b'\xef\xbb\xbf{"camera":{"index":701}}'

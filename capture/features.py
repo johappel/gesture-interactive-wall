@@ -18,6 +18,7 @@ L_WRIST = 15
 R_WRIST = 16
 L_HIP = 23
 R_HIP = 24
+TORSO_LANDMARKS = (L_SHOULDER, R_SHOULDER, L_HIP, R_HIP)
 
 Landmark = Sequence[float]
 Person = Sequence[Landmark]
@@ -34,10 +35,59 @@ def distance(a: tuple[float, float], b: tuple[float, float]) -> float:
 
 def centroid(landmarks: Person) -> tuple[float, float]:
     """Torso center from shoulders and hips."""
-    ids = (L_SHOULDER, R_SHOULDER, L_HIP, R_HIP)
-    xs = [float(landmarks[i][0]) for i in ids]
-    ys = [float(landmarks[i][1]) for i in ids]
+    xs = [float(landmarks[i][0]) for i in TORSO_LANDMARKS]
+    ys = [float(landmarks[i][1]) for i in TORSO_LANDMARKS]
     return sum(xs) / len(xs), sum(ys) / len(ys)
+
+
+def is_plausible_person(
+    landmarks: Person,
+    min_torso_visibility: float = 0.5,
+    active_region: dict | None = None,
+) -> bool:
+    """Return whether a pose has a visible torso inside the active region.
+
+    MediaPipe can occasionally describe object edges as a pose.  Four visible,
+    finite torso landmarks are a deliberately small, non-biometric quality
+    gate; no identity or body interpretation is inferred.  A region is only
+    active when explicitly enabled in configuration.
+    """
+    if len(landmarks) <= R_HIP:
+        return False
+    for index in TORSO_LANDMARKS:
+        landmark = landmarks[index]
+        if len(landmark) < 3:
+            return False
+        x, y, visibility = float(landmark[0]), float(landmark[1]), float(landmark[2])
+        if not all(math.isfinite(value) for value in (x, y, visibility)):
+            return False
+        if not 0.0 <= x <= 1.0 or not 0.0 <= y <= 1.0 or visibility < min_torso_visibility:
+            return False
+
+    if not active_region or not active_region.get("enabled", False):
+        return True
+    try:
+        x_min = float(active_region["x_min"])
+        x_max = float(active_region["x_max"])
+        y_min = float(active_region["y_min"])
+        y_max = float(active_region["y_max"])
+    except (KeyError, TypeError, ValueError):
+        return False
+    if not (0.0 <= x_min < x_max <= 1.0 and 0.0 <= y_min < y_max <= 1.0):
+        return False
+    x, y = centroid(landmarks)
+    return x_min <= x <= x_max and y_min <= y <= y_max
+
+
+def filter_plausible_persons(
+    persons: list[Person], min_torso_visibility: float = 0.5, active_region: dict | None = None
+) -> list[Person]:
+    """Keep only non-biometrically plausible poses for the resonance space."""
+    return [
+        person
+        for person in persons
+        if is_plausible_person(person, min_torso_visibility, active_region)
+    ]
 
 
 def shoulder_width(landmarks: Person) -> float:
@@ -61,6 +111,7 @@ class _Track:
         "vy",
         "state",
         "missing_since",
+        "seen_frames",
     )
 
     def __init__(self, tid: int, c: tuple[float, float], wrists, t: float) -> None:
@@ -73,6 +124,7 @@ class _Track:
         self.vy = 0.0
         self.state = "active"
         self.missing_since: float | None = None
+        self.seen_frames = 1
 
 
 class BodyTracker:
@@ -92,6 +144,7 @@ class BodyTracker:
         grace_period: float | None = None,
         departure_edge_margin: float = 0.08,
         departure_min_speed: float = 0.05,
+        confirmation_frames: int = 1,
     ) -> None:
         self.max_dist = max_dist
         # ``timeout`` remains accepted for existing callers.  New configs use
@@ -102,6 +155,7 @@ class BodyTracker:
         self.smoothing = smoothing
         self.departure_edge_margin = departure_edge_margin
         self.departure_min_speed = departure_min_speed
+        self.confirmation_frames = max(int(confirmation_frames), 1)
         self._tracks: dict[int, _Track] = {}
         self._next_id = 0
         self._departures: list[dict] = []
@@ -149,6 +203,8 @@ class BodyTracker:
         if not outward_candidates:
             return None
         _distance, edge, _outward = min(outward_candidates, key=lambda item: item[0])
+        if tr.seen_frames < self.confirmation_frames:
+            return None
         return {
             "id": tr.id,
             "edge": edge,
@@ -205,6 +261,7 @@ class BodyTracker:
                 tr.vx, tr.vy = vx, vy
                 tr.state = "active"
                 tr.missing_since = None
+                tr.seen_frames += 1
             else:
                 tr = _Track(self._next_id, c, wrists[i], t)
                 self._next_id += 1
@@ -213,17 +270,18 @@ class BodyTracker:
 
             visible_tracks.add(tr.id)
 
-            bodies.append(
-                {
-                    "id": tr.id,
-                    "x": round(c[0], 4),
-                    "y": round(c[1], 4),
-                    "vx": round(vx, 4),
-                    "vy": round(vy, 4),
-                    "intensity": round(tr.intensity, 4),
-                    "openness": round(openness(p), 4),
-                }
-            )
+            if tr.seen_frames >= self.confirmation_frames:
+                bodies.append(
+                    {
+                        "id": tr.id,
+                        "x": round(c[0], 4),
+                        "y": round(c[1], 4),
+                        "vx": round(vx, 4),
+                        "vy": round(vy, 4),
+                        "intensity": round(tr.intensity, 4),
+                        "openness": round(openness(p), 4),
+                    }
+                )
 
         # An unmatched track becomes temporarily missing.  It remains eligible
         # for reassociation during the grace period, but never appears in

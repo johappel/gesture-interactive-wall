@@ -46,6 +46,7 @@ def _make_body_tracker(fcfg: dict) -> BodyTracker:
         grace_period=fcfg.get("track_grace_period", fcfg["track_timeout"]),
         departure_edge_margin=fcfg.get("departure_edge_margin", 0.08),
         departure_min_speed=fcfg.get("departure_min_speed", 0.05),
+        confirmation_frames=fcfg.get("track_confirmation_frames", 1),
     )
 
 
@@ -96,7 +97,13 @@ def run_camera(cfg: dict) -> None:
     camera = Camera(
         ccfg["index"], ccfg["width"], ccfg["height"], ccfg["flip"], ccfg.get("backend", "any")
     )
-    pose = PoseTracker(model_path, pcfg["num_poses"], pcfg["min_detection_confidence"])
+    pose = PoseTracker(
+        model_path,
+        pcfg["num_poses"],
+        pcfg["min_detection_confidence"],
+        pcfg.get("min_torso_visibility", 0.5),
+        pcfg.get("active_region"),
+    )
     tracker = _make_body_tracker(fcfg)
     sender = UdpJsonSender(cfg["network"]["host"], cfg["network"]["port"])
     preview = cfg["debug"]["preview"]

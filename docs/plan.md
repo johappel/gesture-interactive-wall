@@ -295,6 +295,9 @@ Zieldramaturgie:
   zusammenpassen;
 - deterministische Simulator-Szenarien für Stabilität, Verdeckung, Flackern,
   Kreuzung, Verlust, links/rechts und Gruppen-Austritt, Rückkehr sowie Langlauf.
+- zusätzliche nicht-biometrische Qualitätsgates gegen Objekt-Fehlalarme:
+  MediaPipe-Konfidenz, sichtbarer Torso und optional kalibrierte Resonanzzone;
+  neue Tracks werden erst nach mehreren konsistenten Frames sichtbar.
 
 Automatisierte Tests belegen die Software-Invarianten, nicht jedoch Qualität
 und Robustheit mit realer Kamera, Beleuchtung, Verdeckung oder Publikum.

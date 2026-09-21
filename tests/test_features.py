@@ -11,10 +11,13 @@ from capture.features import (  # noqa: E402
     BodyTracker,
     L_SHOULDER,
     L_WRIST,
+    R_HIP,
     R_SHOULDER,
     R_WRIST,
     compute_pairs,
     crowd_energy,
+    filter_plausible_persons,
+    is_plausible_person,
     openness,
 )
 from capture.sim import (  # noqa: E402
@@ -49,6 +52,27 @@ class OpennessTest(unittest.TestCase):
         self.assertLessEqual(openness(person(0.5, 0.5, wrist_spread=0.9)), 1.0)
 
 
+class PoseQualityTest(unittest.TestCase):
+    def test_visible_torso_is_plausible(self):
+        self.assertTrue(is_plausible_person(person(0.5, 0.5), min_torso_visibility=0.6))
+
+    def test_low_visibility_torso_is_rejected(self):
+        candidate = person(0.5, 0.5)
+        candidate[L_SHOULDER] = (0.45, 0.5, 0.2)
+        self.assertFalse(is_plausible_person(candidate, min_torso_visibility=0.6))
+
+    def test_active_region_rejects_pose_outside_resonance_space(self):
+        region = {"enabled": True, "x_min": 0.2, "x_max": 0.8, "y_min": 0.2, "y_max": 0.8}
+        self.assertFalse(is_plausible_person(person(0.1, 0.5), active_region=region))
+        self.assertTrue(is_plausible_person(person(0.5, 0.5), active_region=region))
+
+    def test_filter_keeps_only_plausible_persons(self):
+        low_quality = person(0.5, 0.5)
+        low_quality[R_HIP] = (0.54, 0.6, 0.1)
+        kept = filter_plausible_persons([person(0.4, 0.5), low_quality], 0.6)
+        self.assertEqual(len(kept), 1)
+
+
 class TrackerTest(unittest.TestCase):
     def test_stable_id_for_moving_body(self):
         tr = BodyTracker()
@@ -80,6 +104,13 @@ class TrackerTest(unittest.TestCase):
         tr.update([], t=1.0)
         reappear = tr.update([person(0.5, 0.5)], t=1.1)
         self.assertEqual(reappear[0]["id"], 1)
+
+    def test_track_needs_configured_consecutive_detections_before_visible(self):
+        tr = BodyTracker(confirmation_frames=3)
+        self.assertEqual(tr.update([person(0.5, 0.5)], t=0.0), [])
+        self.assertEqual(tr.update([person(0.51, 0.5)], t=0.1), [])
+        visible = tr.update([person(0.52, 0.5)], t=0.2)
+        self.assertEqual([body["id"] for body in visible], [0])
 
 
 class TrackLifecycleTest(unittest.TestCase):

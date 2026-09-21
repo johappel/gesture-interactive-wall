@@ -94,6 +94,21 @@ Die Schwellenwerte stehen in `config/config.json` unter `features`:
 | `departure_edge_margin` | Breite der Randzone in normierten Bildkoordinaten |
 | `departure_min_speed` | Mindestgeschwindigkeit in Auswärtsrichtung für ein `departure` |
 | `track_timeout` | Kompatibilitäts-Fallback, falls `track_grace_period` in älteren Configs fehlt |
+| `track_confirmation_frames` | Zahl konsistenter Erkennungsframes, bevor ein neuer Track sichtbar wird |
+
+## Pose-Qualität und Resonanzraum
+
+Vor dem Tracking akzeptiert Capture nur Posen mit sichtbaren, endlichen
+Schultern und Hüften. `pose.min_detection_confidence` ist die MediaPipe-Schwelle;
+`pose.min_torso_visibility` ist die zusätzliche Landmark-Qualitätsschwelle.
+So wird aus einer einzelnen objektähnlichen Fehl-Pose nicht sofort eine
+sichtbare Anwesenheit.
+
+`pose.active_region` ist standardmäßig deaktiviert. Nach der realen
+Kamera-Kalibrierung kann sie auf die Lichtinsel gesetzt werden; Posen außerhalb
+werden dann verworfen. Sie begrenzt nur die Annahme von Posen und verändert
+keine Koordinaten. Wird sie eingeengt, müssen Randzone und Departure-Verhalten
+mit der echten Kamera erneut geprüft werden.
 
 ## Renderer-Mapping (Konzept)
 
