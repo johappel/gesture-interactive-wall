@@ -23,7 +23,19 @@ Standard: `127.0.0.1:4242`. Es werden ausschließlich abstrakte Zahlenwerte
   "pairs": [
     { "a": 0, "b": 1, "proximity": 0.8, "mx": 0.5, "my": 0.5 }
   ],
-  "crowd": { "count": 2, "energy": 0.4 }
+  "crowd": { "count": 2, "energy": 0.4 },
+  "events": {
+    "departures": [
+      {
+        "id": 7,
+        "edge": "left",
+        "x": 0.01,
+        "y": 0.54,
+        "vx": -0.23,
+        "vy": 0.02
+      }
+    ]
+  }
 }
 ```
 
@@ -42,6 +54,46 @@ Standard: `127.0.0.1:4242`. Es werden ausschließlich abstrakte Zahlenwerte
 | `pairs[].mx/my`    | 0..1      | Mittelpunkt für die Lichtbrücke |
 | `crowd.count`      | int       | Anzahl erkannter Personen |
 | `crowd.energy`     | 0..1      | Mittlere Intensität aller Personen |
+
+### Departure-Ereignis
+
+| Feld | Bereich | Bedeutung |
+|------|---------|-----------|
+| `events.departures` | array | Einmalige, plausible Rand-Austritte dieses Frames |
+| `events.departures[].id` | int | ID der gerade beendeten Anwesenheitsepisode |
+| `events.departures[].edge` | left/right/top/bottom | Rand, an dem der letzte Verlauf nach außen zeigte |
+| `events.departures[].x/y` | 0..1 | Letzte valide Torso-Position |
+| `events.departures[].vx/vy` | ~-1..1 | Letzte beobachtete Geschwindigkeit (Einheiten/s) |
+
+## Track-Lifecycle und Ereignisse (Phase 4.5A)
+
+`bodies` enthält weiterhin nur im jeweiligen Frame tatsächlich erkannte
+Personen. Ein kurzfristig nicht erkannter Track bleibt intern für die
+konfigurierte `track_grace_period` erhalten, wird aber weder als Body noch in
+`pairs` oder Crowd-Daten ausgegeben. Bei räumlich plausibler Wiederaufnahme
+behält er seine ID.
+
+Nach Ablauf der Grace Period wird ein Track beendet. Ein Eintrag in
+`events.departures` entsteht dabei **nur**, wenn die letzte valide Position in
+der Randzone lag und die letzte beobachtete Geschwindigkeit durch denselben
+Rand nach außen zeigte. Ein Verlust in der Bildmitte und ein bloßer Timeout
+erzeugen kein Ereignis. Das Ereignis wird beim Beenden genau einmal gesendet;
+eine spätere Rückkehr erhält eine neue Track-ID.
+
+Der Renderer darf `events` vorerst ignorieren. Phase 4.5A fügt bewusst keine
+Nachwirkungs- oder sonstigen Godot-Effekte hinzu.
+
+## Tracking-Konfiguration
+
+Die Schwellenwerte stehen in `config/config.json` unter `features`:
+
+| Feld | Bedeutung |
+|-------|-----------|
+| `track_max_dist` | Maximaler Abstand zur kurz extrapolierten letzten Position für eine Reassociation |
+| `track_grace_period` | Sekunden, die ein fehlender Track intern erhalten bleibt |
+| `departure_edge_margin` | Breite der Randzone in normierten Bildkoordinaten |
+| `departure_min_speed` | Mindestgeschwindigkeit in Auswärtsrichtung für ein `departure` |
+| `track_timeout` | Kompatibilitäts-Fallback, falls `track_grace_period` in älteren Configs fehlt |
 
 ## Renderer-Mapping (Konzept)
 

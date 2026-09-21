@@ -223,10 +223,15 @@ Diese sechs sichtbaren Varianten sowie die echte Fensterplatzierung auf zwei
 Displays wurden hier nicht als visuelle Hardware-Abnahme ausgeführt.
 
 Die verbindlichen Tracking-Lifecycle-Kriterien in
-`docs/Track-Lifecycle-Abnahme.md` bleiben ein Gate für Phase 4.5. Diese Phase
-4.4 führt weder `active`/`temporarily_missing`/`departed` als neue
-Produktionslogik noch `departure`, `stillness`, `presence_time`, `rhythm`,
-Nachwirkungswellen oder neue Effektfamilien ein.
+`docs/Track-Lifecycle-Abnahme.md` waren das Gate für Phase 4.5A und sind dort
+jetzt als Pure-Python-Szenarien automatisiert abgedeckt: explizites
+`active`/`temporarily_missing`, begrenzte Wiederaufnahme derselben anonymen
+Anwesenheitsepisode sowie ein einmaliges `departure` nur bei plausibler
+Randbewegung. Verlust in der Bildmitte endet technisch ohne Ereignis. Dies ist
+keine reale Kamera- oder Vor-Ort-Abnahme.
+
+Phase 4.5A führt weder `stillness`, `presence_time`, `rhythm`,
+Nachwirkungswellen noch neue Effektfamilien ein.
 
 ## 7. Resonanzgrammatik
 
@@ -279,7 +284,22 @@ Zieldramaturgie:
 
 ## 9. Phase 4.5 — Resonanzgrammatik und Nachwirkung
 
-Erst nach Integration von 4.4:
+### 9.1 Erreichter Zwischenstand: Phase 4.5A (technisch implementiert, automatisiert getestet)
+
+- Track-Lifecycle mit `active` und `temporarily_missing` sowie begrenzter
+  Reassociation ohne biometrische Identifizierung;
+- finale Unterscheidung `lost != departed`: Ein Trackverlust im Feld wird ohne
+  bedeutungsvolles Ereignis bereinigt;
+- `departure` wird einmalig als UDP-Ereignis mit Rand, letzter Position und
+  letzter Geschwindigkeit gesendet, sofern Randnähe und Auswärtsbewegung
+  zusammenpassen;
+- deterministische Simulator-Szenarien für Stabilität, Verdeckung, Flackern,
+  Kreuzung, Verlust, links/rechts und Gruppen-Austritt, Rückkehr sowie Langlauf.
+
+Automatisierte Tests belegen die Software-Invarianten, nicht jedoch Qualität
+und Robustheit mit realer Kamera, Beleuchtung, Verdeckung oder Publikum.
+
+### 9.2 Noch offen: weitere Phase 4.5
 
 ### Capture / Features
 

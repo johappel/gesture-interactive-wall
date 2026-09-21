@@ -51,7 +51,17 @@ def openness(landmarks: Person) -> float:
 
 
 class _Track:
-    __slots__ = ("id", "centroid", "wrists", "t", "intensity")
+    __slots__ = (
+        "id",
+        "centroid",
+        "wrists",
+        "t",
+        "intensity",
+        "vx",
+        "vy",
+        "state",
+        "missing_since",
+    )
 
     def __init__(self, tid: int, c: tuple[float, float], wrists, t: float) -> None:
         self.id = tid
@@ -59,10 +69,19 @@ class _Track:
         self.wrists = wrists
         self.t = t
         self.intensity = 0.0
+        self.vx = 0.0
+        self.vy = 0.0
+        self.state = "active"
+        self.missing_since: float | None = None
 
 
 class BodyTracker:
-    """Greedy nearest-centroid tracker that assigns stable ids across frames."""
+    """Anonymous presence-episode tracker with a bounded missing-track grace period.
+
+    A track represents only its current episode in the resonance space.  It is
+    never re-used after it has been ended, whether that end was a plausible
+    departure or an inconclusive tracking loss.
+    """
 
     def __init__(
         self,
@@ -70,34 +89,103 @@ class BodyTracker:
         timeout: float = 0.6,
         intensity_scale: float = 1.5,
         smoothing: float = 0.4,
+        grace_period: float | None = None,
+        departure_edge_margin: float = 0.08,
+        departure_min_speed: float = 0.05,
     ) -> None:
         self.max_dist = max_dist
+        # ``timeout`` remains accepted for existing callers.  New configs use
+        # the clearer lifecycle name ``grace_period``.
         self.timeout = timeout
+        self.grace_period = timeout if grace_period is None else grace_period
         self.intensity_scale = intensity_scale
         self.smoothing = smoothing
+        self.departure_edge_margin = departure_edge_margin
+        self.departure_min_speed = departure_min_speed
         self._tracks: dict[int, _Track] = {}
         self._next_id = 0
+        self._departures: list[dict] = []
+
+    def take_departures(self) -> list[dict]:
+        """Return departure events accumulated since the previous call.
+
+        Events are intentionally drained: a renderer can receive a departure
+        once, while the tracker never exposes it as a persistent body state.
+        """
+        departures = self._departures
+        self._departures = []
+        return departures
+
+    @property
+    def track_count(self) -> int:
+        """Number of active or temporarily missing tracks, for diagnostics."""
+        return len(self._tracks)
+
+    def _predicted_centroid(self, tr: _Track, t: float) -> tuple[float, float]:
+        elapsed = max(t - tr.t, 0.0)
+        return tr.centroid[0] + tr.vx * elapsed, tr.centroid[1] + tr.vy * elapsed
+
+    def _departure_event(self, tr: _Track) -> dict | None:
+        """Classify a finalised missing track only when exit evidence agrees.
+
+        Being close to an edge is insufficient.  The last observed velocity
+        must point through that same edge, so an occlusion at an edge does not
+        automatically become an aesthetically meaningful departure.
+        """
+        x, y = tr.centroid
+        margin = self.departure_edge_margin
+        candidates: list[tuple[float, str, bool]] = []
+        if x <= margin:
+            candidates.append((x, "left", tr.vx <= -self.departure_min_speed))
+        if x >= 1.0 - margin:
+            candidates.append((1.0 - x, "right", tr.vx >= self.departure_min_speed))
+        if y <= margin:
+            candidates.append((y, "top", tr.vy <= -self.departure_min_speed))
+        if y >= 1.0 - margin:
+            candidates.append((1.0 - y, "bottom", tr.vy >= self.departure_min_speed))
+        if not candidates:
+            return None
+        outward_candidates = [candidate for candidate in candidates if candidate[2]]
+        if not outward_candidates:
+            return None
+        _distance, edge, _outward = min(outward_candidates, key=lambda item: item[0])
+        return {
+            "id": tr.id,
+            "edge": edge,
+            "x": round(x, 4),
+            "y": round(y, 4),
+            "vx": round(tr.vx, 4),
+            "vy": round(tr.vy, 4),
+        }
 
     def update(self, persons: list[Person], t: float) -> list[dict]:
         cents = [centroid(p) for p in persons]
         wrists = [(_pt(p, L_WRIST), _pt(p, R_WRIST)) for p in persons]
 
-        # Match existing tracks to closest unused person.
+        # Globally sort feasible track/person candidates.  This small,
+        # deterministic assignment prevents the iteration order of tracks from
+        # assigning one detection twice and uses a velocity prediction during a
+        # short occlusion.
         assigned: dict[int, int] = {}  # person index -> track id
-        used: set[int] = set()
+        candidates: list[tuple[float, int, int]] = []
         for tid, tr in self._tracks.items():
-            best, best_d = -1, self.max_dist
+            if t - tr.t > self.grace_period:
+                continue
+            predicted = self._predicted_centroid(tr, t)
             for i, c in enumerate(cents):
-                if i in used:
-                    continue
-                d = distance(tr.centroid, c)
-                if d < best_d:
-                    best, best_d = i, d
-            if best >= 0:
-                assigned[best] = tid
-                used.add(best)
+                d = distance(predicted, c)
+                if d <= self.max_dist:
+                    candidates.append((d, tid, i))
+        used_tracks: set[int] = set()
+        used_persons: set[int] = set()
+        for _distance, tid, i in sorted(candidates):
+            if tid not in used_tracks and i not in used_persons:
+                assigned[i] = tid
+                used_tracks.add(tid)
+                used_persons.add(i)
 
         bodies: list[dict] = []
+        visible_tracks: set[int] = set()
         for i, p in enumerate(persons):
             c = cents[i]
             if i in assigned:
@@ -114,11 +202,16 @@ class BodyTracker:
                 alpha = self.smoothing
                 tr.intensity = tr.intensity * (1.0 - alpha) + raw * alpha
                 tr.centroid, tr.wrists, tr.t = c, wrists[i], t
+                tr.vx, tr.vy = vx, vy
+                tr.state = "active"
+                tr.missing_since = None
             else:
                 tr = _Track(self._next_id, c, wrists[i], t)
                 self._next_id += 1
                 self._tracks[tr.id] = tr
                 vx = vy = 0.0
+
+            visible_tracks.add(tr.id)
 
             bodies.append(
                 {
@@ -132,9 +225,22 @@ class BodyTracker:
                 }
             )
 
-        # Drop tracks not seen within timeout.
-        stale = [tid for tid, tr in self._tracks.items() if t - tr.t > self.timeout]
+        # An unmatched track becomes temporarily missing.  It remains eligible
+        # for reassociation during the grace period, but never appears in
+        # ``bodies``/pairs/crowd until it is actually detected again.
+        for tid, tr in self._tracks.items():
+            if tid not in visible_tracks and tr.missing_since is None:
+                tr.state = "temporarily_missing"
+                tr.missing_since = t
+
+        # Once the bounded grace period has elapsed, distinguish a plausible
+        # outward edge exit from an inconclusive loss and then forget the
+        # episode in both cases.  This makes departure exactly-once by design.
+        stale = [tid for tid, tr in self._tracks.items() if t - tr.t > self.grace_period]
         for tid in stale:
+            departure = self._departure_event(self._tracks[tid])
+            if departure is not None:
+                self._departures.append(departure)
             del self._tracks[tid]
 
         return bodies

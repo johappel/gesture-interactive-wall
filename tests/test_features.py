@@ -17,7 +17,12 @@ from capture.features import (  # noqa: E402
     crowd_energy,
     openness,
 )
-from capture.sim import make_phase44_persons, make_sim_persons  # noqa: E402
+from capture.sim import (  # noqa: E402
+    LIFECYCLE_SCENARIOS,
+    make_lifecycle_persons,
+    make_phase44_persons,
+    make_sim_persons,
+)
 
 _N = 33
 
@@ -77,6 +82,114 @@ class TrackerTest(unittest.TestCase):
         self.assertEqual(reappear[0]["id"], 1)
 
 
+class TrackLifecycleTest(unittest.TestCase):
+    def _tracker(self):
+        return BodyTracker(
+            max_dist=0.3,
+            timeout=0.5,
+            grace_period=0.5,
+            departure_edge_margin=0.08,
+            departure_min_speed=0.05,
+        )
+
+    def _update_scenario(self, tracker, name, times):
+        result = []
+        for t in times:
+            bodies = tracker.update(make_lifecycle_persons(name, t), t)
+            result.append((bodies, tracker.take_departures()))
+        return result
+
+    def test_stable_presence_keeps_one_id(self):
+        tracker = self._tracker()
+        result = self._update_scenario(tracker, "stable", (0.0, 0.2, 0.4, 0.6))
+        self.assertEqual({bodies[0]["id"] for bodies, _events in result}, {0})
+        self.assertTrue(all(not events for _bodies, events in result))
+
+    def test_short_occlusion_reassociates_without_departure(self):
+        tracker = self._tracker()
+        result = self._update_scenario(tracker, "occlusion", (0.0, 0.2, 0.4, 0.5, 0.7))
+        self.assertEqual(tracker._tracks[0].state, "active")
+        self.assertEqual(result[0][0][0]["id"], result[3][0][0]["id"])
+        self.assertTrue(all(not events for _bodies, events in result))
+
+    def test_one_frame_flicker_keeps_id_without_departure(self):
+        tracker = self._tracker()
+        result = self._update_scenario(tracker, "flicker", (0.0, 0.1, 0.2, 0.3))
+        self.assertEqual(result[0][0][0]["id"], result[2][0][0]["id"])
+        self.assertTrue(all(not events for _bodies, events in result))
+
+    def test_center_loss_ends_without_departure(self):
+        tracker = self._tracker()
+        result = self._update_scenario(tracker, "center_loss", (0.0, 0.1, 0.2, 0.8))
+        self.assertEqual(result[-1][1], [])
+        self.assertEqual(tracker.track_count, 0)
+
+    def test_edge_loss_without_outward_motion_is_not_departure(self):
+        tracker = self._tracker()
+        tracker.update([person(0.02, 0.5)], t=0.0)
+        tracker.update([person(0.05, 0.5)], t=0.1)
+        tracker.update([], t=0.2)
+        tracker.take_departures()
+        tracker.update([], t=0.8)
+        self.assertEqual(tracker.take_departures(), [])
+
+    def test_left_departure_is_emitted_once(self):
+        tracker = self._tracker()
+        result = self._update_scenario(tracker, "left_departure", (0.0, 0.1, 0.2, 0.8, 1.0))
+        events = [event for _bodies, frame_events in result for event in frame_events]
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["id"], 0)
+        self.assertEqual(events[0]["edge"], "left")
+        self.assertLess(events[0]["vx"], 0.0)
+
+    def test_right_departure_is_emitted_once(self):
+        tracker = self._tracker()
+        result = self._update_scenario(tracker, "right_departure", (0.0, 0.1, 0.2, 0.8, 1.0))
+        events = [event for _bodies, frame_events in result for event in frame_events]
+        self.assertEqual(len(events), 1)
+        self.assertEqual(events[0]["edge"], "right")
+        self.assertGreater(events[0]["vx"], 0.0)
+
+    def test_departed_episode_is_not_reused_on_return(self):
+        tracker = self._tracker()
+        result = self._update_scenario(tracker, "departure_return", (0.0, 0.1, 0.2, 0.8, 1.0))
+        departures = [event for _bodies, events in result for event in events]
+        self.assertEqual(departures[0]["id"], 0)
+        self.assertEqual(result[-1][0][0]["id"], 1)
+
+    def test_crossing_has_unique_ids_and_valid_pair_references(self):
+        tracker = self._tracker()
+        for t in (0.0, 0.5, 1.0, 1.5):
+            bodies = tracker.update(make_lifecycle_persons("crossing", t), t)
+            ids = {body["id"] for body in bodies}
+            self.assertEqual(len(ids), len(bodies))
+            for pair in compute_pairs(bodies, threshold=1.0):
+                self.assertIn(pair["a"], ids)
+                self.assertIn(pair["b"], ids)
+                self.assertNotEqual(pair["a"], pair["b"])
+            self.assertEqual(tracker.take_departures(), [])
+
+    def test_group_departure_has_one_event_per_episode(self):
+        tracker = self._tracker()
+        result = self._update_scenario(
+            tracker, "group_left_departure", (0.0, 0.1, 0.2, 0.8, 1.0)
+        )
+        events = [event for _bodies, frame_events in result for event in frame_events]
+        self.assertEqual(len(events), 3)
+        self.assertEqual({event["id"] for event in events}, {0, 1, 2})
+        self.assertTrue(all(event["edge"] == "left" for event in events))
+
+    def test_long_run_cleans_up_tracks_without_duplicate_bodies(self):
+        tracker = self._tracker()
+        for step in range(100):
+            t = step * 0.1
+            bodies = tracker.update(make_lifecycle_persons("long_run", t), t)
+            self.assertEqual(len({body["id"] for body in bodies}), len(bodies))
+            tracker.take_departures()
+        tracker.update([], 11.0)
+        self.assertEqual(tracker.track_count, 0)
+
+
 class PairsTest(unittest.TestCase):
     def _bodies(self, x_a, x_b):
         return [
@@ -123,6 +236,14 @@ class SimTest(unittest.TestCase):
         self.assertEqual(len(make_phase44_persons(3.0)), 1)
         self.assertEqual(len(make_phase44_persons(7.0)), 2)
         self.assertEqual(len(make_phase44_persons(11.0)), 0)
+
+    def test_lifecycle_scenarios_are_available_and_deterministic(self):
+        self.assertEqual(len(LIFECYCLE_SCENARIOS), 10)
+        for scenario in LIFECYCLE_SCENARIOS:
+            self.assertEqual(
+                make_lifecycle_persons(scenario, 0.1),
+                make_lifecycle_persons(scenario, 0.1),
+            )
 
 
 if __name__ == "__main__":

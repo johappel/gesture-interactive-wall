@@ -66,3 +66,84 @@ def make_phase44_persons(t: float) -> list[list[tuple[float, float, float]]]:
             )
         ]
     return make_sim_persons(t)
+
+
+LIFECYCLE_SCENARIOS = (
+    "stable",
+    "occlusion",
+    "flicker",
+    "crossing",
+    "center_loss",
+    "left_departure",
+    "right_departure",
+    "group_left_departure",
+    "departure_return",
+    "long_run",
+)
+
+
+def make_lifecycle_persons(name: str, t: float) -> list[list[tuple[float, float, float]]]:
+    """Return deterministic inputs for one Phase-4.5A lifecycle scenario.
+
+    Times are deliberately short and externalised: unit tests can advance
+    simulated time without camera, wall-clock delays, or a renderer.
+    """
+    if name == "stable":
+        return [_person(0.40 + min(t, 2.0) * 0.04, 0.5, 0.4)] if t < 3.0 else []
+    if name == "occlusion":
+        if 0.2 <= t < 0.5:
+            return []
+        return [_person(0.50 + max(t - 0.5, 0.0) * 0.04, 0.5, 0.4)] if t < 1.0 else []
+    if name == "flicker":
+        if 0.1 <= t < 0.2:
+            return []
+        return [_person(0.50 + t * 0.03, 0.5, 0.4)] if t < 0.6 else []
+    if name == "crossing":
+        if t >= 2.0:
+            return []
+        return [_person(0.25 + t * 0.2, 0.46, 0.3), _person(0.75 - t * 0.2, 0.54, 0.6)]
+    if name == "center_loss":
+        return [_person(0.50 + t * 0.02, 0.5, 0.4)] if t < 0.2 else []
+    if name == "left_departure":
+        if t < 0.1:
+            return [_person(0.16, 0.5, 0.4)]
+        if t < 0.2:
+            return [_person(0.04, 0.5, 0.4)]
+        return []
+    if name == "right_departure":
+        if t < 0.1:
+            return [_person(0.84, 0.5, 0.4)]
+        if t < 0.2:
+            return [_person(0.96, 0.5, 0.4)]
+        return []
+    if name == "group_left_departure":
+        if t < 0.1:
+            return [_person(0.18, 0.35, 0.2), _person(0.19, 0.5, 0.4), _person(0.18, 0.65, 0.6)]
+        if t < 0.2:
+            return [_person(0.04, 0.35, 0.2), _person(0.05, 0.5, 0.4), _person(0.04, 0.65, 0.6)]
+        return []
+    if name == "departure_return":
+        if t < 0.1:
+            return [_person(0.16, 0.5, 0.4)]
+        if t < 0.2:
+            return [_person(0.04, 0.5, 0.4)]
+        if t < 1.0:
+            return []
+        return [_person(0.50, 0.5, 0.4)]
+    if name == "long_run":
+        phase = t % 3.0
+        if phase < 0.5:
+            return [_person(0.22 - phase * 0.2, 0.5, 0.4)]
+        if phase < 1.2:
+            return []
+        if phase < 2.0:
+            return [_person(0.5, 0.5, 0.4)]
+        return make_sim_persons(t)
+    raise ValueError(f"Unknown lifecycle scenario: {name}")
+
+
+def make_simulation_persons(name: str, t: float) -> list[list[tuple[float, float, float]]]:
+    """Select the established Phase-4.4 sequence or a lifecycle scenario."""
+    if name == "phase44":
+        return make_phase44_persons(t)
+    return make_lifecycle_persons(name, t)

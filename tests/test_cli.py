@@ -32,6 +32,10 @@ class ParserTest(unittest.TestCase):
         self.assertEqual(args.camera, 2)
         self.assertEqual(args.backend, "dshow")
 
+    def test_known_sim_scenario(self):
+        args = build_parser().parse_args(["--sim", "--sim-scenario", "left_departure"])
+        self.assertEqual(args.sim_scenario, "left_departure")
+
     def test_rejects_unknown_backend(self):
         with self.assertRaises(SystemExit):
             build_parser().parse_args(["--backend", "webrtc"])
@@ -143,6 +147,13 @@ class ConfigTest(unittest.TestCase):
         self.assertIn(cfg["camera"]["backend"], ("any", "dshow", "msmf"))
         for key in ("name", "device_path", "vid", "pid"):
             self.assertIn(key, cfg["camera"])
+        for key in (
+            "track_max_dist",
+            "track_grace_period",
+            "departure_edge_margin",
+            "departure_min_speed",
+        ):
+            self.assertIn(key, cfg["features"])
 
     def test_config_loader_accepts_windows_utf8_bom(self):
         data = b'\xef\xbb\xbf{"camera":{"index":701}}'
@@ -161,6 +172,12 @@ class FrameTest(unittest.TestCase):
         self.assertEqual(frame["crowd"], {"count": 1, "energy": 0.5})
         self.assertEqual(frame["bodies"], [{"id": 0}])
         self.assertEqual(frame["pairs"], [])
+        self.assertEqual(frame["events"], {"departures": []})
+
+    def test_frame_includes_one_shot_departures(self):
+        departure = {"id": 7, "edge": "left", "x": 0.01, "y": 0.54}
+        frame = build_frame(bodies=[], pairs=[], energy=0.0, t=2.0, departures=[departure])
+        self.assertEqual(frame["events"], {"departures": [departure]})
 
 
 if __name__ == "__main__":
