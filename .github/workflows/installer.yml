@@ -4,7 +4,12 @@ name: Installer bauen
 #
 # Ausloeser:
 #   - manuell (workflow_dispatch) fuer einen Probelauf
-#   - ein Tag der Form v0.5.4 erzeugt zusaetzlich ein GitHub-Release
+#   - ein Tag v<Version> erzeugt zusaetzlich ein GitHub-Release
+#
+# Der Tag muss zur VERSION-Datei passen: der Tag benennt das Release, die
+# VERSION-Datei den Inhalt der setup.exe. Laufen beide auseinander, haengt
+# unter dem Release v0.0.2 eine setup.exe mit der Version 0.5.4. Der Workflow
+# bricht in diesem Fall ab.
 #
 # Bewusst nicht bei jedem Push: der Installer ist ein Betriebsmittel, kein
 # Entwicklungsergebnis. Vor einem Veranstaltungseinsatz wird er gezielt gebaut.
@@ -25,13 +30,28 @@ jobs:
       - name: Projekt auschecken
         uses: actions/checkout@v4
 
-      - name: Version ermitteln
+      - name: Version ermitteln und pruefen
         id: version
         shell: pwsh
         run: |
           $version = (Get-Content -LiteralPath VERSION -Raw).Trim()
           if ([string]::IsNullOrWhiteSpace($version)) { throw "VERSION ist leer." }
+          if ($version -notmatch '^\d+\.\d+\.\d+([.\-+].*)?$') { throw "VERSION hat kein gueltiges Format: $version" }
+
+          $expectedTag = "v$version"
+          # Ein Tag-Release muss zur VERSION-Datei passen. Sonst haengt unter dem
+          # Release v0.0.2 eine setup.exe mit der Version 0.5.4 — die Datei traegt
+          # dann eine andere Version als ihr Release. Der Tag ist die Wahrheit
+          # fuer den Namen des Releases, die VERSION-Datei fuer den Inhalt; beide
+          # muessen denselben Stand bezeichnen.
+          if ($env:GITHUB_REF_TYPE -eq 'tag' -and $env:GITHUB_REF_NAME -ne $expectedTag) {
+            throw ("Tag '{0}' passt nicht zur VERSION-Datei ('{1}'). Entweder VERSION auf '{2}' setzen " +
+                   "oder den Tag '{3}' verwenden." -f $env:GITHUB_REF_NAME, $version,
+                   ($env:GITHUB_REF_NAME -replace '^v', ''), $expectedTag)
+          }
+
           "version=$version" >> $env:GITHUB_OUTPUT
+          Write-Host "Version: $version (Tag: $expectedTag)"
 
       - name: Inno Setup bereitstellen
         shell: pwsh

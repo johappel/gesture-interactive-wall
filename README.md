@@ -102,6 +102,22 @@ aus der Datei `VERSION`, damit Installer und Projekt nicht auseinanderlaufen.
 Der GitHub-Workflow `.github/workflows/installer.yml` baut dasselbe Paket bei
 einem Tag `v*` und haengt es an das Release.
 
+> **Wichtig: Tag und `VERSION` muessen uebereinstimmen.**
+>
+> Der Tag benennt das Release, die `VERSION`-Datei den Inhalt der `setup.exe`.
+> Ein Release heisst also `v0.5.4` und enthaelt `WIRKLICHT-Setup-0.5.4.exe`.
+> Laufen beide auseinander, haengt unter dem Release `v0.0.2` eine Datei mit
+> der Version `0.5.4` — der Workflow bricht deshalb ab, statt ein solches
+> Release zu erzeugen.
+>
+> Vor einem Release also `VERSION` anheben und erst danach den Tag setzen:
+>
+> ```powershell
+> # VERSION auf den neuen Stand bringen, committen, dann:
+> git tag v0.5.5
+> git push origin v0.5.5
+> ```
+
 Der Installer richtet Python 3.11, Godot, WIRKLICHT, MediaPipe/OpenCV, das
 Pose-Modell, die Kameraauswahl und Desktop-Verknuepfungen ein. Git ist nicht
 erforderlich. Nach erfolgreicher Installation genuegt ein Doppelklick auf

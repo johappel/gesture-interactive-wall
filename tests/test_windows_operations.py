@@ -196,6 +196,25 @@ class InstallerContractTest(unittest.TestCase):
         # Inno braucht vier Zahlstellen fuer die Versionsinformationen.
         self.assertIn("/DVersionNumeric=", build)
 
+    def test_workflow_pins_tag_to_version_file(self):
+        """Ein Tag-Release muss zur VERSION-Datei passen.
+
+        Der Tag benennt das Release, die VERSION-Datei den Inhalt der
+        setup.exe. Ohne diese Pruefung entstand ein Release v0.0.2, unter dem
+        eine WIRKLICHT-Setup-0.5.4.exe haengt.
+        """
+        workflow = (ROOT / ".github" / "workflows" / "installer.yml").read_text(encoding="utf-8")
+        self.assertIn("GITHUB_REF_TYPE", workflow)
+        self.assertIn("GITHUB_REF_NAME", workflow)
+        self.assertIn('v$version', workflow)
+        self.assertIn("throw", workflow)
+        # Der Dateiname wird aus der VERSION-Datei gebildet, die geprueft wurde.
+        self.assertIn('WIRKLICHT-Setup-${{ steps.version.outputs.version }}.exe', workflow)
+
+    def test_project_version_is_a_semantic_version(self):
+        version = (ROOT / "VERSION").read_text(encoding="utf-8").strip()
+        self.assertRegex(version, r"^\d+\.\d+\.\d+([.\-+].*)?$")
+
     @unittest.skipUnless(shutil.which("powershell"), "Windows PowerShell nicht verfuegbar")
     def test_local_config_initialisation_preserves_existing_config(self):
         common = str(ROOT / "lib" / "common.ps1").replace("'", "''")
