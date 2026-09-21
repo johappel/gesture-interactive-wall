@@ -365,11 +365,29 @@ class SimTest(unittest.TestCase):
             departure_min_speed=0.05,
         )
         departures = []
-        for t in (0.0, 0.3, 0.6, 1.2, 3.0, 3.3, 3.6, 4.2):
+        for t in (0.0, 0.45, 0.6, 1.6, 3.0, 3.45, 3.6, 4.6):
             tracker.update(make_lifecycle_persons("aftereffect_waves", t), t)
             departures.extend(tracker.take_departures())
         self.assertEqual(len(departures), 4)
         self.assertEqual([event["edge"] for event in departures], ["left", "right", "right", "right"])
+
+    def test_aftereffect_wave_scenario_keeps_outward_velocity_at_real_simulator_rate(self):
+        tracker = BodyTracker(
+            max_dist=0.35,
+            timeout=1.5,
+            grace_period=1.0,
+            departure_edge_margin=0.08,
+            departure_min_speed=0.05,
+            confirmation_frames=3,
+        )
+        departures = []
+        for frame in range(480):
+            t = frame / 60.0
+            tracker.update(make_lifecycle_persons("aftereffect_waves", t), t)
+            departures.extend(tracker.take_departures())
+        self.assertEqual([event["edge"] for event in departures], ["left", "right", "right", "right"])
+        self.assertLess(departures[0]["vx"], 0.0)
+        self.assertTrue(all(event["vx"] > 0.0 for event in departures[1:]))
 
 
 if __name__ == "__main__":

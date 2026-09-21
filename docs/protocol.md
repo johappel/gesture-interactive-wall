@@ -168,10 +168,25 @@ anonyme Episode-ID nur für `dedupe_seconds` im Arbeitsspeicher gegen
 wiederholte UDP-Frames. Die Welleninstanz erhält anschließend ausschließlich
 Rand und Position; sie speichert oder zeichnet keine Person-ID.
 
+Der Renderer prüft jedes zwischen zwei Renderzyklen eingetroffene gültige
+UDP-Frame auf `departure`, auch wenn für die fortlaufende Körperdarstellung nur
+der neueste Zustand relevant ist. Ein einmaliges Ereignis kann dadurch nicht
+durch ein jüngeres, ereignisloses UDP-Frame im lokalen Empfangspuffer verloren
+gehen.
+
 Nahe Austritte am selben Rand werden innerhalb von `group_window_seconds` zu
-einer gemeinsamen Welle aggregiert. Daraus entstehen wenige breite, sanft
-nach innen laufende Lichtfronten. Die Wellen liegen hinter Körpern, Trails,
-Funken und Lichtbrücken und werden über geringe `max_alpha` begrenzt.
+einer gemeinsamen Welle aggregiert. Der Renderer legt dafür ein anonymes,
+großflächiges Shader-Lichtfeld an: Sein virtueller Mittelpunkt liegt bereits
+außerhalb des Austrittsrands und wandert mit `origin_escape_distance` weiter
+aus dem Bild. Sichtbar ist nur der nach innen reichende Teil der breiten,
+weichen Resonanz. Er startet am Rand warm und hell, wird allmählich bläulich
+und löst sich ohne harte Kontur in der dunklen Fassade auf. Das ist eine
+Lichtmetapher für Nachwirkung, keine Wasser- oder Personenanimation.
+
+Die Wellen liegen hinter Körpern, Trails, Funken und Lichtbrücken und werden
+über geringe `max_alpha` begrenzt. Ein breiter Halo, ein schwacher innerer
+Nachklang und das langsam verschwindende Quellglühen machen die Welle aus
+Distanz lesbar, ohne die laufende Gegenwart zu dominieren.
 `enabled: false` erzeugt keine Instanz und simuliert keine bestehenden Wellen.
 
 | Config-Feld | Default | Bedeutung |
@@ -179,16 +194,30 @@ Funken und Lichtbrücken und werden über geringe `max_alpha` begrenzt.
 | `enabled` | `true` | Effektfamilie aktiv; `false` erzeugt/simuliert nichts |
 | `group_window_seconds` | `0.22` | Zeitfenster für gemeinsame Rand-Austritte |
 | `group_distance` | `0.18` | maximaler normierter Abstand entlang desselben Randes |
-| `base_width` | `0.22` | Breite einer einzelnen Welle relativ zum Parallelrand |
-| `group_width_per_departure` | `0.10` | zusätzliche Breite je nahe aggregiertem Austritt |
-| `max_width` | `0.65` | Obergrenze der gemeinsamen Wellenbreite |
-| `fronts` | `3` | wenige nacheinander laufende Wellenfronten |
-| `front_interval_seconds` | `0.30` | zeitlicher Abstand der Fronten |
-| `duration_seconds` | `3.4` | Laufzeit einer Front |
-| `inward_distance` | `0.32` | maximale Strecke nach innen, relativ zur kurzen Viewportseite |
-| `line_width` | `9.0` | projektionstaugliche Linienbreite in Pixeln |
-| `max_alpha` | `0.22` | zurückhaltende Maximal-Deckkraft |
+| `group_width_per_departure` | `0.10` | Verbreiterung des gemeinsamen Lichtfelds je nahem Austritt |
+| `duration_seconds` | `4.8` | Dauer, bis die Resonanz vollständig ausläuft |
+| `initial_origin_outset` | `0.03` | anfänglicher Abstand des unsichtbaren Mittelpunkts außerhalb der Fassade |
+| `origin_escape_distance` | `0.16` | zusätzlicher Außenweg des Mittelpunkts bis zum Ende |
+| `start_radius` | `0.03` | anfänglicher Radius der Lichtresonanz |
+| `propagation_speed` | `0.20` | Ausbreitungsgeschwindigkeit der Resonanz in normierten Einheiten/s |
+| `band_width` | `0.09` | Weichheit und Breite des Hauptlichtfelds |
+| `source_glow_radius` | `0.16` | Ausdehnung des warmen Quellglühens am Rand |
+| `echo_spacing` | `0.15` | Abstand eines sehr schwachen inneren Nachklangs |
+| `echo_strength` | `0.28` | Stärke dieses Nachklangs; klein halten, damit kein Rhythmuseffekt entsteht |
+| `max_alpha` | `0.26` | zurückhaltende Maximal-Deckkraft des Lichtfelds |
+| `fade_start_progress` | `0.15` | Anteil der Laufzeit, ab dem die Welle stetig merklich dunkler wird |
+| `fade_end_progress` | `0.92` | Anteil der Laufzeit, an dem die Welle bereits vollständig transparent ist |
+| `glow_strength` | `1.55` | additive Helligkeitsverstärkung für Projektionstauglichkeit |
+| `warm_color` | `#fff0bd` | warme, helle Ausgangsfarbe am Austrittsrand |
+| `blue_color` | `#5caeff` | allmählich erreichte blaue Ausklangfarbe |
 | `dedupe_seconds` | `5.0` | kurzlebige UDP-Duplikatsperre für die anonyme Episode-ID |
+
+Die Standardform ist eine einzige, breite und diffuse Lichtwelle. Ihre Mitte
+bleibt unsichtbar jenseits des Austrittsrands und wandert weiter nach außen;
+in die Fassade gelangt nur die weiche, langsam auslaufende Rückwirkung. Ihre
+Helligkeit beginnt deutlich vor der Fassadenmitte stetig abzunehmen und ist vor
+dem technischen Ablaufende bereits transparent; sie wird daher nicht sichtbar
+abgeschaltet.
 
 ## OSC (später, Phase 5)
 

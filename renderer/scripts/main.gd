@@ -41,15 +41,21 @@ func _ready() -> void:
 	_print_station_state()
 
 func _process(delta: float) -> void:
-	var latest := ""
+	var frames: Array[Dictionary] = []
 	while _udp.get_available_packet_count() > 0:
-		latest = _udp.get_packet().get_string_from_utf8()
-
-	if latest != "":
-		_time_since_packet = 0.0
+		var packet := _udp.get_packet().get_string_from_utf8()
 		var json := JSON.new()
-		if json.parse(latest) == OK and json.get_data() is Dictionary:
-			_apply(json.get_data(), delta)
+		if json.parse(packet) == OK and json.get_data() is Dictionary:
+			var frame: Dictionary = json.get_data()
+			frames.append(frame)
+
+	if not frames.is_empty():
+		_time_since_packet = 0.0
+		# Bodies use only the newest state, but every queued frame is inspected.
+		# A departure is intentionally one-shot, so silently discarding an older
+		# UDP frame here could otherwise erase the only visible aftereffect.
+		for index in range(frames.size()):
+			_apply(frames[index], delta if index == frames.size() - 1 else 0.0)
 	else:
 		_time_since_packet += delta
 		if _time_since_packet > FADE_AFTER:
@@ -148,7 +154,12 @@ func _consume_departures(data: Dictionary, frame_time: float) -> void:
 		_aftereffect_waves.queue_departure(str(departure["edge"]), float(departure["x"]), float(departure["y"]))
 
 func _valid_departure(departure) -> bool:
-	if not departure is Dictionary or typeof(departure.get("id")) != TYPE_INT:
+	if not departure is Dictionary:
+		return false
+	var raw_id = departure.get("id")
+	# Godot's JSON parser may expose an integral JSON id as TYPE_FLOAT.
+	# Accept only finite, non-negative whole numbers; never coerce 1.5 to 1.
+	if not _is_finite_number(raw_id) or float(raw_id) < 0.0 or float(int(raw_id)) != float(raw_id):
 		return false
 	if not departure.has("edge") or not (str(departure["edge"]) in ["left", "right", "top", "bottom"]):
 		return false
@@ -422,15 +433,22 @@ func _default_effects() -> Dictionary:
 			"enabled": true,
 			"group_window_seconds": 0.22,
 			"group_distance": 0.18,
-			"base_width": 0.22,
 			"group_width_per_departure": 0.10,
-			"max_width": 0.65,
-			"fronts": 3,
-			"front_interval_seconds": 0.30,
-			"duration_seconds": 3.4,
-			"inward_distance": 0.32,
-			"line_width": 9.0,
-			"max_alpha": 0.22,
+			"duration_seconds": 4.8,
+			"initial_origin_outset": 0.03,
+			"origin_escape_distance": 0.16,
+			"start_radius": 0.03,
+			"propagation_speed": 0.20,
+			"band_width": 0.09,
+			"source_glow_radius": 0.16,
+			"echo_spacing": 0.15,
+			"echo_strength": 0.28,
+			"max_alpha": 0.26,
+			"fade_start_progress": 0.15,
+			"fade_end_progress": 0.92,
+			"glow_strength": 1.55,
+			"warm_color": "#fff0bd",
+			"blue_color": "#5caeff",
 			"dedupe_seconds": 5.0,
 		},
 	}

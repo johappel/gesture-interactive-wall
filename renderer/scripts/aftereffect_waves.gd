@@ -1,56 +1,73 @@
-# Quiet, short-lived facade memory for plausible anonymous departures.
-# The node receives no body IDs: it only keeps a pending edge position, then
-# combines nearby exits into a shared, broad inward-moving light front.
+# Quiet, anonymous facade memory for plausible departures.
+#
+# This manager deliberately contains no drawing code: each grouped departure
+# owns a full-viewport shader field. The shader's virtual origin travels out
+# beyond the exit edge, so the visible part is a returning light resonance,
+# not a line representing a person.
 class_name AftereffectWaves
 extends Node2D
 
 const VALID_EDGES := ["left", "right", "top", "bottom"]
-const GOLD := Color(1.0, 0.78, 0.38)
+const AftereffectWaveFieldScript := preload("res://scripts/aftereffect_wave_field.gd")
 
 var _pending: Array[Dictionary] = []
 var _waves: Array[Dictionary] = []
-var _group_window_seconds := 0.22
-var _group_distance := 0.18
-var _base_width := 0.22
-var _group_width_per_departure := 0.10
-var _max_width := 0.65
-var _fronts := 3
-var _front_interval_seconds := 0.30
-var _duration_seconds := 3.4
-var _inward_distance := 0.32
-var _line_width := 9.0
-var _max_alpha := 0.22
+var _group_window_seconds: float = 0.22
+var _group_distance: float = 0.18
+var _duration_seconds: float = 4.8
+var _field_config: Dictionary = {}
 
 
 func configure(config: Dictionary) -> void:
-	_group_window_seconds = max(_number(config, "group_window_seconds", 0.22), 0.0)
-	_group_distance = clamp(_number(config, "group_distance", 0.18), 0.0, 1.0)
-	_base_width = clamp(_number(config, "base_width", 0.22), 0.02, 1.0)
-	_group_width_per_departure = max(_number(config, "group_width_per_departure", 0.10), 0.0)
-	_max_width = clamp(_number(config, "max_width", 0.65), _base_width, 1.0)
-	_fronts = clampi(int(_number(config, "fronts", 3.0)), 1, 5)
-	_front_interval_seconds = max(_number(config, "front_interval_seconds", 0.30), 0.0)
-	_duration_seconds = max(_number(config, "duration_seconds", 3.4), 0.1)
-	_inward_distance = clamp(_number(config, "inward_distance", 0.32), 0.02, 1.0)
-	_line_width = max(_number(config, "line_width", 9.0), 1.0)
-	_max_alpha = clamp(_number(config, "max_alpha", 0.22), 0.01, 0.5)
+	_group_window_seconds = maxf(_number(config, "group_window_seconds", 0.22), 0.0)
+	_group_distance = clampf(_number(config, "group_distance", 0.18), 0.0, 1.0)
+	_duration_seconds = maxf(_number(config, "duration_seconds", 4.8), 0.1)
+	var fade_start_progress: float = clampf(_number(config, "fade_start_progress", 0.15), 0.0, 0.95)
+	var fade_end_progress: float = clampf(_number(config, "fade_end_progress", 0.92), fade_start_progress + 0.01, 1.0)
+	# A normalized, finite-only block lets the shader field remain safe if a
+	# hand-edited config is incomplete or malformed.
+	_field_config = {
+		"duration_seconds": _duration_seconds,
+		"group_width_per_departure": clampf(_number(config, "group_width_per_departure", 0.10), 0.0, 0.5),
+		"initial_origin_outset": clampf(_number(config, "initial_origin_outset", 0.03), 0.0, 0.5),
+		"origin_escape_distance": clampf(_number(config, "origin_escape_distance", 0.16), 0.0, 1.0),
+		"start_radius": clampf(_number(config, "start_radius", 0.03), 0.001, 1.0),
+		"propagation_speed": clampf(_number(config, "propagation_speed", 0.20), 0.001, 2.0),
+		"band_width": clampf(_number(config, "band_width", 0.09), 0.01, 0.5),
+		"source_glow_radius": clampf(_number(config, "source_glow_radius", 0.16), 0.01, 0.6),
+		"echo_spacing": clampf(_number(config, "echo_spacing", 0.15), 0.0, 1.0),
+		"echo_strength": clampf(_number(config, "echo_strength", 0.28), 0.0, 1.0),
+		"max_alpha": clampf(_number(config, "max_alpha", 0.26), 0.01, 0.5),
+		"fade_start_progress": fade_start_progress,
+		"fade_end_progress": fade_end_progress,
+		"glow_strength": clampf(_number(config, "glow_strength", 1.55), 0.1, 4.0),
+		"warm_color": _color_string(config, "warm_color", "#fff0bd"),
+		"blue_color": _color_string(config, "blue_color", "#5caeff"),
+	}
 
 
 func _number(config: Dictionary, key: String, default_value: float) -> float:
 	var value = config.get(key, default_value)
 	if typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT:
-		var number := float(value)
+		var number: float = float(value)
 		if not is_nan(number) and not is_inf(number):
 			return number
+	return default_value
+
+
+func _color_string(config: Dictionary, key: String, default_value: String) -> String:
+	var value = config.get(key, default_value)
+	if typeof(value) == TYPE_STRING and Color.from_string(str(value), Color.TRANSPARENT) != Color.TRANSPARENT:
+		return str(value)
 	return default_value
 
 
 func queue_departure(edge: String, x: float, y: float) -> void:
 	if not (edge in VALID_EDGES):
 		return
-	var axis := y if edge == "left" or edge == "right" else x
+	var axis: float = y if edge == "left" or edge == "right" else x
 	for pending in _pending:
-		if pending["edge"] == edge and abs(float(pending["axis"]) - axis) <= _group_distance:
+		if pending["edge"] == edge and absf(float(pending["axis"]) - axis) <= _group_distance:
 			var count: int = int(pending["count"])
 			pending["axis"] = (float(pending["axis"]) * count + axis) / float(count + 1)
 			pending["count"] = count + 1
@@ -60,8 +77,11 @@ func queue_departure(edge: String, x: float, y: float) -> void:
 
 func clear() -> void:
 	_pending.clear()
+	for wave in _waves:
+		var field = wave.get("field")
+		if is_instance_valid(field):
+			field.queue_free()
 	_waves.clear()
-	queue_redraw()
 
 
 func _process(delta: float) -> void:
@@ -69,48 +89,25 @@ func _process(delta: float) -> void:
 		var pending: Dictionary = _pending[index]
 		pending["age"] = float(pending["age"]) + delta
 		if float(pending["age"]) >= _group_window_seconds:
-			_waves.append({"edge": pending["edge"], "axis": pending["axis"], "count": pending["count"], "age": 0.0})
+			_create_wave(str(pending["edge"]), float(pending["axis"]), int(pending["count"]))
 			_pending.remove_at(index)
 
-	var total_duration: float = _duration_seconds + float(_fronts - 1) * _front_interval_seconds
 	for index in range(_waves.size() - 1, -1, -1):
 		var wave: Dictionary = _waves[index]
 		wave["age"] = float(wave["age"]) + delta
-		if float(wave["age"]) >= total_duration:
+		var field = wave.get("field")
+		if is_instance_valid(field):
+			field.update_wave(str(wave["edge"]), float(wave["axis"]), float(wave["age"]), int(wave["count"]), _field_config)
+		if float(wave["age"]) >= _duration_seconds:
+			if is_instance_valid(field):
+				field.queue_free()
 			_waves.remove_at(index)
-	queue_redraw()
 
 
-func _draw() -> void:
-	var viewport: Vector2 = get_viewport_rect().size
-	if viewport.x <= 0.0 or viewport.y <= 0.0:
-		return
-	for wave in _waves:
-		var count: int = int(wave["count"])
-		var width_norm: float = minf(_base_width + float(count - 1) * _group_width_per_departure, _max_width)
-		for front_index in range(_fronts):
-			var age: float = float(wave["age"]) - float(front_index) * _front_interval_seconds
-			if age < 0.0 or age > _duration_seconds:
-				continue
-			var progress: float = clampf(age / _duration_seconds, 0.0, 1.0)
-			var alpha: float = _max_alpha * (1.0 - progress) * (1.0 - float(front_index) * 0.16)
-			_draw_front(str(wave["edge"]), float(wave["axis"]), width_norm, progress, Color(GOLD.r * 1.35, GOLD.g * 1.25, GOLD.b, alpha), viewport)
-
-
-func _draw_front(edge: String, axis: float, width_norm: float, progress: float, color: Color, viewport: Vector2) -> void:
-	var points := PackedVector2Array()
-	var segments: int = 12
-	var normal_span: float = minf(viewport.x, viewport.y) * _inward_distance * progress
-	var parallel_size: float = viewport.y if edge == "left" or edge == "right" else viewport.x
-	var centre: float = axis * parallel_size
-	var half_span: float = maxf(parallel_size * width_norm * 0.5, _line_width)
-	for index in range(segments + 1):
-		var ratio: float = float(index) / float(segments)
-		var parallel: float = centre + lerpf(-half_span, half_span, ratio)
-		var curve: float = sin(ratio * PI) * minf(22.0, normal_span * 0.22)
-		match edge:
-			"left": points.append(Vector2(normal_span + curve, parallel))
-			"right": points.append(Vector2(viewport.x - normal_span - curve, parallel))
-			"top": points.append(Vector2(parallel, normal_span + curve))
-			"bottom": points.append(Vector2(parallel, viewport.y - normal_span - curve))
-	draw_polyline(points, color, _line_width, true)
+func _create_wave(edge: String, axis: float, count: int) -> void:
+	var field = AftereffectWaveFieldScript.new()
+	field.z_index = 0
+	add_child(field)
+	field.update_wave(edge, axis, 0.0, count, _field_config)
+	# Intentionally anonymous: only edge, shared axis and group size survive.
+	_waves.append({"edge": edge, "axis": axis, "count": count, "age": 0.0, "field": field})

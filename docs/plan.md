@@ -328,10 +328,17 @@ Publikum. Diese Punkte bleiben Teil der Realwelt-Abnahme in Phase 5.
 
 ### 9.3 Phase 4.5C: Fortgehen → Nachwirkung (technisch implementiert, automatisiert getestet)
 
+Die Default-Form ist eine breite, weiche Lichtresonanz ohne sichtbare Linie.
+Ihr virtueller Mittelpunkt verlässt die Fassade weiter über den Austrittsrand
+hinaus. Vom warmen Quellglühen am Rand kehrt nur ein zunehmend bläuliches,
+diffuses Lichtfeld in die Fassade zurück und wird allmählich mit ihrer dunklen
+Oberfläche eins.
+
 - Der Godot-Renderer verarbeitet `events.departures[]` ausschließlich in der
   neuen Effektfamilie `effects.aftereffect_waves`. Gültige Ereignisse erzeugen
-  wenige breite, vom Austrittsrand nach innen laufende Lichtfronten; sie liegen
-  hinter den vorhandenen Körpern, Trails, Funken und Lichtbrücken.
+  wenige breite, shader-basierte Lichtfelder. Der unsichtbare Mittelpunkt
+  wandert weiter nach außen; der sichtbare Resonanzanteil reicht weich zurück
+  in die Fassade. Er liegt hinter Körpern, Trails, Funken und Lichtbrücken.
 - Die anonyme Episode-ID dient ausschließlich einer auf `dedupe_seconds`
   begrenzten Arbeitsspeicher-Sperre gegen wiederholte UDP-Frames. Alte Frames
   sowie ungültige oder unvollständige Events werden ignoriert; die Wellenlogik

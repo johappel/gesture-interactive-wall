@@ -157,14 +157,13 @@ def make_lifecycle_persons(name: str, t: float) -> list[list[tuple[float, float,
         # One single exit, then a close group exit. Capture emits only the
         # anonymous edge events; the renderer owns the shared wave form.
         phase = t % 8.0
-        if phase < 0.25:
-            return [_person(0.18, 0.50, 0.35)]
         if phase < 0.5:
-            return [_person(0.04, 0.50, 0.35)]
-        if 3.0 <= phase < 3.25:
-            return [_person(0.82, 0.38, 0.25), _person(0.82, 0.50, 0.4), _person(0.82, 0.62, 0.55)]
-        if 3.25 <= phase < 3.5:
-            return [_person(0.96, 0.38, 0.25), _person(0.96, 0.50, 0.4), _person(0.96, 0.62, 0.55)]
+            # Keep moving through the final observed frame. Holding a figure
+            # still at the edge would correctly suppress a departure event.
+            return [_person(0.18 - phase * 0.28, 0.50, 0.35)]
+        if 3.0 <= phase < 3.5:
+            x = 0.82 + (phase - 3.0) * 0.28
+            return [_person(x, 0.38, 0.25), _person(x, 0.50, 0.4), _person(x, 0.62, 0.55)]
         return []
     raise ValueError(f"Unknown lifecycle scenario: {name}")
 
