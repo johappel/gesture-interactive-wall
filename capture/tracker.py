@@ -27,13 +27,14 @@ def load_config(path: str = _CONFIG_PATH) -> dict:
         return json.load(fh)
 
 
-def build_frame(bodies, pairs, energy, t, departures=None) -> dict:
+def build_frame(bodies, pairs, energy, t, departures=None, temporarily_missing=None) -> dict:
     return {
         "t": round(t, 3),
         "bodies": bodies,
         "pairs": pairs,
         "crowd": {"count": len(bodies), "energy": energy},
         "events": {"departures": departures or []},
+        "tracking": {"temporarily_missing": temporarily_missing or []},
     }
 
 
@@ -67,7 +68,12 @@ def run_sim(cfg: dict, scenario: str = "phase44") -> None:
             persons = make_simulation_persons(scenario, t)
             bodies = tracker.update(persons, t)
             pairs = compute_pairs(bodies, fcfg["proximity_threshold"])
-            sender.send(build_frame(bodies, pairs, crowd_energy(bodies), t, tracker.take_departures()))
+            sender.send(
+                build_frame(
+                    bodies, pairs, crowd_energy(bodies), t, tracker.take_departures(),
+                    tracker.temporarily_missing_ids(),
+                )
+            )
             time.sleep(1.0 / 60.0)
     except KeyboardInterrupt:
         pass
@@ -122,7 +128,12 @@ def run_camera(cfg: dict) -> None:
             persons = pose.process(frame, int(t * 1000))
             bodies = tracker.update(persons, t)
             pairs = compute_pairs(bodies, fcfg["proximity_threshold"])
-            sender.send(build_frame(bodies, pairs, crowd_energy(bodies), t, tracker.take_departures()))
+            sender.send(
+                build_frame(
+                    bodies, pairs, crowd_energy(bodies), t, tracker.take_departures(),
+                    tracker.temporarily_missing_ids(),
+                )
+            )
 
             if preview:
                 _draw_overlay(cv2, frame, bodies)

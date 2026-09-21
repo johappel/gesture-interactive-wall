@@ -56,7 +56,15 @@ func _process(delta: float) -> void:
 func _apply(data: Dictionary, delta: float) -> void:
 	var vp := get_viewport_rect().size
 	var seen := {}
+	var temporarily_missing := {}
 	_positions.clear()
+	var tracking = data.get("tracking", {})
+	if tracking is Dictionary:
+		var missing_ids = tracking.get("temporarily_missing", [])
+		if missing_ids is Array:
+			for missing_id in missing_ids:
+				if typeof(missing_id) == TYPE_INT or typeof(missing_id) == TYPE_FLOAT:
+					temporarily_missing[int(missing_id)] = true
 
 	for b in data.get("bodies", []):
 		var id := int(b["id"])
@@ -83,6 +91,11 @@ func _apply(data: Dictionary, delta: float) -> void:
 
 	for id in _bodies.keys():
 		if not seen.has(id):
+			# Preserve an already-rendered light only inside Capture's bounded
+			# grace period, so a brief pose loss is not visibly interpreted as
+			# immediate departure.
+			if temporarily_missing.has(id):
+				continue
 			if _bodies[id].fade(delta):
 				_bodies[id].queue_free()
 				_bodies.erase(id)

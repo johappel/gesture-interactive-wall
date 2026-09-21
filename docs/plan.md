@@ -307,7 +307,9 @@ und Robustheit mit realer Kamera, Beleuchtung, Verdeckung oder Publikum.
 - Capture sendet für jeden sichtbaren, bestätigten anonymen Track
   `presence_time` und `stillness` als kontinuierliche Werte. Ein kurzer
   Detection-Ausfall innerhalb der Grace-Period behält Episode, Anwesenheitszeit
-  und erreichte Stillness bei.
+  und erreichte Stillness bei. Der Renderer hält während dieser begrenzten
+  Zeit allein den bereits sichtbaren Lichtzustand; der fehlende Track bleibt
+  dabei aus Bodies, Paaren und Crowd-Daten heraus.
 - `stillness` ist keine Geste, Emotion oder Bewertung, sondern eine geglättete
   beobachtete Bewegungsruhe. Sie wächst und löst sich zeitlich allmählich.
 - Die neue, separat schaltbare Effektfamilie

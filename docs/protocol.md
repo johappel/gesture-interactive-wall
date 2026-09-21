@@ -37,6 +37,9 @@ Standard: `127.0.0.1:4242`. Es werden ausschließlich abstrakte Zahlenwerte
         "vy": 0.02
       }
     ]
+  },
+  "tracking": {
+    "temporarily_missing": []
   }
 }
 ```
@@ -58,6 +61,7 @@ Standard: `127.0.0.1:4242`. Es werden ausschließlich abstrakte Zahlenwerte
 | `pairs[].mx/my`    | 0..1      | Mittelpunkt für die Lichtbrücke |
 | `crowd.count`      | int       | Anzahl erkannter Personen |
 | `crowd.energy`     | 0..1      | Mittlere Intensität aller Personen |
+| `tracking.temporarily_missing` | int[] | Bestätigte anonyme IDs innerhalb der kurzen Track-Grace-Period; hält nur ihren bereits sichtbaren Lichtzustand |
 
 ### Departure-Ereignis
 
@@ -102,6 +106,13 @@ Während eines Detection-Ausfalls wird keine nicht beobachtbare Bewegung
 hinzuerfunden: bei Wiederaufnahme bleibt der zuletzt erreichte Stillness-Wert
 erhalten und wird erst mit der nächsten zusammenhängenden Beobachtung erneut
 aktualisiert.
+
+`tracking.temporarily_missing` enthält während derselben Grace-Period nur die
+bereits bestätigten, momentan nicht erkannten Track-IDs. Diese IDs sind keine
+Bodies und fließen nicht in Pairs oder Crowd ein. Der Renderer hält dafür allein
+den zuletzt sichtbaren Lichtzustand, damit ein kurzer Pose-Ausfall nicht als
+sichtbares Verschwinden erscheint. Nach Ablauf der Grace-Period entfällt die ID
+und der Renderer blendet den Lichtpunkt regulär aus.
 
 ## Tracking-Konfiguration
 

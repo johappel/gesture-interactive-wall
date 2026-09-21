@@ -143,6 +143,14 @@ class TrackLifecycleTest(unittest.TestCase):
         self.assertEqual(result[0][0][0]["id"], result[3][0][0]["id"])
         self.assertTrue(all(not events for _bodies, events in result))
 
+    def test_confirmed_short_occlusion_is_exposed_only_as_transient_metadata(self):
+        tracker = self._tracker()
+        tracker.update([person(0.5, 0.5)], 0.0)
+        tracker.update([], 0.1)
+        self.assertEqual(tracker.temporarily_missing_ids(), [0])
+        self.assertEqual(tracker.update([], 0.7), [])
+        self.assertEqual(tracker.temporarily_missing_ids(), [])
+
     def test_one_frame_flicker_keeps_id_without_departure(self):
         tracker = self._tracker()
         result = self._update_scenario(tracker, "flicker", (0.0, 0.1, 0.2, 0.3))

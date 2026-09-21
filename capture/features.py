@@ -182,6 +182,19 @@ class BodyTracker:
         self._departures = []
         return departures
 
+    def temporarily_missing_ids(self) -> list[int]:
+        """Return confirmed anonymous episodes currently inside the grace period.
+
+        This is transient renderer metadata only. Missing tracks remain absent
+        from bodies, pairs and crowd calculations; a renderer can merely avoid
+        fading their already-visible light before the bounded grace period ends.
+        """
+        return sorted(
+            tr.id
+            for tr in self._tracks.values()
+            if tr.state == "temporarily_missing" and tr.seen_frames >= self.confirmation_frames
+        )
+
     @property
     def track_count(self) -> int:
         """Number of active or temporarily missing tracks, for diagnostics."""

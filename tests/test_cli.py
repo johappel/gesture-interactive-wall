@@ -179,6 +179,7 @@ class FrameTest(unittest.TestCase):
         self.assertEqual(frame["bodies"], [{"id": 0}])
         self.assertEqual(frame["pairs"], [])
         self.assertEqual(frame["events"], {"departures": []})
+        self.assertEqual(frame["tracking"], {"temporarily_missing": []})
 
     def test_frame_includes_one_shot_departures(self):
         departure = {"id": 7, "edge": "left", "x": 0.01, "y": 0.54}
@@ -189,6 +190,13 @@ class FrameTest(unittest.TestCase):
         body = {"id": 2, "presence_time": 3.5, "stillness": 0.82}
         frame = build_frame(bodies=[body], pairs=[], energy=0.0, t=3.5)
         self.assertEqual(frame["bodies"][0], body)
+
+    def test_frame_includes_temporary_missing_metadata_without_a_body(self):
+        frame = build_frame(
+            bodies=[], pairs=[], energy=0.0, t=2.0, temporarily_missing=[4]
+        )
+        self.assertEqual(frame["bodies"], [])
+        self.assertEqual(frame["tracking"], {"temporarily_missing": [4]})
 
 
 if __name__ == "__main__":
