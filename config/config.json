@@ -1,14 +1,14 @@
 {
     "camera":  {
-                   "index":  702,
+                   "index":  701,
                    "width":  1920,
                    "height":  1080,
                    "flip":  true,
                    "backend":  "any",
-                   "name":  "HD Pro Webcam C920",
-                   "device_path":  "\\\\?\\usb#vid_046d\u0026pid_082d\u0026mi_00#7\u002612cd2aed\u00260\u00260000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\\global",
+                   "name":  "Logitech StreamCam",
+                   "device_path":  "\\\\?\\usb#vid_046d\u0026pid_0893\u0026mi_00#9\u002696a87e7\u00260\u00260000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\\global",
                    "vid":  "046D",
-                   "pid":  "082D"
+                   "pid":  "0893"
                },
     "network":  {
                     "host":  "127.0.0.1",
