@@ -43,8 +43,17 @@
                  },
     "station":  {
                     "facade":  {
-                                   "screen":  0,
-                                   "fullscreen":  true
+                                   "screen":  1,
+                                   "fullscreen":  true,
+                                   "display":  {
+                                                   "x":  1920,
+                                                   "y":  0,
+                                                   "width":  1920,
+                                                   "height":  1200,
+                                                   "primary":  false,
+                                                   "relative_x":  1920,
+                                                   "relative_y":  0
+                                               }
                                },
                     "monitor":  {
                                     "enabled":  true,
@@ -55,7 +64,16 @@
                                     "fullscreen":  true,
                                     "width":  960,
                                     "height":  540,
-                                    "prompt_font_size":  38
+                                    "prompt_font_size":  38,
+                                    "display":  {
+                                                    "x":  0,
+                                                    "y":  0,
+                                                    "width":  1920,
+                                                    "height":  1200,
+                                                    "primary":  true,
+                                                    "relative_x":  0,
+                                                    "relative_y":  0
+                                                }
                                 },
                     "prompt":  {
                                    "enabled":  true,

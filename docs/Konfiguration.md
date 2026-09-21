@@ -124,7 +124,8 @@ und keine visuellen Effektfamilien sind.
 
 | Parameter | Typ | Wirkung |
 |---|---|---|
-| `screen` | int | Bildschirmindex für die Fassade. Nicht verfügbare Werte fallen auf Bildschirm 0 zurück (mit Warnung). |
+| `screen` | int | Letzter Bildschirmindex für die Fassade. Er wird durch die Bildschirmwahl gespeichert und dient als Rückfall für ältere Configs. |
+| `display` | object | Gespeicherte Position und Auflösung der gewählten Ausgabe, zusätzlich relativ zum Hauptbildschirm. Der Renderer nutzt diese Signatur, damit eine geänderte Windows-Reihenfolge oder ein abweichender virtueller Ursprung nicht stillschweigend auf den falschen Bildschirm zeigt. Fehlt sie, wird bei mehreren Bildschirmen vor dem Start gewählt. |
 | `fullscreen` | bool | Vollbild auf dem gewählten Bildschirm. |
 
 ### `station.monitor` — Nahraum der Rückkopplung
@@ -136,6 +137,7 @@ und keine visuellen Effektfamilien sind.
 | `show_camera_image` | bool | **Im Publikumsbetrieb `false`.** Der Renderer ignoriert `true` und warnt; das rohe Kamerabild bleibt verborgen. |
 | `title` | string | Fenstertitel. |
 | `screen` | int | Bildschirmindex des Monitors. Muss sich von `facade.screen` unterscheiden, sonst bleibt der Monitor aus. |
+| `display` | object | Gespeicherte Bildschirm-Signatur wie bei `station.facade`. Wird über **WIRKLICHT Nahraum-Monitor waehlen** gesetzt. |
 | `fullscreen` | bool | Vollbild oder Fenster. |
 | `width`, `height` | int | Fenstergröße im Fenstermodus. |
 | `prompt_font_size` | int | Schriftgröße des Sprachimpulses auf dem Monitor. |

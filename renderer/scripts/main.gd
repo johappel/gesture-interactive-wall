@@ -327,7 +327,7 @@ func _setup_station_monitor() -> void:
 	if str(monitor_cfg.get("mode", "facade_preview")) != "facade_preview":
 		push_warning("Unbekannter Monitor-Modus; Monitor bleibt aus.")
 		return
-	var monitor_screen := _resolve_screen(int(monitor_cfg.get("screen", 0)), "station.monitor.screen")
+	var monitor_screen := _resolve_output_screen(monitor_cfg, "station.monitor.screen")
 	if DisplayServer.get_screen_count() < 2 or monitor_screen == _facade_screen:
 		push_warning("Nahraum-Monitor bleibt aus: keine von der Fassade getrennte Anzeige verfuegbar.")
 		return
@@ -390,6 +390,39 @@ func _setup_facade_output() -> void:
 	print("WIRKLICHT Fassade: Bildschirm %d, %s" % [_facade_screen, "Vollbild" if facade_window.mode == Window.MODE_FULLSCREEN else "Fenster"])
 
 func _resolve_facade_screen(facade_cfg: Dictionary) -> int:
+	return _resolve_output_screen(facade_cfg, "station.facade.screen")
+
+func _resolve_output_screen(output_cfg: Dictionary, label: String) -> int:
+	var display_signature = output_cfg.get("display", {})
+	if display_signature is Dictionary:
+		var required_keys := ["x", "y", "width", "height"]
+		var has_signature := true
+		for key in required_keys:
+			if not display_signature.has(key):
+				has_signature = false
+				break
+		if has_signature:
+			for screen_index in range(DisplayServer.get_screen_count()):
+				var position := DisplayServer.screen_get_position(screen_index)
+				var size := DisplayServer.screen_get_size(screen_index)
+				if position.x == int(display_signature["x"]) and position.y == int(display_signature["y"]) and size.x == int(display_signature["width"]) and size.y == int(display_signature["height"]):
+					print("WIRKLICHT gespeicherte Ausgabe %s: Bildschirm %d" % [label, screen_index])
+					return screen_index
+			if display_signature.has("relative_x") and display_signature.has("relative_y"):
+				var primary_position := DisplayServer.screen_get_position(_primary_screen())
+				for screen_index in range(DisplayServer.get_screen_count()):
+					var position := DisplayServer.screen_get_position(screen_index)
+					var size := DisplayServer.screen_get_size(screen_index)
+					if position.x - primary_position.x == int(display_signature["relative_x"]) and position.y - primary_position.y == int(display_signature["relative_y"]) and size.x == int(display_signature["width"]) and size.y == int(display_signature["height"]):
+						print("WIRKLICHT gespeicherte Ausgabe %s über relative Position: Bildschirm %d" % [label, screen_index])
+						return screen_index
+	var requested_screen := int(output_cfg.get("screen", 0))
+	if requested_screen >= 0 and requested_screen < DisplayServer.get_screen_count():
+		push_warning("Die gespeicherte Bildschirm-Geometrie für %s passt nicht zur Godot-Koordinate; verwende den gespeicherten Bildschirmindex %d." % [label, requested_screen])
+		return requested_screen
+	return _resolve_screen(requested_screen, label)
+
+func _resolve_legacy_facade_screen(facade_cfg: Dictionary) -> int:
 	var display_signature = facade_cfg.get("display", {})
 	if display_signature is Dictionary:
 		var required_keys := ["x", "y", "width", "height"]

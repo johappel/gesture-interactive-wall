@@ -20,9 +20,11 @@ class WindowsScriptContractTest(unittest.TestCase):
     def test_renderer_output_config_has_separate_fullscreen_displays(self):
         config = json.loads((ROOT / "config" / "config.json").read_text(encoding="utf-8"))
         station = config["station"]
-        self.assertEqual(station["facade"]["screen"], 0)
+        self.assertIsInstance(station["facade"]["screen"], int)
+        self.assertGreaterEqual(station["facade"]["screen"], 0)
         self.assertTrue(station["facade"]["fullscreen"])
-        self.assertEqual(station["monitor"]["screen"], 0)
+        self.assertIsInstance(station["monitor"]["screen"], int)
+        self.assertGreaterEqual(station["monitor"]["screen"], 0)
         self.assertTrue(station["monitor"]["fullscreen"])
         self.assertFalse(station["monitor"]["show_camera_image"])
 
@@ -41,7 +43,7 @@ class WindowsScriptContractTest(unittest.TestCase):
     def test_operator_scripts_exist(self):
         for name in ("install.ps1", "start.ps1", "camera-select.ps1", "monitor-select.ps1", "update.ps1", "diagnose.ps1"):
             self.assertTrue((ROOT / name).is_file(), name)
-        for name in ("WIRKLICHT starten.cmd", "WIRKLICHT Kamera waehlen.cmd", "WIRKLICHT Bildschirm waehlen.cmd", "WIRKLICHT Diagnose.cmd"):
+        for name in ("WIRKLICHT starten.cmd", "WIRKLICHT Kamera waehlen.cmd", "WIRKLICHT Bildschirm waehlen.cmd", "WIRKLICHT Nahraum-Monitor waehlen.cmd", "WIRKLICHT Diagnose.cmd"):
             self.assertTrue((ROOT / name).is_file(), name)
         self.assertTrue((ROOT / "lib" / "common.ps1").is_file())
 
@@ -66,7 +68,11 @@ class WindowsScriptContractTest(unittest.TestCase):
         self.assertIn("Get-WirklichtAvailableCameras", common)
         self.assertIn("Save-WirklichtCameraSelection", common)
         self.assertIn("Get-WirklichtAvailableScreens", common)
+        self.assertIn("return $result.ToArray()", common)
         self.assertIn("Save-WirklichtFacadeScreenSelection", common)
+        self.assertIn("Save-WirklichtMonitorScreenSelection", common)
+        self.assertIn("Select-WirklichtMonitorScreen", common)
+        self.assertIn("relative_x", common)
         self.assertIn("Find-WirklichtConfiguredScreen", common)
         self.assertIn("Test-WirklichtCameraSelection", common)
         self.assertIn("UTF8Encoding($false)", common)
@@ -81,14 +87,18 @@ class WindowsScriptContractTest(unittest.TestCase):
         self.assertIn("camera-select.ps1", start)
         self.assertIn("monitor-select.ps1", start)
         self.assertIn("Select-WirklichtFacadeScreen", start)
+        self.assertIn("Select-WirklichtMonitorScreen", start)
         self.assertIn("[switch]$NoPrompt", common)
         self.assertIn("System.Windows.Forms", camera_select)
         self.assertIn("Testen & speichern", camera_select)
         self.assertIn("System.Windows.Forms", monitor_select)
-        self.assertIn("Bildschirm wählen", monitor_select)
+        self.assertIn("WIRKLICHT - ", monitor_select)
         self.assertIn("Position", monitor_select)
+        self.assertIn('"monitor"', monitor_select)
         self.assertIn('New-WirklichtShortcut -Name "WIRKLICHT Kamera waehlen"', common)
         self.assertIn('New-WirklichtShortcut -Name "WIRKLICHT Bildschirm waehlen"', common)
+        self.assertIn('New-WirklichtShortcut -Name "WIRKLICHT Nahraum-Monitor waehlen"', common)
+        self.assertIn("-Target monitor", common)
         self.assertIn("Get-WirklichtShortcutDirectories", common)
         self.assertIn("Start-Verknuepfungen:", common)
         self.assertIn("WIRKLICHT starten.cmd", common)
