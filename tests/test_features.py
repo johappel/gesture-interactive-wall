@@ -315,7 +315,7 @@ class SimTest(unittest.TestCase):
         self.assertEqual(len(make_phase44_persons(11.0)), 0)
 
     def test_lifecycle_scenarios_are_available_and_deterministic(self):
-        self.assertEqual(len(LIFECYCLE_SCENARIOS), 11)
+        self.assertEqual(len(LIFECYCLE_SCENARIOS), 12)
         for scenario in LIFECYCLE_SCENARIOS:
             self.assertEqual(
                 make_lifecycle_persons(scenario, 0.1),
@@ -347,6 +347,29 @@ class SimTest(unittest.TestCase):
         self.assertEqual(recovered["id"], before_gap["id"])
         self.assertAlmostEqual(recovered["presence_time"], 4.3)
         self.assertAlmostEqual(recovered["stillness"], before_gap["stillness"])
+
+    def test_aftereffect_wave_scenario_contains_single_and_group_exits(self):
+        self.assertEqual(len(make_lifecycle_persons("aftereffect_waves", 0.1)), 1)
+        self.assertEqual(len(make_lifecycle_persons("aftereffect_waves", 0.35)), 1)
+        self.assertEqual(make_lifecycle_persons("aftereffect_waves", 1.0), [])
+        self.assertEqual(len(make_lifecycle_persons("aftereffect_waves", 3.1)), 3)
+        self.assertEqual(len(make_lifecycle_persons("aftereffect_waves", 3.35)), 3)
+        self.assertEqual(make_lifecycle_persons("aftereffect_waves", 4.0), [])
+
+    def test_aftereffect_wave_scenario_emits_one_single_and_one_group_exit(self):
+        tracker = BodyTracker(
+            max_dist=0.3,
+            timeout=0.5,
+            grace_period=0.5,
+            departure_edge_margin=0.08,
+            departure_min_speed=0.05,
+        )
+        departures = []
+        for t in (0.0, 0.3, 0.6, 1.2, 3.0, 3.3, 3.6, 4.2):
+            tracker.update(make_lifecycle_persons("aftereffect_waves", t), t)
+            departures.extend(tracker.take_departures())
+        self.assertEqual(len(departures), 4)
+        self.assertEqual([event["edge"] for event in departures], ["left", "right", "right", "right"])
 
 
 if __name__ == "__main__":

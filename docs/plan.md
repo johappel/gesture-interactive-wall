@@ -326,7 +326,34 @@ Automatisierte Tests und Simulator belegen Signal- und Ablauf-Invarianten, aber
 nicht die Sichtbarkeit, Latenz oder Wirkung auf echter Fassade bzw. bei
 Publikum. Diese Punkte bleiben Teil der Realwelt-Abnahme in Phase 5.
 
-### 9.3 Noch offen: weitere Phase 4.5
+### 9.3 Phase 4.5C: Fortgehen → Nachwirkung (technisch implementiert, automatisiert getestet)
+
+- Der Godot-Renderer verarbeitet `events.departures[]` ausschließlich in der
+  neuen Effektfamilie `effects.aftereffect_waves`. Gültige Ereignisse erzeugen
+  wenige breite, vom Austrittsrand nach innen laufende Lichtfronten; sie liegen
+  hinter den vorhandenen Körpern, Trails, Funken und Lichtbrücken.
+- Die anonyme Episode-ID dient ausschließlich einer auf `dedupe_seconds`
+  begrenzten Arbeitsspeicher-Sperre gegen wiederholte UDP-Frames. Alte Frames
+  sowie ungültige oder unvollständige Events werden ignoriert; die Wellenlogik
+  selbst erhält und speichert nur Rand und Position.
+- Nahe Austritte am gleichen Rand werden in `group_window_seconds` zu einer
+  breiteren gemeinsamen Nachwirkung aggregiert. Es entsteht keine individuelle
+  Personendarstellung, keine Gestenlogik und keine Ereignis-Historie.
+- `enabled: false` legt die Welleninstanz nicht an und simuliert daher keine
+  Wellen. `minimal_mode` lässt die Familie ebenfalls aus.
+- Der deterministische Simulatorfall `aftereffect_waves` zeigt erst einen
+  einzelnen linken und anschließend einen nahen gemeinsamen rechten Austritt;
+  er ist mit `python -m capture.tracker --sim --sim-scenario aftereffect_waves`
+  ausführbar.
+
+Automatisiert geprüft sind Config- und Renderer-Verträge, die sichere
+Event-Validierung, zeitlich rückläufige Frames, Duplikat-Schutz und die
+anonyme Gruppenaggregation im Quellvertrag sowie der Capture-Simulatorablauf.
+Ein sichtbarer Godot-Simulatorlauf und die reale Fassadenabnahme bleiben
+separate Schritte: insbesondere Helligkeit, Distanzlesbarkeit, Latenz und die
+Wirkung bei mehreren Menschen sind nicht durch Unit-Tests belegt.
+
+### 9.4 Noch offen: weitere Phase 4.5
 
 ### Capture / Features
 
@@ -344,16 +371,13 @@ Mindestens simulieren:
 - Öffnung / Verdichtung;
 - zwei Personen kommen zusammen;
 - größere Gruppe;
-- einzelne Person verlässt links/rechts;
-- mehrere Personen verlassen gemeinsam einen Randbereich.
 
 ### Renderer
 
 1. Nähe als Feld / Dunst zusätzlich zur Linie;
 2. rhythmische Bewegung als dezente Wellenmodulation;
-3. `departure` als zurücklaufende Wasser-/Lichtwelle;
-4. Interaktion der Wellen mit vorhandenen Partikeln/Feldern;
-5. Config-Schalter für jede neue Effektfamilie.
+3. Interaktion der Wellen mit vorhandenen Partikeln/Feldern;
+4. Config-Schalter für jede neue Effektfamilie.
 
 ## 10. Nachwirkung / Echo
 

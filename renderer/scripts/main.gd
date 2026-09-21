@@ -6,6 +6,7 @@ extends Node2D
 const DEFAULT_PORT := 4242
 const FADE_AFTER := 0.4  # seconds without packets before bodies fade
 const BodyLightScript := preload("res://scripts/body_light.gd")
+const AftereffectWavesScript := preload("res://scripts/aftereffect_waves.gd")
 
 var _udp := PacketPeerUDP.new()
 var _bodies := {}          # id -> BodyLight
@@ -20,12 +21,16 @@ var _facade_screen := 0
 var _monitor_window: Window
 var _monitor_prompt: Label
 var _monitor_closed := false
+var _aftereffect_waves
+var _last_frame_time := -INF
+var _seen_departure_ids := {}
 
 func _ready() -> void:
 	_load_config()
 	_setup_facade_output()
 	_setup_background()
 	_setup_glow()
+	_setup_aftereffect_waves()
 	_setup_station_monitor()
 	var err := _udp.bind(_port, "127.0.0.1")
 	if err != OK:
@@ -43,7 +48,7 @@ func _process(delta: float) -> void:
 	if latest != "":
 		_time_since_packet = 0.0
 		var json := JSON.new()
-		if json.parse(latest) == OK:
+		if json.parse(latest) == OK and json.get_data() is Dictionary:
 			_apply(json.get_data(), delta)
 	else:
 		_time_since_packet += delta
@@ -54,6 +59,12 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 func _apply(data: Dictionary, delta: float) -> void:
+	var frame_time = data.get("t", null)
+	if _is_finite_number(frame_time):
+		if float(frame_time) < _last_frame_time:
+			return
+		_last_frame_time = float(frame_time)
+		_consume_departures(data, _last_frame_time)
 	var vp := get_viewport_rect().size
 	var seen := {}
 	var temporarily_missing := {}
@@ -66,7 +77,12 @@ func _apply(data: Dictionary, delta: float) -> void:
 				if typeof(missing_id) == TYPE_INT or typeof(missing_id) == TYPE_FLOAT:
 					temporarily_missing[int(missing_id)] = true
 
-	for b in data.get("bodies", []):
+	var raw_bodies = data.get("bodies", [])
+	if not raw_bodies is Array:
+		raw_bodies = []
+	for b in raw_bodies:
+		if not (b is Dictionary) or not b.has("id") or not _is_finite_number(b.get("x")) or not _is_finite_number(b.get("y")):
+			continue
 		var id := int(b["id"])
 		seen[id] = true
 		var pos := Vector2(float(b["x"]) * vp.x, float(b["y"]) * vp.y)
@@ -100,7 +116,59 @@ func _apply(data: Dictionary, delta: float) -> void:
 				_bodies[id].queue_free()
 				_bodies.erase(id)
 
-	_pairs = data.get("pairs", []) if _effect_enabled("proximity_bridges", true) else []
+	var raw_pairs = data.get("pairs", [])
+	_pairs = raw_pairs if raw_pairs is Array and _effect_enabled("proximity_bridges", true) else []
+
+func _setup_aftereffect_waves() -> void:
+	if not _effect_enabled("aftereffect_waves", false):
+		return
+	_aftereffect_waves = AftereffectWavesScript.new()
+	_aftereffect_waves.z_index = -1
+	_aftereffect_waves.configure(_effect_block("aftereffect_waves"))
+	add_child(_aftereffect_waves)
+
+func _consume_departures(data: Dictionary, frame_time: float) -> void:
+	if _aftereffect_waves == null:
+		return
+	_prune_seen_departure_ids(frame_time)
+	var events = data.get("events", {})
+	if not events is Dictionary:
+		return
+	var departures = events.get("departures", [])
+	if not departures is Array:
+		return
+	for departure in departures:
+		if not _valid_departure(departure):
+			continue
+		var departure_id: int = int(departure["id"])
+		if _seen_departure_ids.has(departure_id):
+			continue
+		# IDs are only transient UDP duplicate guards. The wave receives no ID.
+		_seen_departure_ids[departure_id] = frame_time + _aftereffect_dedupe_seconds()
+		_aftereffect_waves.queue_departure(str(departure["edge"]), float(departure["x"]), float(departure["y"]))
+
+func _valid_departure(departure) -> bool:
+	if not departure is Dictionary or typeof(departure.get("id")) != TYPE_INT:
+		return false
+	if not departure.has("edge") or not (str(departure["edge"]) in ["left", "right", "top", "bottom"]):
+		return false
+	for name in ["x", "y", "vx", "vy"]:
+		if not _is_finite_number(departure.get(name)):
+			return false
+	return float(departure["x"]) >= 0.0 and float(departure["x"]) <= 1.0 and float(departure["y"]) >= 0.0 and float(departure["y"]) <= 1.0
+
+func _is_finite_number(value) -> bool:
+	if not (typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT):
+		return false
+	return not is_nan(float(value)) and not is_inf(float(value))
+
+func _prune_seen_departure_ids(frame_time: float) -> void:
+	for departure_id in _seen_departure_ids.keys():
+		if float(_seen_departure_ids[departure_id]) < frame_time:
+			_seen_departure_ids.erase(departure_id)
+
+func _aftereffect_dedupe_seconds() -> float:
+	return max(float(_effect_block("aftereffect_waves").get("dedupe_seconds", 5.0)), 0.1)
 
 func _fade_all(delta: float) -> void:
 	for id in _bodies.keys():
@@ -114,6 +182,8 @@ func _draw() -> void:
 	if not _effect_enabled("proximity_bridges", true):
 		return
 	for p in _pairs:
+		if not p is Dictionary or not p.has("a") or not p.has("b"):
+			continue
 		var a := int(p["a"])
 		var b := int(p["b"])
 		if _positions.has(a) and _positions.has(b):
@@ -330,6 +400,10 @@ func _effect_enabled(name: String, default_value: bool) -> bool:
 		return bool(block.get("enabled", default_value))
 	return default_value
 
+func _effect_block(name: String) -> Dictionary:
+	var block = _effects.get(name, {})
+	return block if block is Dictionary else {}
+
 func _default_effects() -> Dictionary:
 	return {
 		"enabled": true,
@@ -343,6 +417,21 @@ func _default_effects() -> Dictionary:
 			"min_presence_seconds": 3.0,
 			"pulse_seconds": 6.0,
 			"max_scale": 1.3,
+		},
+		"aftereffect_waves": {
+			"enabled": true,
+			"group_window_seconds": 0.22,
+			"group_distance": 0.18,
+			"base_width": 0.22,
+			"group_width_per_departure": 0.10,
+			"max_width": 0.65,
+			"fronts": 3,
+			"front_interval_seconds": 0.30,
+			"duration_seconds": 3.4,
+			"inward_distance": 0.32,
+			"line_width": 9.0,
+			"max_alpha": 0.22,
+			"dedupe_seconds": 5.0,
 		},
 	}
 

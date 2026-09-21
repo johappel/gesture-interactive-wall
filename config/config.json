@@ -101,7 +101,19 @@
                                             "enabled":  false
                                         },
                     "aftereffect_waves":  {
-                                              "enabled":  false
+                                              "enabled":  true,
+                                              "group_window_seconds":  0.22,
+                                              "group_distance":  0.18,
+                                              "base_width":  0.22,
+                                              "group_width_per_departure":  0.10,
+                                              "max_width":  0.65,
+                                              "fronts":  3,
+                                              "front_interval_seconds":  0.30,
+                                              "duration_seconds":  3.4,
+                                              "inward_distance":  0.32,
+                                              "line_width":  9.0,
+                                              "max_alpha":  0.22,
+                                              "dedupe_seconds":  5.0
                                           },
                     "crowd_field":  {
                                         "enabled":  false

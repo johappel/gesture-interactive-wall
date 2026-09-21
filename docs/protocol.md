@@ -88,8 +88,9 @@ Rand nach außen zeigte. Ein Verlust in der Bildmitte und ein bloßer Timeout
 erzeugen kein Ereignis. Das Ereignis wird beim Beenden genau einmal gesendet;
 eine spätere Rückkehr erhält eine neue Track-ID.
 
-Der Renderer darf `events` vorerst ignorieren. Phase 4.5A fügt bewusst keine
-Nachwirkungs- oder sonstigen Godot-Effekte hinzu.
+Phase 4.5C verarbeitet ausschließlich diese plausiblen `departure`-Ereignisse
+als Nachwirkungswellen. Sie sind keine Body-Daten und werden nicht als
+individuelle Darstellung fortgeführt.
 
 ## Verweilen-Signale (Phase 4.5B)
 
@@ -156,8 +157,38 @@ mit der echten Kamera erneut geprüft werden.
 Die Effektfamilie `effects.stillness_resonance` ist unabhängig schaltbar. Bei
 `enabled: false` wird ihr Feld nicht erzeugt und nicht simuliert. Fassade und
 Nahraum-Monitor nutzen dieselbe Renderer-Ausgabe (`facade_preview`); es wird
-kein Kamerabild übertragen oder angezeigt. Nachwirkungswellen, Rhythmus, Dunst
-und Crowd-Felder sind nicht Teil von Phase 4.5B.
+kein Kamerabild übertragen oder angezeigt.
+
+### Nachwirkungswellen (Phase 4.5C)
+
+`effects.aftereffect_waves` verarbeitet nur gültige `events.departures[]` aus
+zeitlich nicht rückläufigen Frames. Der Renderer prüft `id`, Rand, Position und
+Geschwindigkeit, verwirft unvollständige bzw. ungültige Ereignisse und hält die
+anonyme Episode-ID nur für `dedupe_seconds` im Arbeitsspeicher gegen
+wiederholte UDP-Frames. Die Welleninstanz erhält anschließend ausschließlich
+Rand und Position; sie speichert oder zeichnet keine Person-ID.
+
+Nahe Austritte am selben Rand werden innerhalb von `group_window_seconds` zu
+einer gemeinsamen Welle aggregiert. Daraus entstehen wenige breite, sanft
+nach innen laufende Lichtfronten. Die Wellen liegen hinter Körpern, Trails,
+Funken und Lichtbrücken und werden über geringe `max_alpha` begrenzt.
+`enabled: false` erzeugt keine Instanz und simuliert keine bestehenden Wellen.
+
+| Config-Feld | Default | Bedeutung |
+|---|---:|---|
+| `enabled` | `true` | Effektfamilie aktiv; `false` erzeugt/simuliert nichts |
+| `group_window_seconds` | `0.22` | Zeitfenster für gemeinsame Rand-Austritte |
+| `group_distance` | `0.18` | maximaler normierter Abstand entlang desselben Randes |
+| `base_width` | `0.22` | Breite einer einzelnen Welle relativ zum Parallelrand |
+| `group_width_per_departure` | `0.10` | zusätzliche Breite je nahe aggregiertem Austritt |
+| `max_width` | `0.65` | Obergrenze der gemeinsamen Wellenbreite |
+| `fronts` | `3` | wenige nacheinander laufende Wellenfronten |
+| `front_interval_seconds` | `0.30` | zeitlicher Abstand der Fronten |
+| `duration_seconds` | `3.4` | Laufzeit einer Front |
+| `inward_distance` | `0.32` | maximale Strecke nach innen, relativ zur kurzen Viewportseite |
+| `line_width` | `9.0` | projektionstaugliche Linienbreite in Pixeln |
+| `max_alpha` | `0.22` | zurückhaltende Maximal-Deckkraft |
+| `dedupe_seconds` | `5.0` | kurzlebige UDP-Duplikatsperre für die anonyme Episode-ID |
 
 ## OSC (später, Phase 5)
 
