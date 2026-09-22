@@ -322,12 +322,22 @@ class SimTest(unittest.TestCase):
         self.assertEqual(len(make_phase44_persons(11.0)), 0)
 
     def test_lifecycle_scenarios_are_available_and_deterministic(self):
-        self.assertEqual(len(LIFECYCLE_SCENARIOS), 13)
+        self.assertEqual(len(LIFECYCLE_SCENARIOS), 14)
         for scenario in LIFECYCLE_SCENARIOS:
             self.assertEqual(
                 make_lifecycle_persons(scenario, 0.1),
                 make_lifecycle_persons(scenario, 0.1),
             )
+
+    def test_proximity_scenario_approaches_stands_and_parts(self):
+        self.assertEqual(make_lifecycle_persons("proximity", 1.0), [])
+        # Approaching: two people, still apart.
+        far = make_lifecycle_persons("proximity", 2.5)
+        self.assertEqual(len(far), 2)
+        # Standing together: the two torsos are close on the x axis.
+        near = make_lifecycle_persons("proximity", 10.0)
+        self.assertEqual(len(near), 2)
+        self.assertLess(abs(near[0][0][0] - near[1][0][0]), abs(far[0][0][0] - far[1][0][0]))
 
     def test_crowd_aura_scenario_grows_holds_and_releases_the_group(self):
         # 0 -> 1 -> 2 -> 4 -> 7 -> 14 people, then movement, stillness, split,

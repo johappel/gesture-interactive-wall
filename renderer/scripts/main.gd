@@ -8,6 +8,7 @@ const FADE_AFTER := 0.4  # seconds without packets before bodies fade
 const BodyLightScript := preload("res://scripts/body_light.gd")
 const AftereffectWavesScript := preload("res://scripts/aftereffect_waves.gd")
 const CrowdAuraScript := preload("res://scripts/crowd_aura.gd")
+const ProximityBridgesScript := preload("res://scripts/proximity_bridges.gd")
 const PromptCueScript := preload("res://scripts/prompt_cue.gd")
 
 var _udp := PacketPeerUDP.new()
@@ -35,6 +36,7 @@ var _prompt_rotation_pending := false
 var _monitor_closed := false
 var _aftereffect_waves
 var _crowd_aura
+var _proximity_bridges
 var _last_frame_time := -INF
 var _seen_departure_ids := {}
 
@@ -44,6 +46,7 @@ func _ready() -> void:
 	_setup_background()
 	_setup_glow()
 	_setup_crowd_aura()
+	_setup_proximity_bridges()
 	_setup_aftereffect_waves()
 	_setup_station_monitor()
 	var err := _udp.bind(_port, "127.0.0.1")
@@ -145,6 +148,8 @@ func _apply(data: Dictionary, delta: float) -> void:
 
 	var raw_pairs = data.get("pairs", [])
 	_pairs = raw_pairs if raw_pairs is Array and _effect_enabled("proximity_bridges", true) else []
+	if _proximity_bridges != null:
+		_proximity_bridges.update_pairs(_pairs, _positions, delta)
 
 	_update_crowd_aura(data, normalized_positions, delta)
 
@@ -183,6 +188,13 @@ func _setup_crowd_aura() -> void:
 	_crowd_aura = CrowdAuraScript.new()
 	_crowd_aura.configure(_effect_block("crowd_aura"))
 	add_child(_crowd_aura)
+
+func _setup_proximity_bridges() -> void:
+	if not _effect_enabled("proximity_bridges", true):
+		return
+	_proximity_bridges = ProximityBridgesScript.new()
+	_proximity_bridges.configure(_effect_block("proximity_bridges"))
+	add_child(_proximity_bridges)
 
 func _consume_departures(data: Dictionary, frame_time: float) -> void:
 	if _aftereffect_waves == null:
@@ -243,20 +255,8 @@ func _fade_all(delta: float) -> void:
 	# time constant instead of being switched off.
 	if _crowd_aura != null:
 		_crowd_aura.update_crowd([], 0, 0.0, delta)
-
-func _draw() -> void:
-	if not _effect_enabled("proximity_bridges", true):
-		return
-	for p in _pairs:
-		if not p is Dictionary or not p.has("a") or not p.has("b"):
-			continue
-		var a := int(p["a"])
-		var b := int(p["b"])
-		if _positions.has(a) and _positions.has(b):
-			var prox := float(p.get("proximity", 0.0))
-			var br := 1.0 + prox * 2.5
-			var col := Color(0.55 * br, 0.8 * br, 1.0 * br, 0.9)
-			draw_line(_positions[a], _positions[b], col, 3.0 + prox * 12.0, true)
+	if _proximity_bridges != null:
+		_proximity_bridges.update_pairs([], {}, delta)
 
 func _load_config() -> void:
 	var config_path := ProjectSettings.globalize_path("res://../config/config.json")
@@ -645,7 +645,20 @@ func _default_effects() -> Dictionary:
 		"body_glow": {"enabled": true},
 		"trails": {"enabled": true},
 		"sparks": {"enabled": true, "activation_intensity": 0.09},
-		"proximity_bridges": {"enabled": true},
+		"proximity_bridges": {
+			"enabled": true,
+			"orbs_min": 2,
+			"orbs_max": 6,
+			"travel": 0.8,
+			"speed": 2.2,
+			"orb_size": 26.0,
+			"wobble": 0.06,
+			"max_alpha": 0.85,
+			"field_strength": 0.6,
+			"fade_seconds": 0.6,
+			"warm_color": "#ffcd79",
+			"hot_color": "#ff9a3c",
+		},
 		"stillness_resonance": {
 			"enabled": true,
 			"min_presence_seconds": 3.0,

@@ -82,6 +82,7 @@ LIFECYCLE_SCENARIOS = (
     "stay_resonance",
     "aftereffect_waves",
     "crowd_aura",
+    "proximity",
 )
 
 
@@ -168,7 +169,30 @@ def make_lifecycle_persons(name: str, t: float) -> list[list[tuple[float, float,
         return []
     if name == "crowd_aura":
         return _crowd_aura_persons(t)
+    if name == "proximity":
+        return _proximity_persons(t)
     raise ValueError(f"Unknown lifecycle scenario: {name}")
+
+
+def _proximity_persons(t: float) -> list[list[tuple[float, float, float]]]:
+    """Two people approach, stand together, then part — loops for viewing.
+
+    This makes the proximity bridge (fire-orbs shuttling, then condensing into a
+    shared pair field) inspectable without a camera.
+    """
+    phase = t % 20.0
+    if phase < 2.0:
+        return []
+    if phase < 7.0:
+        f = (phase - 2.0) / 5.0  # approach
+        return [_person(0.30 + 0.14 * f, 0.5, 0.3), _person(0.70 - 0.14 * f, 0.5, 0.3)]
+    if phase < 13.0:
+        # Standing together: low motion, high proximity -> condensed pair field.
+        return [_person(0.46, 0.5, 0.12), _person(0.54, 0.5, 0.12)]
+    if phase < 18.0:
+        f = (phase - 13.0) / 5.0  # part
+        return [_person(0.46 - 0.16 * f, 0.5, 0.35), _person(0.54 + 0.16 * f, 0.5, 0.35)]
+    return []
 
 
 def _crowd_aura_persons(t: float) -> list[list[tuple[float, float, float]]]:

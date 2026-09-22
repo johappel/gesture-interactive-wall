@@ -112,7 +112,18 @@
                                    "activation_intensity":  0.09
                                },
                     "proximity_bridges":  {
-                                              "enabled":  true
+                                              "enabled":  true,
+                                              "orbs_min":  2,
+                                              "orbs_max":  6,
+                                              "travel":  0.8,
+                                              "speed":  2.2,
+                                              "orb_size":  26.0,
+                                              "wobble":  0.06,
+                                              "max_alpha":  0.85,
+                                              "field_strength":  0.6,
+                                              "fade_seconds":  0.6,
+                                              "warm_color":  "#ffcd79",
+                                              "hot_color":  "#ff9a3c"
                                           },
                     "stillness_resonance":  {
                                                 "enabled":  true,

@@ -225,9 +225,23 @@ nach Rot, Helligkeit steigt mit `intensity`.
 
 | Parameter | Typ | Wirkung |
 |---|---|---|
-| `enabled` | bool | Zeichnet Lichtbrücken zwischen nahen Personen. Beim Abschalten werden `pairs` verworfen. |
+| `enabled` | bool | Zeigt die Nähe-Brücke. Beim Abschalten wird der Effekt-Node nicht erzeugt und nicht simuliert; `pairs` werden verworfen. |
+| `orbs_min`, `orbs_max` | int | Anzahl schwebender Feuerkugeln bei geringer bzw. hoher Nähe (dazwischen interpoliert). |
+| `travel` | 0..1 | Wie weit die Kugeln bei Annäherung zwischen beiden Personen pendeln. Bei Zusammenstehen kollabiert der Weg, die Kugeln verdichten sich. |
+| `speed` | float | Pendelgeschwindigkeit der Kugeln. |
+| `orb_size` | float | Basisgröße einer Kugel in Pixeln. |
+| `wobble` | 0..1 | Seitliches Schweben quer zur Verbindung (Anteil der Verbindungslänge). |
+| `max_alpha` | 0..1 | Maximale Helligkeit der Kugeln (additiv). |
+| `field_strength` | 0..1 | Stärke des verdichteten gemeinsamen Paar-Felds, sobald zwei Personen zusammen stehen. |
+| `fade_seconds` | Sekunden | Ein-/Ausblendzeit, wenn ein Paar entsteht oder auseinandergeht. |
+| `warm_color` | Hex | Farbe bei Annäherung. |
+| `hot_color` | Hex | Farbe bei großer Nähe; die Kugeln wandern von warm nach heiß. |
 
-Breite und Helligkeit folgen `proximity`.
+Die Brücke ist **keine Verbindungslinie**: Bei Annäherung pendeln warme
+Feuerkugeln im Zwischenraum, bei wachsender Nähe werden sie langsamer, wärmer
+und verdichten sich zu einem kleinen gemeinsamen Feld — dem Paar-„Wir", eine
+Ebene unter `crowd_aura`. Der Effekt hat eine eigene Bewegungszeit und zeichnet
+jeden Frame neu (die frühere Linie aktualisierte sich nur bei Eingaben).
 
 ### `stillness_resonance` — Antwort auf Bleiben
 
