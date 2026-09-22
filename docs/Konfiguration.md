@@ -258,6 +258,8 @@ Bleiben eine qualitativ andere Antwort als Vorübergehen.
 | `max_alpha` | 0..1 | Obere Deckkraft. Bewusst niedrig gehalten (Nachtprojektion). |
 | `energy_influence` | 0..1 | Wie stark `crowd.energy` die innere Bewegung moduliert. Beeinflusst **nie** die Sichtbarkeit. |
 | `individual_dimming_max` | 0..1 | Maximale Abschwächung personengebundener Effekte bei voller Aura. Bleibt unter 1, damit Personen sichtbar bleiben. |
+| `body_clearance` | 0..1 | Radius um jede Person, in dem das Aura-Feld ausgespart bleibt. Verhindert, dass Körper in der Atmosphäre verwischen. |
+| `gap_emphasis` | 0..1 | Wie stark das Feld im Zwischenraum betont und um die Körper herum zurückgenommen wird. |
 | `warm_color` | Hex | Farbe im gemeinsamen Zentrum. |
 | `cool_color` | Hex | Farbe in den äußeren Bereichen. |
 
@@ -268,6 +270,16 @@ Ausdehnung, Stärke und Form werden zeitlich geglättet, damit das Feld nicht
 jeder kleinen Bewegung hinterherspringt. Eine ruhige Gruppe behält eine
 deutliche gemeinsame Präsenz, weil `crowd.energy` nur die innere Bewegung
 moduliert.
+
+**Wichtig — die Einzelnen bleiben scharf.** Zwei Mechanismen verhindern, dass
+die Gruppe zu einem Brei wird:
+
+- `body_clearance`/`gap_emphasis` sparen das Feld um jeden Körper herum aus und
+  betonen stattdessen den Zwischenraum. Das WIR erscheint als Veränderung des
+  Raumes *zwischen* den Körpern, nicht als Lichtschleier über ihnen.
+- `individual_dimming_max` schwächt personengebundene Effekte nur über Größe
+  und Helligkeit ab — **nie über die Deckkraft**. Ein Mensch wird in der Gruppe
+  nicht durchsichtig; er bleibt ein definierter Lichtkörper.
 
 ### `aftereffect_waves` — Nachwirkung nach dem Gehen
 

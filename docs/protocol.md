@@ -175,6 +175,10 @@ Protokollfeld eingeführt.
   und Abbauzeiten ein und aus. Es gibt keinen harten „ab N Personen“-Schalter.
 - `crowd.energy` moduliert nur die innere Bewegung; eine ruhige Gruppe behält
   eine deutliche gemeinsame Präsenz.
+- Die aktuellen Body-Positionen werden zusätzlich an den Shader gegeben, damit
+  das Feld rund um jeden Körper ausgespart und der Zwischenraum betont wird.
+  So bleibt jede Person ein definierter Lichtkörper statt in der Atmosphäre zu
+  verwischen.
 - `enabled: false` erzeugt und simuliert keine Aura und schwächt auch keine
   anderen Effektfamilien ab.
 

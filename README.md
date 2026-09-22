@@ -244,8 +244,15 @@ Die **Crowd-Aura** löst diese Aussage erstmals sichtbar ein: Je mehr Menschen
 dazukommen, desto stärker zeigt WIRKLICHT das Geschehen zwischen ihnen. Die
 Aura ist kein größerer Glow und kein Effekt für eine einzelne Person, sondern
 ein gemeinsames, weich begrenztes Lichtfeld, das aus den vorhandenen anonymen
-Body- und Crowd-Daten entsteht. Personen bleiben dabei sichtbar; ihre
-Einzeleffekte treten mit wachsender Gruppe nur leise zurück.
+Body- und Crowd-Daten entsteht.
+
+Dabei gilt eine wichtige Einschränkung: **Das WIR darf die Einzelnen nicht
+unscharf machen.** Die Aura ist kein Lichtschleier über der Gruppe. Sie wird
+rund um jeden Körper ausgespart und betont den Zwischenraum; personengebundene
+Effekte werden mit wachsender Gruppe nur über Größe und Helligkeit zurück-
+genommen, nie über die Deckkraft. Personen bleiben also erkennbare,
+definierte Lichtkörper — Gemeinschaft entsteht nicht dadurch, dass
+Individuen verschwimmen.
 
 ## Verbindliche Effekt-Schalter
 

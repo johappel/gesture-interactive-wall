@@ -20,8 +20,13 @@ const SHAPE_SMOOTHING_SECONDS := 1.6
 # A compact group still needs a readable field, so the hull never collapses to
 # a point.
 const MIN_HALF_EXTENT := Vector2(0.16, 0.14)
+# Must match MAX_BODIES in the shader. The array is fixed so no allocation is
+# needed per frame.
+const MAX_BODIES := 16
 
 var _material := ShaderMaterial.new()
+# Preallocated, fixed-size: positions never allocate per frame.
+var _body_positions: PackedVector2Array = PackedVector2Array()
 
 var _min_people := 3
 var _full_strength_people := 10
@@ -34,6 +39,8 @@ var _min_alpha := 0.04
 var _max_alpha := 0.20
 var _energy_influence := 0.30
 var _individual_dimming_max := 0.45
+var _body_clearance := 0.13
+var _gap_emphasis := 0.75
 var _warm_color := "#ffe3a1"
 var _cool_color := "#5caeff"
 
@@ -49,6 +56,8 @@ func _init() -> void:
 	_material.shader = CrowdAuraShader
 	material = _material
 	z_index = -2
+	_body_positions.resize(MAX_BODIES)
+	_body_positions.fill(Vector2(-1.0, -1.0))
 
 
 func configure(config: Dictionary) -> void:
@@ -63,6 +72,8 @@ func configure(config: Dictionary) -> void:
 	_max_alpha = clampf(_number(config, "max_alpha", 0.20), _min_alpha, 0.6)
 	_energy_influence = clampf(_number(config, "energy_influence", 0.30), 0.0, 1.0)
 	_individual_dimming_max = clampf(_number(config, "individual_dimming_max", 0.45), 0.0, 1.0)
+	_body_clearance = clampf(_number(config, "body_clearance", 0.13), 0.02, 0.5)
+	_gap_emphasis = clampf(_number(config, "gap_emphasis", 0.75), 0.0, 1.0)
 	_warm_color = _color_string(config, "warm_color", "#ffe3a1")
 	_cool_color = _color_string(config, "cool_color", "#5caeff")
 	_push_parameters()
@@ -96,9 +107,23 @@ func update_crowd(positions: Array, count: int, energy: float, delta: float) -> 
 			_centre = _approach_vector(_centre, target_centre, SHAPE_SMOOTHING_SECONDS, delta)
 			_half_extent = _approach_vector(_half_extent, target_extent, SHAPE_SMOOTHING_SECONDS, delta)
 
+	# The per-body clearances are intentionally NOT smoothed: the field must
+	# stay clear exactly where a body actually is right now, otherwise a moving
+	# person would briefly sit inside the atmosphere and blur into it.
+	_update_body_positions(positions)
+
 	_energy = _approach(_energy, clampf(energy, 0.0, 1.0), SHAPE_SMOOTHING_SECONDS, delta)
 	_push_parameters()
 	queue_redraw()
+
+
+func _update_body_positions(positions: Array) -> void:
+	for index in range(MAX_BODIES):
+		if index < positions.size():
+			_body_positions[index] = positions[index]
+		else:
+			# Park unused slots far outside the field so they never subtract.
+			_body_positions[index] = Vector2(-1.0, -1.0)
 
 
 # 0..1 weight of the collective representation. main.gd derives the individual
@@ -135,8 +160,23 @@ func _push_parameters() -> void:
 	_material.set_shader_parameter("energy_influence", _energy_influence)
 	_material.set_shader_parameter("pulse_phase", TAU * _elapsed / _pulse_seconds)
 	_material.set_shader_parameter("glow_strength", 1.25)
+	_material.set_shader_parameter("body_count", _active_body_count())
+	_material.set_shader_parameter("body_positions", _body_positions)
+	_material.set_shader_parameter("body_clearance", _body_clearance)
+	_material.set_shader_parameter("gap_emphasis", _gap_emphasis)
 	_material.set_shader_parameter("warm_color", Color.from_string(_warm_color, Color(1.0, 0.89, 0.63)))
 	_material.set_shader_parameter("cool_color", Color.from_string(_cool_color, Color(0.36, 0.68, 1.0)))
+
+
+# Only slots inside the viewport hold a real body; parked slots use negative
+# coordinates and must not count.
+func _active_body_count() -> int:
+	var count := 0
+	for index in range(MAX_BODIES):
+		var point := _body_positions[index]
+		if point.x >= 0.0 and point.x <= 1.0 and point.y >= 0.0 and point.y <= 1.0:
+			count += 1
+	return count
 
 
 func _draw() -> void:

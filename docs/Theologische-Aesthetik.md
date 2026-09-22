@@ -161,6 +161,14 @@ Ein einzelner Mensch erzeugt sichtbare Präsenz. Zwischen Menschen können Bezie
 
 Wichtig bleibt: Die Einzelnen verschwinden dabei nicht. Ihre Lichtkörper bleiben erkennbar; mit wachsender Gruppe treten sie nur leise zurück, damit das Geschehen zwischen ihnen Gewicht bekommt. Gemeinschaft entsteht nicht durch Auflösung der Einzelnen, sondern durch Beziehungen zwischen ihnen.
 
+Daraus folgt eine harte Gestaltungsregel, die sich direkt gegen ein naheliegendes Missverständnis richtet:
+
+> **Das WIR darf die Einzelnen nicht unscharf machen.**
+
+Die Aura ist kein Schleier über der Gruppe. Sie legt sich nicht als diffuse Helligkeit über die Körper, sodass am Ende alles in einem weichen Brei zerläuft. Genau das wäre die falsche Aussage: als würde Individualität in der Gemeinschaft an Eindeutigkeit verlieren. WIRKLICHT behauptet das Gegenteil — dass nämlich mehrere unterscheidbare Menschen zusammen einen Raum bilden.
+
+Technisch wird das durch zwei Entscheidungen abgesichert: Das Aura-Feld wird rund um jeden Körper ausgespart und betont den Zwischenraum; und personengebundene Effekte werden bei wachsender Gruppe nur über Größe und Helligkeit zurückgenommen, nie über die Deckkraft. Ein Mensch wird in der Gemeinschaft nicht durchsichtig, sondern bleibt ein definierter Lichtkörper.
+
 ---
 
 ## 7. Nachwirkung: Gegenwart endet nicht am Bildrand

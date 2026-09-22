@@ -198,6 +198,20 @@ Es ersetzt die früher reservierten Ideen `mist` und `crowd_field`; die alten
 reservierten Familien `mist`, `crowd_field`, `floating_bodies` und `waves`
 wurden vollständig entfernt. `aftereffect_waves` bleibt davon unberührt.
 
+Verbindliche Gestaltungsregel für die Gruppenebene:
+
+**Das WIR darf die Einzelnen nicht unscharf machen.** Die Aura ist kein
+Lichtschleier über der Gruppe; sonst entstünde der Eindruck, das Individuum
+löse sich in der Gemeinschaft zu einem Brei auf. Deshalb gilt:
+
+- Das Aura-Feld wird rund um jeden Körper ausgespart (`body_clearance`,
+  `gap_emphasis`) und betont den Zwischenraum.
+- Personengebundene Effekte werden bei wachsender Gruppe nur über Größe und
+  Helligkeit zurückgenommen — **nie über die Deckkraft**. Ein Mensch darf in
+  der Gruppe nicht durchsichtig werden.
+- Der Bloom bleibt schmal und hoch angeschwellt, damit überlappende Kerne nicht
+  ineinanderlaufen.
+
 ## Stand-Konfiguration
 
 `station.monitor` und `station.prompt` gehören nicht unter `effects`, weil sie

@@ -4,6 +4,8 @@ extends Node2D
 
 const GOLD := Color(1.0, 0.78, 0.38)
 const INTENSE := Color(1.0, 0.36, 0.14)
+# Share of the glow texture radius that stays a definite, near-solid core.
+const CORE_FRACTION := 0.55
 const StillnessResonanceScript := preload("res://scripts/stillness_resonance.gd")
 
 var _sprite: Sprite2D
@@ -65,11 +67,16 @@ func update_state(pos: Vector2, intensity: float, openness: float, presence_time
 	var hdr := Color(color.r * brightness, color.g * brightness, color.b * brightness)
 
 	if _effect_enabled("body_glow", true):
-		var size := 0.35 + openness * 0.6 + intensity * 0.3
+		# Crowd dimming must NEVER turn a person translucent. Lowering alpha
+		# would let the shared aura shine through and dissolve the light into a
+		# blurry wash - exactly the "everything becomes one mush" reading we do
+		# not want. Instead the core stays fully opaque and only its size and
+		# absolute brightness recede, so each person remains a definite light.
+		var dim := _individual_weight
+		var size := (0.35 + openness * 0.6 + intensity * 0.3) * (0.72 + 0.28 * dim)
 		_sprite.scale = Vector2(size, size)
-		# Presence stays readable even in a large crowd; only its brightness
-		# recedes so the shared aura can carry the collective image.
-		_sprite.modulate = Color(hdr.r, hdr.g, hdr.b, _individual_weight)
+		var core := hdr * (0.62 + 0.38 * dim)
+		_sprite.modulate = Color(core.r, core.g, core.b, 1.0)
 
 	if _effect_enabled("sparks", true):
 		var sparks := _effect_block("sparks")
@@ -170,9 +177,19 @@ func _make_particle_material() -> ParticleProcessMaterial:
 	return mat
 
 func _make_glow_texture(size: int) -> GradientTexture2D:
+	# The profile is deliberately "crisp core + soft halo" rather than a single
+	# linear falloff. A pure falloff has no definite centre, so many overlapping
+	# bodies would merge into one bright wash and every individual light would
+	# lose its edge. The bright plateau keeps each person readable; the short
+	# shoulder adds the glow without dissolving the core.
 	var grad := Gradient.new()
-	grad.set_color(0, Color(1, 1, 1, 1))
-	grad.set_color(1, Color(1, 1, 1, 0))
+	grad.offsets = PackedFloat32Array([0.0, CORE_FRACTION * 0.62, CORE_FRACTION, 1.0])
+	grad.colors = PackedColorArray([
+		Color(1, 1, 1, 1),
+		Color(1, 1, 1, 0.94),
+		Color(1, 1, 1, 0.58),
+		Color(1, 1, 1, 0),
+	])
 	var tex := GradientTexture2D.new()
 	tex.gradient = grad
 	tex.fill = GradientTexture2D.FILL_RADIAL

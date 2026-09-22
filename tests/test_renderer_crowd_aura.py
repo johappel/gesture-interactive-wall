@@ -47,7 +47,8 @@ class CrowdAuraConfigTest(unittest.TestCase):
         for key in (
             "min_people", "full_strength_people", "fade_in_seconds", "fade_out_seconds",
             "pulse_seconds", "padding", "softness", "min_alpha", "max_alpha",
-            "energy_influence", "individual_dimming_max", "warm_color", "cool_color",
+            "energy_influence", "individual_dimming_max", "body_clearance",
+            "gap_emphasis", "warm_color", "cool_color",
         ):
             self.assertIn(key, aura)
         self.assertGreaterEqual(aura["min_people"], 1)
@@ -132,10 +133,51 @@ class CrowdAuraRendererContractTest(unittest.TestCase):
         for marker in (
             "func set_individual_weight(weight: float) -> void:",
             "_individual_weight = clamp(weight, 0.0, 1.0)",
-            "Color(hdr.r, hdr.g, hdr.b, _individual_weight)",
         ):
             self.assertIn(marker, self.body_light)
         self.assertIn("_apply_collective_weight()", self.main)
+
+    def test_crowd_dimming_never_makes_a_person_translucent(self):
+        # The regression this guards: dimming a body by lowering its alpha
+        # lets the aura shine through and blurs the individual into the group.
+        # A person must stay fully opaque; only size and brightness recede.
+        self.assertIn("var dim := _individual_weight", self.body_light)
+        self.assertIn("Color(core.r, core.g, core.b, 1.0)", self.body_light)
+        self.assertNotIn("hdr.r, hdr.g, hdr.b, _individual_weight", self.body_light)
+
+    def test_glow_has_a_definite_core_not_only_a_falloff(self):
+        # A pure falloff has no definite centre; many overlapping bodies would
+        # merge into one wash. The texture keeps a near-solid core plateau.
+        self.assertIn("const CORE_FRACTION", self.body_light)
+        self.assertIn("CORE_FRACTION * 0.62", self.body_light)
+        self.assertIn("grad.offsets = PackedFloat32Array", self.body_light)
+
+    def test_glow_bloom_stays_narrow_and_high_thresholded(self):
+        # The widest bloom pass smears bright cores into one another; only the
+        # narrow passes stay enabled and only genuinely bright cores bloom.
+        self.assertIn("env.set_glow_level(4, 0.5)", self.main)
+        self.assertIn("env.glow_hdr_threshold = 0.95", self.main)
+        self.assertNotIn("env.set_glow_level(5", self.main)
+
+    def test_aura_emphasises_the_space_between_bodies(self):
+        # The field must be withheld around each body so the "we" reads as the
+        # space between people, not as a bright wash over everyone.
+        for marker in (
+            "uniform int body_count",
+            "uniform vec2 body_positions[MAX_BODIES]",
+            "uniform float body_clearance",
+            "uniform float gap_emphasis",
+            "float nearest_body_distance(vec2 uv)",
+            "field *= mix(1.0 - clamp(gap_emphasis, 0.0, 1.0), 1.0, clearance)",
+        ):
+            self.assertIn(marker, self.shader)
+        for marker in (
+            "const MAX_BODIES := 16",
+            "func _update_body_positions(",
+            "func _active_body_count() -> int:",
+            "set_shader_parameter(\"body_positions\", _body_positions)",
+        ):
+            self.assertIn(marker, self.aura)
 
     def test_dimming_never_writes_an_invalid_particle_amount(self):
         # Godot rejects an amount below 1. The weight may reduce the count but

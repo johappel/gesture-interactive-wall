@@ -661,10 +661,12 @@ func _default_effects() -> Dictionary:
 			"pulse_seconds": 9.0,
 			"padding": 0.12,
 			"softness": 0.18,
-			"min_alpha": 0.04,
-			"max_alpha": 0.20,
+			"min_alpha": 0.05,
+			"max_alpha": 0.18,
 			"energy_influence": 0.30,
 			"individual_dimming_max": 0.45,
+			"body_clearance": 0.13,
+			"gap_emphasis": 0.75,
 			"warm_color": "#ffe3a1",
 			"cool_color": "#5caeff",
 		},
@@ -837,12 +839,15 @@ func _setup_glow() -> void:
 	env.glow_enabled = true
 	for i in range(7):
 		env.set_glow_level(i, 0.0)
+	# Only the narrow bloom passes are used. The widest pass (level 6) smears
+	# bright cores far beyond their own size, which in a full group turns many
+	# individual lights into one blurred wash. A high HDR threshold makes only
+	# genuinely bright cores bloom at all, so presence stays definite.
 	env.set_glow_level(3, 1.0)
-	env.set_glow_level(4, 1.0)
-	env.set_glow_level(5, 0.6)
-	env.glow_intensity = 1.4
-	env.glow_bloom = 0.35
+	env.set_glow_level(4, 0.5)
+	env.glow_intensity = 1.0
+	env.glow_bloom = 0.15
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
-	env.glow_hdr_threshold = 0.7
+	env.glow_hdr_threshold = 0.95
 	we.environment = env
 	add_child(we)
