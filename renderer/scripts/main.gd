@@ -844,10 +844,10 @@ func _setup_glow() -> void:
 	# individual lights into one blurred wash. A high HDR threshold makes only
 	# genuinely bright cores bloom at all, so presence stays definite.
 	env.set_glow_level(3, 1.0)
-	env.set_glow_level(4, 0.5)
-	env.glow_intensity = 1.0
-	env.glow_bloom = 0.15
+	env.set_glow_level(4, 0.0)
+	env.glow_intensity = 0.7
+	env.glow_bloom = 0.05
 	env.glow_blend_mode = Environment.GLOW_BLEND_MODE_ADDITIVE
-	env.glow_hdr_threshold = 0.95
+	env.glow_hdr_threshold = 1.0
 	we.environment = env
 	add_child(we)

@@ -4,8 +4,8 @@ extends Node2D
 
 const GOLD := Color(1.0, 0.78, 0.38)
 const INTENSE := Color(1.0, 0.36, 0.14)
-# Share of the glow texture radius that stays a definite, near-solid core.
-const CORE_FRACTION := 0.55
+# Radius (0..1 of the texture) of the solid, definite core with a hard edge.
+const CORE_FRACTION := 0.30
 const StillnessResonanceScript := preload("res://scripts/stillness_resonance.gd")
 
 var _sprite: Sprite2D
@@ -177,17 +177,16 @@ func _make_particle_material() -> ParticleProcessMaterial:
 	return mat
 
 func _make_glow_texture(size: int) -> GradientTexture2D:
-	# The profile is deliberately "crisp core + soft halo" rather than a single
-	# linear falloff. A pure falloff has no definite centre, so many overlapping
-	# bodies would merge into one bright wash and every individual light would
-	# lose its edge. The bright plateau keeps each person readable; the short
-	# shoulder adds the glow without dissolving the core.
+	# A definite individual, not a defocused blob: a fully opaque core with a
+	# hard shoulder gives every person a clear edge, so overlapping bodies stay
+	# distinct instead of merging into a wash. The faint tail beyond the core is
+	# only a quiet shared glow — the aura is that gentle halo, never a general blur.
 	var grad := Gradient.new()
-	grad.offsets = PackedFloat32Array([0.0, CORE_FRACTION * 0.62, CORE_FRACTION, 1.0])
+	grad.offsets = PackedFloat32Array([0.0, CORE_FRACTION, CORE_FRACTION + 0.10, 1.0])
 	grad.colors = PackedColorArray([
 		Color(1, 1, 1, 1),
-		Color(1, 1, 1, 0.94),
-		Color(1, 1, 1, 0.58),
+		Color(1, 1, 1, 1),
+		Color(1, 1, 1, 0.22),
 		Color(1, 1, 1, 0),
 	])
 	var tex := GradientTexture2D.new()

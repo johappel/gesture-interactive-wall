@@ -146,17 +146,17 @@ class CrowdAuraRendererContractTest(unittest.TestCase):
         self.assertNotIn("hdr.r, hdr.g, hdr.b, _individual_weight", self.body_light)
 
     def test_glow_has_a_definite_core_not_only_a_falloff(self):
-        # A pure falloff has no definite centre; many overlapping bodies would
-        # merge into one wash. The texture keeps a near-solid core plateau.
+        # A pure falloff has no definite centre; overlapping bodies would merge
+        # into one wash. The texture keeps a fully opaque core with a hard edge.
         self.assertIn("const CORE_FRACTION", self.body_light)
-        self.assertIn("CORE_FRACTION * 0.62", self.body_light)
+        self.assertIn("CORE_FRACTION + 0.10", self.body_light)
         self.assertIn("grad.offsets = PackedFloat32Array", self.body_light)
 
     def test_glow_bloom_stays_narrow_and_high_thresholded(self):
         # The widest bloom pass smears bright cores into one another; only the
-        # narrow passes stay enabled and only genuinely bright cores bloom.
-        self.assertIn("env.set_glow_level(4, 0.5)", self.main)
-        self.assertIn("env.glow_hdr_threshold = 0.95", self.main)
+        # narrow pass stays enabled and only genuinely bright cores bloom.
+        self.assertIn("env.set_glow_level(4, 0.0)", self.main)
+        self.assertIn("env.glow_hdr_threshold = 1.0", self.main)
         self.assertNotIn("env.set_glow_level(5", self.main)
 
     def test_aura_emphasises_the_space_between_bodies(self):
