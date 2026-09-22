@@ -7,6 +7,7 @@ const DEFAULT_PORT := 4242
 const FADE_AFTER := 0.4  # seconds without packets before bodies fade
 const BodyLightScript := preload("res://scripts/body_light.gd")
 const AftereffectWavesScript := preload("res://scripts/aftereffect_waves.gd")
+const CrowdAuraScript := preload("res://scripts/crowd_aura.gd")
 const PromptCueScript := preload("res://scripts/prompt_cue.gd")
 
 var _udp := PacketPeerUDP.new()
@@ -33,6 +34,7 @@ var _prompt_idle_elapsed := 0.0
 var _prompt_rotation_pending := false
 var _monitor_closed := false
 var _aftereffect_waves
+var _crowd_aura
 var _last_frame_time := -INF
 var _seen_departure_ids := {}
 
@@ -41,6 +43,7 @@ func _ready() -> void:
 	_setup_facade_output()
 	_setup_background()
 	_setup_glow()
+	_setup_crowd_aura()
 	_setup_aftereffect_waves()
 	_setup_station_monitor()
 	var err := _udp.bind(_port, "127.0.0.1")
@@ -90,6 +93,7 @@ func _apply(data: Dictionary, delta: float) -> void:
 	var vp := get_viewport_rect().size
 	var seen := {}
 	var temporarily_missing := {}
+	var normalized_positions: Array = []
 	_positions.clear()
 	var tracking = data.get("tracking", {})
 	if tracking is Dictionary:
@@ -109,6 +113,7 @@ func _apply(data: Dictionary, delta: float) -> void:
 		seen[id] = true
 		var pos := Vector2(float(b["x"]) * vp.x, float(b["y"]) * vp.y)
 		_positions[id] = pos
+		normalized_positions.append(Vector2(float(b["x"]), float(b["y"])))
 
 		var node
 		if _bodies.has(id):
@@ -141,6 +146,29 @@ func _apply(data: Dictionary, delta: float) -> void:
 	var raw_pairs = data.get("pairs", [])
 	_pairs = raw_pairs if raw_pairs is Array and _effect_enabled("proximity_bridges", true) else []
 
+	_update_crowd_aura(data, normalized_positions, delta)
+
+func _update_crowd_aura(data: Dictionary, normalized_positions: Array, delta: float) -> void:
+	if _crowd_aura == null:
+		return
+	var crowd = data.get("crowd", {})
+	var count := normalized_positions.size()
+	var energy := 0.0
+	if crowd is Dictionary:
+		if _is_finite_number(crowd.get("count")):
+			count = max(int(crowd["count"]), 0)
+		if _is_finite_number(crowd.get("energy")):
+			energy = float(crowd["energy"])
+	_crowd_aura.update_crowd(normalized_positions, count, energy, delta)
+	_apply_collective_weight()
+
+func _apply_collective_weight() -> void:
+	if _crowd_aura == null:
+		return
+	var weight: float = _crowd_aura.individual_weight()
+	for id in _bodies.keys():
+		_bodies[id].set_individual_weight(weight)
+
 func _setup_aftereffect_waves() -> void:
 	if not _effect_enabled("aftereffect_waves", false):
 		return
@@ -148,6 +176,13 @@ func _setup_aftereffect_waves() -> void:
 	_aftereffect_waves.z_index = -1
 	_aftereffect_waves.configure(_effect_block("aftereffect_waves"))
 	add_child(_aftereffect_waves)
+
+func _setup_crowd_aura() -> void:
+	if not _effect_enabled("crowd_aura", false):
+		return
+	_crowd_aura = CrowdAuraScript.new()
+	_crowd_aura.configure(_effect_block("crowd_aura"))
+	add_child(_crowd_aura)
 
 func _consume_departures(data: Dictionary, frame_time: float) -> void:
 	if _aftereffect_waves == null:
@@ -204,6 +239,10 @@ func _fade_all(delta: float) -> void:
 			_bodies.erase(id)
 	_pairs = []
 	_positions.clear()
+	# No packets means no observed crowd: the shared field fades out on its own
+	# time constant instead of being switched off.
+	if _crowd_aura != null:
+		_crowd_aura.update_crowd([], 0, 0.0, delta)
 
 func _draw() -> void:
 	if not _effect_enabled("proximity_bridges", true):
@@ -585,11 +624,8 @@ func _effect_names() -> Array[String]:
 		"sparks",
 		"proximity_bridges",
 		"stillness_resonance",
-		"mist",
-		"waves",
-		"floating_bodies",
+		"crowd_aura",
 		"aftereffect_waves",
-		"crowd_field",
 	]
 
 func _effect_enabled(name: String, default_value: bool) -> bool:
@@ -615,6 +651,22 @@ func _default_effects() -> Dictionary:
 			"min_presence_seconds": 3.0,
 			"pulse_seconds": 6.0,
 			"max_scale": 1.3,
+		},
+		"crowd_aura": {
+			"enabled": true,
+			"min_people": 3,
+			"full_strength_people": 10,
+			"fade_in_seconds": 2.5,
+			"fade_out_seconds": 4.0,
+			"pulse_seconds": 9.0,
+			"padding": 0.12,
+			"softness": 0.18,
+			"min_alpha": 0.04,
+			"max_alpha": 0.20,
+			"energy_influence": 0.30,
+			"individual_dimming_max": 0.45,
+			"warm_color": "#ffe3a1",
+			"cool_color": "#5caeff",
 		},
 		"aftereffect_waves": {
 			"enabled": true,

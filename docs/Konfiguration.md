@@ -242,6 +242,33 @@ Das Feld ist **keine Belohnung für eine Geste**: Anwesenheitszeit und beobachte
 Ruhe blenden kontinuierlich in ein langsames Pulsieren ein. Damit bekommt
 Bleiben eine qualitativ andere Antwort als Vorübergehen.
 
+### `crowd_aura` — gemeinsamer Resonanzraum der Gruppe
+
+| Parameter | Typ | Wirkung |
+|---|---|---|
+| `enabled` | bool | Zeigt die gemeinsame Aura. Beim Abschalten wird sie weder erzeugt noch simuliert und schwächt auch keine anderen Effekte ab. |
+| `min_people` | int | Personenzahl, ab der die Aura überhaupt zu entstehen beginnt. Kein harter Schalter: die Stärke wächst geglättet. |
+| `full_strength_people` | int | Personenzahl, ab der die Aura ihre volle Stärke erreicht. |
+| `fade_in_seconds` | Sekunden | Zeitkonstante des Aufbaus. |
+| `fade_out_seconds` | Sekunden | Zeitkonstante des Abbaus. |
+| `pulse_seconds` | Sekunden | Periodendauer des langsamen atmenden Pulsierens. |
+| `padding` | 0..1 | Zusätzliche Ausdehnung um die räumliche Streuung der Gruppe. |
+| `softness` | 0..1 | Weichheit des äußeren Randes. Größer = diffuser. |
+| `min_alpha` | 0..1 | Untere Deckkraft der Aura. |
+| `max_alpha` | 0..1 | Obere Deckkraft. Bewusst niedrig gehalten (Nachtprojektion). |
+| `energy_influence` | 0..1 | Wie stark `crowd.energy` die innere Bewegung moduliert. Beeinflusst **nie** die Sichtbarkeit. |
+| `individual_dimming_max` | 0..1 | Maximale Abschwächung personengebundener Effekte bei voller Aura. Bleibt unter 1, damit Personen sichtbar bleiben. |
+| `warm_color` | Hex | Farbe im gemeinsamen Zentrum. |
+| `cool_color` | Hex | Farbe in den äußeren Bereichen. |
+
+Die Aura ist **kein Effekt für eine einzelne Person** und kein größerer Glow.
+Sie entsteht aus den vorhandenen anonymen Body-Positionen, `crowd.count` und
+`crowd.energy`; es wird kein neues Capture-Signal benötigt. Mittelpunkt,
+Ausdehnung, Stärke und Form werden zeitlich geglättet, damit das Feld nicht
+jeder kleinen Bewegung hinterherspringt. Eine ruhige Gruppe behält eine
+deutliche gemeinsame Präsenz, weil `crowd.energy` nur die innere Bewegung
+moduliert.
+
 ### `aftereffect_waves` — Nachwirkung nach dem Gehen
 
 | Parameter | Typ | Wirkung |
@@ -269,12 +296,6 @@ Bleiben eine qualitativ andere Antwort als Vorübergehen.
 
 Wellen sind bewusst anonym: nur Kante, gemeinsame Achse und Gruppengröße
 überleben. Keine Splash- oder Feuerwerk-Ästhetik.
-
-### Reservierte Effektfamilien
-
-`mist`, `waves`, `floating_bodies`, `crowd_field` sind als Schalter vorhanden,
-aber noch nicht vollständig implementiert. Sie stehen auf `enabled: false` und
-werden derzeit nicht erzeugt.
 
 ---
 

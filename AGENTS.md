@@ -144,8 +144,7 @@ presence → relation → collective → memory
 ### Visuelles Vokabular und Projektionstauglichkeit
 
 Vorgesehene Materialitäten sind u. a. Lichtkörper, Funken, Trails,
-Nähe-Brücken/Felder, Lichtdunst, Wellen, schwebende Lichtkörper,
-Nachwirkungswellen und Crowd-Felder.
+Nähe-Brücken/Felder, die gemeinsame Crowd-Aura und Nachwirkungswellen.
 
 Bei neuen oder geänderten Effekten immer bedenken:
 
@@ -188,14 +187,16 @@ Aktuell implementierte schaltbare Effekte:
 - `trails`
 - `sparks`
 - `proximity_bridges`
-
-Reservierte, noch nicht vollständig implementierte Effektfamilien:
-
-- `mist`
-- `waves`
-- `floating_bodies`
+- `stillness_resonance`
+- `crowd_aura`
 - `aftereffect_waves`
-- `crowd_field`
+
+`crowd_aura` ist die ästhetische Repräsentation des **WIR**: ein gemeinsames
+atmosphärisches Lichtfeld, das aus den vorhandenen anonymen Body-/Crowd-Daten
+entsteht. Es ist kein Effekt für eine einzelne Person und kein größerer Glow.
+Es ersetzt die früher reservierten Ideen `mist` und `crowd_field`; die alten
+reservierten Familien `mist`, `crowd_field`, `floating_bodies` und `waves`
+wurden vollständig entfernt. `aftereffect_waves` bleibt davon unberührt.
 
 ## Stand-Konfiguration
 

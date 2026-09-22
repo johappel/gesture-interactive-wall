@@ -120,15 +120,22 @@
                                                 "pulse_seconds":  6.0,
                                                 "max_scale":  2.3
                                             },
-                    "mist":  {
-                                 "enabled":  false
-                             },
-                    "waves":  {
-                                  "enabled":  false
-                              },
-                    "floating_bodies":  {
-                                            "enabled":  false
-                                        },
+                    "crowd_aura":  {
+                                       "enabled":  true,
+                                       "min_people":  3,
+                                       "full_strength_people":  10,
+                                       "fade_in_seconds":  2.5,
+                                       "fade_out_seconds":  4.0,
+                                       "pulse_seconds":  9.0,
+                                       "padding":  0.12,
+                                       "softness":  0.18,
+                                       "min_alpha":  0.04,
+                                       "max_alpha":  0.20,
+                                       "energy_influence":  0.30,
+                                       "individual_dimming_max":  0.45,
+                                       "warm_color":  "#ffe3a1",
+                                       "cool_color":  "#5caeff"
+                                   },
                     "aftereffect_waves":  {
                                               "enabled":  true,
                                               "group_window_seconds":  0.22,
@@ -150,10 +157,7 @@
                                               "warm_color":  "#ffcd79",
                                               "blue_color":  "#164155",
                                               "dedupe_seconds":  5.0
-                                          },
-                    "crowd_field":  {
-                                        "enabled":  false
-                                    }
+                                          }
                 },
     "debug":  {
                   "preview":  true

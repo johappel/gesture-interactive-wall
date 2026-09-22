@@ -150,7 +150,10 @@ mit der echten Kamera erneut geprüft werden.
 - `intensity` → Helligkeit, Partikelausstoß, Farbtemperatur (sanft → energisch)
 - `openness`  → Größe/Ausdehnung der Lichtaura
 - `pairs`     → wachsende Lichtbrücke am Mittelpunkt `mx/my`
-- `crowd.energy` → Gesamtglühen der Fassade
+- `crowd.count` + Body-Positionen → Mittelpunkt, Ausdehnung und Stärke der
+  gemeinsamen Crowd-Aura
+- `crowd.energy` → innere Bewegung/Helligkeitsmodulation der Crowd-Aura;
+  **nicht** ihre Sichtbarkeit
 - `presence_time` + `stillness` → nach einer Mindestdauer ein zurückhaltendes,
   langsam pulsierendes Resonanzfeld um den vorhandenen Lichtkörper
 
@@ -158,6 +161,22 @@ Die Effektfamilie `effects.stillness_resonance` ist unabhängig schaltbar. Bei
 `enabled: false` wird ihr Feld nicht erzeugt und nicht simuliert. Fassade und
 Nahraum-Monitor nutzen dieselbe Renderer-Ausgabe (`facade_preview`); es wird
 kein Kamerabild übertragen oder angezeigt.
+
+### Crowd-Aura (Phase 4.5D)
+
+`effects.crowd_aura` leitet ein gemeinsames atmosphärisches Lichtfeld
+ausschließlich aus den bereits vorhandenen anonymen Daten ab: den aktuellen
+Body-Positionen, `crowd.count` und `crowd.energy`. Es wird **kein** neues
+Protokollfeld eingeführt.
+
+- Die Geometrie (Mittelpunkt, räumliche Ausdehnung) folgt der tatsächlichen
+  Streuung der Gruppe und wird zeitlich geglättet.
+- Ein geglätteter `collective_strength`-Wert blendet die Aura über eigene Auf-
+  und Abbauzeiten ein und aus. Es gibt keinen harten „ab N Personen“-Schalter.
+- `crowd.energy` moduliert nur die innere Bewegung; eine ruhige Gruppe behält
+  eine deutliche gemeinsame Präsenz.
+- `enabled: false` erzeugt und simuliert keine Aura und schwächt auch keine
+  anderen Effektfamilien ab.
 
 ### Nachwirkungswellen (Phase 4.5C)
 

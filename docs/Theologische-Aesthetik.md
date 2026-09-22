@@ -127,7 +127,7 @@ Diese Ebene lässt sich als **Atmosphäre** beschreiben.
 
 Atmosphäre gehört niemandem allein. Sie ist weder vollständig im Subjekt noch vollständig im Raum. Sie entsteht dazwischen. Ein Raum kann sich verändern, wenn Menschen ihn betreten, ohne dass sich diese Veränderung auf eine einzelne Handlung zurückführen lässt.
 
-Gerade deshalb darf die visuelle Grammatik nicht aus immer mehr isolierten Spezialeffekten bestehen. Licht, Funken, Dunst, Spuren und Wellen sind kein Effektkatalog, sondern unterschiedliche **Materialitäten von Resonanz**.
+Gerade deshalb darf die visuelle Grammatik nicht aus immer mehr isolierten Spezialeffekten bestehen. Licht, Funken, Spuren und Wellen sind kein Effektkatalog, sondern unterschiedliche **Materialitäten von Resonanz**.
 
 Sie sollten miteinander eine gemeinsame ästhetische Sprache bilden.
 
@@ -136,11 +136,30 @@ Mögliche Zuordnungen sind:
 - Licht / Glow → Präsenz,
 - Funken → Bewegung und Freisetzung,
 - Spuren → zurückgelegter Weg,
-- Felder / Lichtdunst → Beziehung und Atmosphäre,
-- Wellen → Ausbreitung und Nachwirkung,
-- schwebende Lichtkörper → verdichtete gemeinsame Momente.
+- Felder / Lichtbrücken → konkrete Beziehung,
+- Crowd-Aura → gemeinsamer Resonanzraum,
+- Wellen → Ausbreitung und Nachwirkung.
 
 Diese Zuordnungen dürfen nicht zu einer neuen geheimen Gestensprache erstarren. Sie sind Vokabular, keine Befehlsliste.
+
+### Das WIR erscheint als Veränderung des Raumes
+
+Der Übergang vom Einzelnen zur Gruppe ist der ästhetisch heikelste Punkt des Projekts. Naheliegend wäre, mit jeder weiteren Person einfach mehr Licht zu erzeugen: mehr Lichtkörper, mehr Funken, mehr Spuren. Das würde die Leitregel jedoch verfehlen. Bei zwanzig Menschen entstünde so kein WIR, sondern nur ein lauteres Nebeneinander.
+
+Die gemeinsame **Crowd-Aura** setzt hier eine andere Vorstellung um. Sie ist kein weiterer Körper und kein besonders großer Lichtkörper. Sie ist ein atmosphärisches Feld, das den Zwischenraum zwischen den Menschen sichtbar macht.
+
+> **Das WIR erscheint nicht als weiterer Körper. Es erscheint als Veränderung des Raumes zwischen den Körpern.**
+
+Das WIR ist damit:
+
+- nicht bloß Addition einzelner Lichter,
+- nicht Gleichförmigkeit oder Synchronität,
+- nicht Verschmelzung der Einzelnen,
+- nicht Auflösung des Individuums.
+
+Ein einzelner Mensch erzeugt sichtbare Präsenz. Zwischen Menschen können Beziehungen sichtbar werden. Wenn mehrere Menschen einen Raum teilen, entsteht darüber hinaus eine Atmosphäre, die keinem Individuum allein zugerechnet werden kann. Die Aura repräsentiert ausschließlich diese beobachtbare Tatsache: dass mehrere Menschen für einen Moment denselben Resonanzraum teilen. Sie behauptet keine Emotion, keine Einigkeit, keine Harmonie und keine religiöse Bedeutung.
+
+Wichtig bleibt: Die Einzelnen verschwinden dabei nicht. Ihre Lichtkörper bleiben erkennbar; mit wachsender Gruppe treten sie nur leise zurück, damit das Geschehen zwischen ihnen Gewicht bekommt. Gemeinschaft entsteht nicht durch Auflösung der Einzelnen, sondern durch Beziehungen zwischen ihnen.
 
 ---
 
@@ -326,6 +345,17 @@ Jeder neue visuelle Effekt sollte nicht nur technisch, sondern anhand einiger ä
 11. Entsteht eine überraschende Offenheit — oder nur ein vorhersehbarer Trigger?
 12. Passt sein zeitliches Verhalten zum Projekt: Entstehen, Wirken, Nachwirken, Vergehen?
 
+Für die Gruppenebene kommt ein zentrales Prüfkriterium hinzu:
+
+> **Zeigt der Effekt einfach mehr Licht, weil mehr Menschen da sind — oder wird
+> tatsächlich erfahrbar, dass zwischen vielen Einzelnen ein gemeinsamer
+> Resonanzraum entsteht?**
+
+Nur die zweite Variante entspricht dem Ziel der Crowd-Aura. Ein Effekt, der
+lediglich mit der Personenzahl heller wird, verfehlt die Leitregel, dass
+WIRKLICHT mit wachsender Gruppe weniger die Einzelnen und stärker das Geschehen
+zwischen ihnen zeigt.
+
 Die Effekt-Schalter in `config.json` sind deshalb nicht nur eine technische Sicherheitsfunktion. Sie ermöglichen auch, die visuelle Sprache vor Ort zu kuratieren und einzelne Ausdrucksmittel zurückzunehmen, wenn das Ganze zu laut oder zu eindeutig wird.
 
 ---
@@ -339,13 +369,14 @@ Für die weitere Diskussion lassen sich folgende Thesen festhalten:
 3. **Der Körper ist nicht Controller, sondern leibliche Gegenwart im Raum.**
 4. **Beziehungen sind ästhetisch mindestens so wichtig wie einzelne Personen.**
 5. **Mit wachsender Gruppe soll der gemeinsame Raum wichtiger werden als individuelle Effekte.**
-6. **Die Fassade besitzt ein zeitliches Gedächtnis: Wirkung kann Anwesenheit überdauern.**
-7. **Nachwirkung erinnert, ohne Personen festzuhalten oder zu identifizieren.**
-8. **Licht braucht Dunkelheit und Zwischenräume; maximale Helligkeit ist kein Qualitätskriterium.**
-9. **Verschiedene visuelle Materialitäten bilden ein Vokabular, keinen Effektkatalog.**
-10. **Die Installation darf offen bleiben für Deutungen, die das Projektteam nicht vorhergesehen hat.**
-11. **Theologie liegt nicht nur im Motiv „Licht“, sondern in der Gestaltung von Beziehung, Unverfügbarkeit, Leiblichkeit, Erinnerung und Schwelle.**
-12. **Das Entscheidende ist nicht, dass Menschen etwas Spektakuläres auslösen, sondern dass sie erfahren können: Meine Gegenwart bleibt nicht ohne Wirkung.**
+6. **Das WIR erscheint nicht als weiterer Körper, sondern als Veränderung des Raumes zwischen den Körpern.**
+7. **Die Fassade besitzt ein zeitliches Gedächtnis: Wirkung kann Anwesenheit überdauern.**
+8. **Nachwirkung erinnert, ohne Personen festzuhalten oder zu identifizieren.**
+9. **Licht braucht Dunkelheit und Zwischenräume; maximale Helligkeit ist kein Qualitätskriterium.**
+10. **Verschiedene visuelle Materialitäten bilden ein Vokabular, keinen Effektkatalog.**
+11. **Die Installation darf offen bleiben für Deutungen, die das Projektteam nicht vorhergesehen hat.**
+12. **Theologie liegt nicht nur im Motiv „Licht“, sondern in der Gestaltung von Beziehung, Unverfügbarkeit, Leiblichkeit, Erinnerung und Schwelle.**
+13. **Das Entscheidende ist nicht, dass Menschen etwas Spektakuläres auslösen, sondern dass sie erfahren können: Meine Gegenwart bleibt nicht ohne Wirkung.**
 
 ---
 

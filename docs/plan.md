@@ -264,9 +264,7 @@ Keine Klassifikation wie „Freude“, „Trauer“ oder „Gebet“.
 | Öffnung | räumliche Ausdehnung |
 | Bewegung durch den Raum | Trail |
 | Nähe | Lichtbrücke / gemeinsames Feld |
-| längere Nähe | Lichtdunst |
-| gemeinsamer Rhythmus | Wellen |
-| größere Gruppe | gemeinsamer Atmosphärenzustand |
+| Gruppe | gemeinsame Crowd-Aura / gemeinsamer Resonanzraum |
 | Verlassen | Nachwirkung / zurücklaufende Welle |
 
 Die Zuordnung ist kein starres 1:1-Regelwerk.
@@ -360,7 +358,39 @@ Ein sichtbarer Godot-Simulatorlauf und die reale Fassadenabnahme bleiben
 separate Schritte: insbesondere Helligkeit, Distanzlesbarkeit, Latenz und die
 Wirkung bei mehreren Menschen sind nicht durch Unit-Tests belegt.
 
-### 9.4 Noch offen: weitere Phase 4.5
+### 9.4 Phase 4.5D: Gruppe → gemeinsamer Resonanzraum (implementiert, automatisiert getestet)
+
+Die neue, separat schaltbare Effektfamilie `effects.crowd_aura` macht erstmals
+sichtbar, dass mehrere Menschen für einen Moment denselben Resonanzraum teilen.
+Sie ist kein Effekt für eine einzelne Person, kein größerer Glow und keine
+Summe vergrößerter Body-Glows, sondern ein gemeinsames atmosphärisches
+Lichtfeld.
+
+- Die Geometrie entsteht ausschließlich aus bereits vorhandenen anonymen Daten:
+  den aktuellen Body-Positionen, `crowd.count` und `crowd.energy`. Es wird kein
+  neues Capture-Signal und keine Protokollerweiterung eingeführt.
+- Mittelpunkt, räumliche Ausdehnung, Stärke und Form werden zeitlich geglättet.
+  Menschen bewegen sich innerhalb eines gemeinsamen Feldes; das Feld springt
+  nicht jeder kleinen Poseabweichung hinterher.
+- Es gibt keinen harten „ab drei Personen“-Schalter. Ein geglätteter
+  `collective_strength`-Wert blendet die Aura über eigene Auf- und Abbauzeiten
+  ein und aus.
+- `crowd.energy` moduliert nur die innere Bewegung und Helligkeit, nie die
+  Sichtbarkeit. Eine ruhige Gruppe behält eine deutliche gemeinsame Präsenz.
+- Mit wachsender Gruppe gewinnt die Aura an visuellem Gewicht, während
+  personengebundene Effekte über ein abgeleitetes `individual_weight` leise
+  zurücktreten. Personen bleiben sichtbar; Identität wird nicht gelöscht.
+- Bei `enabled: false` wird die Aura weder erzeugt noch simuliert und schwächt
+  auch keine anderen Effektfamilien ab.
+- Der deterministische Simulatorfall `crowd_aura` zeigt Wachstum, Bewegung,
+  Ruhe, räumliche Aufteilung und schrittweises Fortgehen; er ist mit
+  `python -m capture.tracker --sim --sim-scenario crowd_aura` ausführbar.
+
+Automatisierte Tests belegen Config-Vertrag, isolierenden Lifecycle,
+Datenrobustheit und die Entfernung der alten Effektfamilien. Die sichtbare
+Wirkung auf realer Fassade bleibt Teil der Realwelt-Abnahme in Phase 5.
+
+### 9.5 Noch offen: weitere Phase 4.5
 
 ### Capture / Features
 
@@ -381,10 +411,9 @@ Mindestens simulieren:
 
 ### Renderer
 
-1. Nähe als Feld / Dunst zusätzlich zur Linie;
-2. rhythmische Bewegung als dezente Wellenmodulation;
-3. Interaktion der Wellen mit vorhandenen Partikeln/Feldern;
-4. Config-Schalter für jede neue Effektfamilie.
+1. Nähe als Feld zusätzlich zur Linie;
+2. Interaktion der Nachwirkungswellen mit vorhandenen Partikeln/Feldern;
+3. Config-Schalter für jede neue Effektfamilie.
 
 ## 10. Nachwirkung / Echo
 

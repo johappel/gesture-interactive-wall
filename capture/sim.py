@@ -81,6 +81,7 @@ LIFECYCLE_SCENARIOS = (
     "long_run",
     "stay_resonance",
     "aftereffect_waves",
+    "crowd_aura",
 )
 
 
@@ -165,7 +166,68 @@ def make_lifecycle_persons(name: str, t: float) -> list[list[tuple[float, float,
             x = 0.82 + (phase - 3.0) * 0.28
             return [_person(x, 0.38, 0.25), _person(x, 0.50, 0.4), _person(x, 0.62, 0.55)]
         return []
+    if name == "crowd_aura":
+        return _crowd_aura_persons(t)
     raise ValueError(f"Unknown lifecycle scenario: {name}")
+
+
+def _crowd_aura_persons(t: float) -> list[list[tuple[float, float, float]]]:
+    """Deterministic crowd growth, movement, stillness, split and departure.
+
+    This scenario exists so crowd_aura can be judged without a camera: the
+    shared field must build up, reshape with the group's spread, stay present
+    for a quiet group, and fade out calmly while aftereffect_waves takes over.
+    """
+    phase = t % 72.0
+    if phase < 3.0:
+        return []
+    if phase < 6.0:
+        return _crowd(1, t, spread=0.0, cx=0.5, cy=0.5, motion=0.6)
+    if phase < 9.0:
+        return _crowd(2, t, spread=0.22, cx=0.5, cy=0.5, motion=0.6)
+    if phase < 14.0:
+        return _crowd(4, t, spread=0.34, cx=0.5, cy=0.5, motion=0.6)
+    if phase < 22.0:
+        return _crowd(7, t, spread=0.52, cx=0.5, cy=0.5, motion=0.6)
+    if phase < 32.0:
+        return _crowd(14, t, spread=0.72, cx=0.5, cy=0.5, motion=0.6)
+    if phase < 40.0:
+        # The whole group drifts through the space; the field should follow
+        # slowly instead of snapping to every pose.
+        cx = 0.5 + 0.18 * math.sin((phase - 32.0) * 0.5)
+        return _crowd(12, t, spread=0.66, cx=cx, cy=0.5, motion=0.6)
+    if phase < 48.0:
+        # A quiet group: presence stays, energy drops, the aura must remain.
+        return _crowd(10, t, spread=0.6, cx=0.5, cy=0.5, motion=0.05)
+    if phase < 56.0:
+        # The group splits into two clusters; the field should widen.
+        left = _crowd(5, t, spread=0.16, cx=0.26, cy=0.5, motion=0.4)
+        right = _crowd(5, t, spread=0.16, cx=0.74, cy=0.5, motion=0.4)
+        return left + right
+    if phase < 64.0:
+        # People leave one by one; the aura recedes gradually.
+        remaining = max(1, int(10 - (phase - 56.0) * 1.2))
+        return _crowd(remaining, t, spread=0.5, cx=0.5, cy=0.5, motion=0.4)
+    return []
+
+
+def _crowd(
+    count: int,
+    t: float,
+    spread: float,
+    cx: float,
+    cy: float,
+    motion: float,
+) -> list[list[tuple[float, float, float]]]:
+    """Place `count` people in a horizontal band around (cx, cy)."""
+    persons = []
+    for index in range(count):
+        fraction = 0.0 if count == 1 else (index / (count - 1)) - 0.5
+        x = cx + fraction * spread
+        y = cy + 0.06 * math.sin(index * 1.7)
+        arm = 0.5 + 0.5 * math.sin(t * 1.6 + index)
+        persons.append(_person(x, y, arm * motion))
+    return persons
 
 
 def make_simulation_persons(name: str, t: float) -> list[list[tuple[float, float, float]]]:

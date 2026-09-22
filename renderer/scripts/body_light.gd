@@ -12,6 +12,7 @@ var _trail: Line2D
 var _stillness_resonance
 var _alpha := 1.0
 var _effects: Dictionary = {}
+var _individual_weight := 1.0
 
 func _ready() -> void:
 	var tex := _make_glow_texture(256)
@@ -44,6 +45,17 @@ func configure_effects(effects: Dictionary) -> void:
 	if is_node_ready():
 		_apply_effect_config()
 
+# 0..1 multiplier for person-bound effects. As a crowd grows, crowd_aura takes
+# on more visual weight and individual effects gently recede. It is never zero:
+# people stay visible as presence, identity is not erased.
+func set_individual_weight(weight: float) -> void:
+	_individual_weight = clamp(weight, 0.0, 1.0)
+	# Only the weight-dependent visuals are refreshed here. The full effect
+	# config is intentionally not re-applied, so the per-frame spark emission
+	# gate in update_state() stays authoritative.
+	if is_node_ready() and _trail != null and _trail.visible:
+		_trail.width = float(_effect_block("trails").get("width", 10.0)) * _individual_weight
+
 func update_state(pos: Vector2, intensity: float, openness: float, presence_time: float, stillness: float) -> void:
 	_alpha = 1.0
 	position = pos
@@ -55,7 +67,9 @@ func update_state(pos: Vector2, intensity: float, openness: float, presence_time
 	if _effect_enabled("body_glow", true):
 		var size := 0.35 + openness * 0.6 + intensity * 0.3
 		_sprite.scale = Vector2(size, size)
-		_sprite.modulate = hdr
+		# Presence stays readable even in a large crowd; only its brightness
+		# recedes so the shared aura can carry the collective image.
+		_sprite.modulate = Color(hdr.r, hdr.g, hdr.b, _individual_weight)
 
 	if _effect_enabled("sparks", true):
 		var sparks := _effect_block("sparks")
@@ -73,7 +87,12 @@ func update_state(pos: Vector2, intensity: float, openness: float, presence_time
 		mat.initial_velocity_max = lerp(velocity_min, velocity_max, clamp(intensity, 0.0, 1.0))
 		mat.emission_sphere_radius = 6.0 + openness * 30.0
 		_particles.emitting = should_emit
-		_particles.amount = int(round(lerp(float(amount_min), float(amount_max), clamp(intensity, 0.0, 1.0)))) if should_emit else 0
+		# Godot rejects an amount below 1, so the count is only written while
+		# emitting and clamped to at least one. The individual weight reduces
+		# the count but can never produce an invalid zero.
+		if should_emit:
+			var amount := int(round(lerp(float(amount_min), float(amount_max), clamp(intensity, 0.0, 1.0)) * _individual_weight))
+			_particles.amount = max(amount, 1)
 
 	if _effect_enabled("trails", true):
 		_push_trail(pos)
@@ -99,7 +118,7 @@ func _apply_effect_config() -> void:
 		_trail.clear_points()
 	else:
 		var trails := _effect_block("trails")
-		_trail.width = float(trails.get("width", 10.0))
+		_trail.width = float(trails.get("width", 10.0)) * _individual_weight
 
 	var sparks_enabled := _effect_enabled("sparks", true)
 	_particles.visible = sparks_enabled

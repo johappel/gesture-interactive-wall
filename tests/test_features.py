@@ -322,12 +322,34 @@ class SimTest(unittest.TestCase):
         self.assertEqual(len(make_phase44_persons(11.0)), 0)
 
     def test_lifecycle_scenarios_are_available_and_deterministic(self):
-        self.assertEqual(len(LIFECYCLE_SCENARIOS), 12)
+        self.assertEqual(len(LIFECYCLE_SCENARIOS), 13)
         for scenario in LIFECYCLE_SCENARIOS:
             self.assertEqual(
                 make_lifecycle_persons(scenario, 0.1),
                 make_lifecycle_persons(scenario, 0.1),
             )
+
+    def test_crowd_aura_scenario_grows_holds_and_releases_the_group(self):
+        # 0 -> 1 -> 2 -> 4 -> 7 -> 14 people, then movement, stillness, split,
+        # gradual departure and finally an empty space.
+        self.assertEqual(make_lifecycle_persons("crowd_aura", 1.0), [])
+        self.assertEqual(len(make_lifecycle_persons("crowd_aura", 4.0)), 1)
+        self.assertEqual(len(make_lifecycle_persons("crowd_aura", 7.0)), 2)
+        self.assertEqual(len(make_lifecycle_persons("crowd_aura", 11.0)), 4)
+        self.assertEqual(len(make_lifecycle_persons("crowd_aura", 18.0)), 7)
+        self.assertEqual(len(make_lifecycle_persons("crowd_aura", 28.0)), 14)
+        self.assertEqual(len(make_lifecycle_persons("crowd_aura", 36.0)), 12)
+        self.assertEqual(len(make_lifecycle_persons("crowd_aura", 44.0)), 10)
+        self.assertEqual(len(make_lifecycle_persons("crowd_aura", 52.0)), 10)
+        self.assertEqual(len(make_lifecycle_persons("crowd_aura", 70.0)), 0)
+
+    def test_crowd_aura_scenario_is_deterministic_and_finite(self):
+        for t in (4.0, 18.0, 36.0, 44.0, 52.0, 60.0):
+            persons = make_lifecycle_persons("crowd_aura", t)
+            self.assertEqual(persons, make_lifecycle_persons("crowd_aura", t))
+            for person in persons:
+                for x, y, _ in person:
+                    self.assertTrue(math.isfinite(x) and math.isfinite(y))
 
     def test_stay_resonance_scenario_has_a_brief_gap_and_later_movement(self):
         self.assertEqual(len(make_lifecycle_persons("stay_resonance", 3.9)), 1)

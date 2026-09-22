@@ -229,9 +229,7 @@ sind verschiedene visuelle Materialitäten, zum Beispiel:
 - Funken und aufsteigende Lichtpartikel für Bewegung,
 - Trails für Wege durch den Raum,
 - Lichtbrücken und Felder für Nähe,
-- Lichtdunst für länger anhaltende Beziehung bzw. Atmosphäre,
-- Wellen für Rhythmus und Modulation,
-- gelegentliche schwebende Lichtkörper für intensive gemeinsame Phasen,
+- eine gemeinsame **Crowd-Aura** als atmosphärischer Resonanzraum der Gruppe,
 - zurücklaufende Wasser-/Lichtwellen als **Nachwirkung** beim Verlassen.
 
 Mit wachsender Personenzahl soll die Darstellung von einzelnen Lichtkörpern
@@ -241,6 +239,13 @@ zunehmend zu einem gemeinsamen Resonanzkörper der Fassade übergehen:
 body → pair → crowd
 presence → relation → collective → memory
 ```
+
+Die **Crowd-Aura** löst diese Aussage erstmals sichtbar ein: Je mehr Menschen
+dazukommen, desto stärker zeigt WIRKLICHT das Geschehen zwischen ihnen. Die
+Aura ist kein größerer Glow und kein Effekt für eine einzelne Person, sondern
+ein gemeinsames, weich begrenztes Lichtfeld, das aus den vorhandenen anonymen
+Body- und Crowd-Daten entsteht. Personen bleiben dabei sichtbar; ihre
+Einzeleffekte treten mit wachsender Gruppe nur leise zurück.
 
 ## Verbindliche Effekt-Schalter
 
@@ -253,10 +258,9 @@ So können vor Ort Effekte kurzfristig abgeschaltet werden, wenn sie zu unruhig,
 zu schwach, performancekritisch oder für die reale Projektionsfläche ungeeignet
 sind.
 
-Aktuell werden `body_glow`, `trails`, `sparks` und `proximity_bridges` vom
-Renderer tatsächlich aus der gemeinsamen Config gelesen. Weitere Effektfamilien
-sind bereits als deaktivierte Config-Blöcke reserviert und werden erst bei ihrer
-Implementierung aktiviert.
+Aktuell werden `body_glow`, `trails`, `sparks`, `proximity_bridges`,
+`stillness_resonance`, `crowd_aura` und `aftereffect_waves` vom Renderer
+tatsächlich aus der gemeinsamen Config gelesen.
 
 Beispiel:
 
@@ -280,11 +284,13 @@ Beispiel:
       "velocity_max": 300.0
     },
     "proximity_bridges": { "enabled": true },
-    "mist": { "enabled": false },
-    "waves": { "enabled": false },
-    "floating_bodies": { "enabled": false },
-    "aftereffect_waves": { "enabled": false },
-    "crowd_field": { "enabled": false }
+    "stillness_resonance": { "enabled": true },
+    "crowd_aura": {
+      "enabled": true,
+      "min_people": 3,
+      "full_strength_people": 10
+    },
+    "aftereffect_waves": { "enabled": true }
   }
 }
 ```
