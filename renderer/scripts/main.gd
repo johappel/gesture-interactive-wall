@@ -149,7 +149,7 @@ func _apply(data: Dictionary, delta: float) -> void:
 	var raw_pairs = data.get("pairs", [])
 	_pairs = raw_pairs if raw_pairs is Array and _effect_enabled("proximity_bridges", true) else []
 	if _proximity_bridges != null:
-		_proximity_bridges.update_pairs(_pairs, _positions, delta)
+		_proximity_bridges.update_pairs(_pairs, vp, delta)
 
 	_update_crowd_aura(data, normalized_positions, delta)
 
@@ -256,7 +256,7 @@ func _fade_all(delta: float) -> void:
 	if _crowd_aura != null:
 		_crowd_aura.update_crowd([], 0, 0.0, delta)
 	if _proximity_bridges != null:
-		_proximity_bridges.update_pairs([], {}, delta)
+		_proximity_bridges.update_pairs([], get_viewport_rect().size, delta)
 
 func _load_config() -> void:
 	var config_path := ProjectSettings.globalize_path("res://../config/config.json")

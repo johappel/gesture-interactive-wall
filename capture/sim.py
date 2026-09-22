@@ -187,7 +187,11 @@ def _proximity_persons(t: float) -> list[list[tuple[float, float, float]]]:
         f = (phase - 2.0) / 5.0  # approach
         return [_person(0.30 + 0.14 * f, 0.5, 0.3), _person(0.70 - 0.14 * f, 0.5, 0.3)]
     if phase < 13.0:
-        # Standing together: low motion, high proximity -> condensed pair field.
+        # Standing together. Around 9.3-10.0 s the two overlap so much that only
+        # one pose is detected (real MediaPipe occlusion); the bridge must ride
+        # through this brief merge on the grace period instead of blinking out.
+        if 9.3 <= phase < 10.0:
+            return [_person(0.5, 0.5, 0.12)]
         return [_person(0.46, 0.5, 0.12), _person(0.54, 0.5, 0.12)]
     if phase < 18.0:
         f = (phase - 13.0) / 5.0  # part

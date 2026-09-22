@@ -23,7 +23,7 @@ Standard: `127.0.0.1:4242`. Es werden ausschließlich abstrakte Zahlenwerte
     }
   ],
   "pairs": [
-    { "a": 0, "b": 1, "proximity": 0.8, "mx": 0.5, "my": 0.5 }
+    { "a": 0, "b": 1, "proximity": 0.8, "mx": 0.5, "my": 0.5, "ax": 0.42, "ay": 0.5, "bx": 0.58, "by": 0.5 }
   ],
   "crowd": { "count": 2, "energy": 0.4 },
   "events": {
@@ -59,6 +59,8 @@ Standard: `127.0.0.1:4242`. Es werden ausschließlich abstrakte Zahlenwerte
 | `pairs[].a/b`      | int       | IDs der nahen Personen |
 | `pairs[].proximity`| 0..1      | 1 = sehr nah |
 | `pairs[].mx/my`    | 0..1      | Mittelpunkt für die Lichtbrücke |
+| `pairs[].ax/ay`    | 0..1      | Position von `a` (die Brücke zeichnet aus diesen Endpunkten, unabhängig von der Body-Sichtbarkeit) |
+| `pairs[].bx/by`    | 0..1      | Position von `b` |
 | `crowd.count`      | int       | Anzahl erkannter Personen |
 | `crowd.energy`     | 0..1      | Mittlere Intensität aller Personen |
 | `tracking.temporarily_missing` | int[] | Bestätigte anonyme IDs innerhalb der kurzen Track-Grace-Period; hält nur ihren bereits sichtbaren Lichtzustand |
@@ -77,9 +79,18 @@ Standard: `127.0.0.1:4242`. Es werden ausschließlich abstrakte Zahlenwerte
 
 `bodies` enthält weiterhin nur im jeweiligen Frame tatsächlich erkannte
 Personen. Ein kurzfristig nicht erkannter Track bleibt intern für die
-konfigurierte `track_grace_period` erhalten, wird aber weder als Body noch in
-`pairs` oder Crowd-Daten ausgegeben. Bei räumlich plausibler Wiederaufnahme
-behält er seine ID.
+konfigurierte `track_grace_period` erhalten und wird **nicht** als Body oder in
+Crowd-Daten ausgegeben. Bei räumlich plausibler Wiederaufnahme behält er seine
+ID.
+
+**Ausnahme Nähe-Paare:** Eine Beziehung ist nicht dasselbe wie zwei sichtbare
+Erkennungen. Stehen zwei Menschen zusammen, liefert MediaPipe häufig nur eine
+Pose; der zweite Track sitzt dann in der Grace-Period. Damit die Lichtbrücke im
+entscheidenden Moment nicht ausblendet, darf ein solcher verdeckter Partner mit
+seiner zuletzt bekannten Position weiterhin **Endpunkt eines Paares** sein —
+sofern mindestens ein Endpunkt aktuell erkannt ist und der Abstand unter der
+Schwelle bleibt. Zwei gleichzeitig verdeckte Personen werden nie verbunden. Der
+verdeckte Partner erscheint dabei trotzdem nicht in `bodies` oder Crowd-Daten.
 
 Nach Ablauf der Grace Period wird ein Track beendet. Ein Eintrag in
 `events.departures` entsteht dabei **nur**, wenn die letzte valide Position in

@@ -13,7 +13,7 @@ import json
 import os
 import time
 
-from .features import BodyTracker, compute_pairs, crowd_energy
+from .features import BodyTracker, crowd_energy
 from .sim import LIFECYCLE_SCENARIOS
 from .net import UdpJsonSender
 
@@ -67,7 +67,7 @@ def run_sim(cfg: dict, scenario: str = "phase44") -> None:
             t = time.time() - start
             persons = make_simulation_persons(scenario, t)
             bodies = tracker.update(persons, t)
-            pairs = compute_pairs(bodies, fcfg["proximity_threshold"])
+            pairs = tracker.compute_pairs(fcfg["proximity_threshold"])
             sender.send(
                 build_frame(
                     bodies, pairs, crowd_energy(bodies), t, tracker.take_departures(),
@@ -127,7 +127,7 @@ def run_camera(cfg: dict) -> None:
             t = time.time() - start
             persons = pose.process(frame, int(t * 1000))
             bodies = tracker.update(persons, t)
-            pairs = compute_pairs(bodies, fcfg["proximity_threshold"])
+            pairs = tracker.compute_pairs(fcfg["proximity_threshold"])
             sender.send(
                 build_frame(
                     bodies, pairs, crowd_energy(bodies), t, tracker.take_departures(),

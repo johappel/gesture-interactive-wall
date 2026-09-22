@@ -345,6 +345,56 @@ class BodyTracker:
 
         return bodies
 
+    def compute_pairs(self, threshold: float = 0.35) -> list[dict]:
+        """Proximity bridges that survive a brief occlusion of one partner.
+
+        A relationship is not the same as two visible detections. When two
+        people stand together, MediaPipe frequently reports only one pose; the
+        other track then sits in the bounded grace period. Keeping the pair
+        alive with that partner's last known position lets the bridge stay put —
+        and condense into the shared field — instead of blinking out at the very
+        moment the two come together. A pair needs at least one currently
+        detected endpoint, so two invisible people are never bridged. Call this
+        immediately after ``update`` (stale tracks are already pruned there, so
+        any remaining missing track is within the grace period).
+        """
+        endpoints: list[tuple[int, float, float, bool]] = []
+        for tr in self._tracks.values():
+            if tr.seen_frames < self.confirmation_frames:
+                continue
+            if tr.state not in ("active", "temporarily_missing"):
+                continue
+            endpoints.append((tr.id, tr.centroid[0], tr.centroid[1], tr.state == "active"))
+
+        pairs: list[dict] = []
+        for i in range(len(endpoints)):
+            for j in range(i + 1, len(endpoints)):
+                id_i, xi, yi, active_i = endpoints[i]
+                id_j, xj, yj, active_j = endpoints[j]
+                if not (active_i or active_j):
+                    continue
+                d = math.hypot(xi - xj, yi - yj)
+                if d >= threshold:
+                    continue
+                if id_i <= id_j:
+                    a_id, ax, ay, b_id, bx, by = id_i, xi, yi, id_j, xj, yj
+                else:
+                    a_id, ax, ay, b_id, bx, by = id_j, xj, yj, id_i, xi, yi
+                pairs.append(
+                    {
+                        "a": a_id,
+                        "b": b_id,
+                        "proximity": round(1.0 - d / threshold, 4),
+                        "mx": round((ax + bx) / 2.0, 4),
+                        "my": round((ay + by) / 2.0, 4),
+                        "ax": round(ax, 4),
+                        "ay": round(ay, 4),
+                        "bx": round(bx, 4),
+                        "by": round(by, 4),
+                    }
+                )
+        return pairs
+
 
 def compute_pairs(bodies: list[dict], threshold: float = 0.35) -> list[dict]:
     """Return proximity bridges for body pairs closer than ``threshold``."""
@@ -361,6 +411,10 @@ def compute_pairs(bodies: list[dict], threshold: float = 0.35) -> list[dict]:
                         "proximity": round(1.0 - d / threshold, 4),
                         "mx": round((a["x"] + b["x"]) / 2.0, 4),
                         "my": round((a["y"] + b["y"]) / 2.0, 4),
+                        "ax": round(a["x"], 4),
+                        "ay": round(a["y"], 4),
+                        "bx": round(b["x"], 4),
+                        "by": round(b["y"], 4),
                     }
                 )
     return pairs

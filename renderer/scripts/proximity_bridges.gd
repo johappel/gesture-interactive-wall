@@ -53,29 +53,32 @@ func configure(config: Dictionary) -> void:
 	_hot_color = _color_value(config, "hot_color", Color("#ff9a3c"))
 
 
-# `pairs` are the raw pair dicts; `positions` maps body id -> screen position.
-func update_pairs(pairs: Array, positions: Dictionary, delta: float) -> void:
+# `pairs` carry their own normalised endpoints (ax/ay/bx/by), so a bridge can
+# stay drawn while one partner is briefly occluded (only one visible body).
+func update_pairs(pairs: Array, viewport: Vector2, delta: float) -> void:
 	var seen := {}
 	for p in pairs:
 		if not (p is Dictionary) or not p.has("a") or not p.has("b"):
 			continue
+		if not (_finite01(p.get("ax")) and _finite01(p.get("ay")) and _finite01(p.get("bx")) and _finite01(p.get("by"))):
+			continue
 		var a := int(p["a"])
 		var b := int(p["b"])
-		if not positions.has(a) or not positions.has(b):
-			continue
+		var pa := Vector2(float(p["ax"]) * viewport.x, float(p["ay"]) * viewport.y)
+		var pb := Vector2(float(p["bx"]) * viewport.x, float(p["by"]) * viewport.y)
 		var key := "%d-%d" % [mini(a, b), maxi(a, b)]
 		seen[key] = true
 		var proximity: float = clampf(float(p.get("proximity", 0.0)), 0.0, 1.0)
 		if _bridges.has(key):
 			var bridge: Dictionary = _bridges[key]
-			bridge["pa"] = positions[a]
-			bridge["pb"] = positions[b]
+			bridge["pa"] = pa
+			bridge["pb"] = pb
 			bridge["proximity"] = proximity
 			bridge["alpha"] = minf(float(bridge["alpha"]) + delta / _fade_seconds, 1.0)
 		else:
 			_bridges[key] = {
-				"pa": positions[a],
-				"pb": positions[b],
+				"pa": pa,
+				"pb": pb,
 				"proximity": proximity,
 				"alpha": 0.0,
 				"seeds": _make_seeds(),
@@ -88,6 +91,13 @@ func update_pairs(pairs: Array, positions: Dictionary, delta: float) -> void:
 			if float(bridge["alpha"]) <= 0.0:
 				_bridges.erase(key)
 	queue_redraw()
+
+
+func _finite01(value) -> bool:
+	if not (typeof(value) == TYPE_INT or typeof(value) == TYPE_FLOAT):
+		return false
+	var number := float(value)
+	return not is_nan(number) and not is_inf(number) and number >= 0.0 and number <= 1.0
 
 
 func clear() -> void:

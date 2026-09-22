@@ -296,6 +296,59 @@ class PairsTest(unittest.TestCase):
         far = compute_pairs(self._bodies(0.5, 0.8), threshold=0.35)[0]["proximity"]
         self.assertGreater(near, far)
 
+    def test_pairs_carry_endpoints_for_the_bridge(self):
+        pair = compute_pairs(self._bodies(0.5, 0.6), threshold=0.35)[0]
+        for key in ("ax", "ay", "bx", "by"):
+            self.assertIn(key, pair)
+        self.assertAlmostEqual(pair["ax"], 0.5, places=3)
+        self.assertAlmostEqual(pair["bx"], 0.6, places=3)
+
+
+class PairGracePersistenceTest(unittest.TestCase):
+    """A pair (and thus the bridge) survives a brief occlusion of one partner."""
+
+    def _tracker(self):
+        return BodyTracker(max_dist=0.3, grace_period=1.0, confirmation_frames=1)
+
+    def _two_close(self):
+        return [person(0.46, 0.5), person(0.54, 0.5)]
+
+    def test_pair_persists_while_one_partner_is_briefly_occluded(self):
+        tracker = self._tracker()
+        tracker.update(self._two_close(), 0.0)
+        both = tracker.compute_pairs(0.35)
+        self.assertEqual(len(both), 1)
+        ids = (both[0]["a"], both[0]["b"])
+
+        # One partner is now occluded: only a single merged pose is detected.
+        bodies = tracker.update([person(0.50, 0.5)], 0.2)
+        self.assertEqual(len(bodies), 1)  # only one visible body
+        occluded = tracker.compute_pairs(0.35)
+        self.assertEqual(len(occluded), 1, "bridge must survive the merge")
+        self.assertEqual((occluded[0]["a"], occluded[0]["b"]), ids)
+        self.assertGreater(occluded[0]["proximity"], both[0]["proximity"] - 0.5)
+
+        # Both detected again within the grace period: same ids, still one pair.
+        tracker.update(self._two_close(), 0.4)
+        rejoined = tracker.compute_pairs(0.35)
+        self.assertEqual(len(rejoined), 1)
+        self.assertEqual((rejoined[0]["a"], rejoined[0]["b"]), ids)
+
+    def test_two_invisible_people_are_never_bridged(self):
+        tracker = self._tracker()
+        tracker.update(self._two_close(), 0.0)
+        tracker.update([], 0.2)  # both occluded -> no active endpoint
+        self.assertEqual(tracker.compute_pairs(0.35), [])
+
+    def test_no_phantom_bridge_once_the_partner_moves_far_away(self):
+        tracker = self._tracker()
+        tracker.update(self._two_close(), 0.0)
+        tracker.update([person(0.50, 0.5)], 0.2)  # one occluded near midpoint
+        # The visible partner walks far away while the other stays occluded.
+        tracker.update([person(0.95, 0.5)], 0.4)
+        self.assertEqual(tracker.compute_pairs(0.35), [])
+
+
 
 class CrowdTest(unittest.TestCase):
     def test_empty_is_zero(self):

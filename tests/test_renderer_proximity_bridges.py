@@ -43,7 +43,7 @@ class ProximityBridgeRendererContractTest(unittest.TestCase):
             "func _setup_proximity_bridges() -> void:",
             'if not _effect_enabled("proximity_bridges", true):',
             "ProximityBridgesScript.new()",
-            "_proximity_bridges.update_pairs(_pairs, _positions, delta)",
+            "_proximity_bridges.update_pairs(_pairs, vp, delta)",
         ):
             self.assertIn(marker, self.main)
         setup = self.main.split("func _setup_proximity_bridges()", 1)[1].split("func ", 1)[0]
@@ -64,13 +64,23 @@ class ProximityBridgeRendererContractTest(unittest.TestCase):
 
     def test_orbs_shuttle_and_condense_into_a_pair_field(self):
         for marker in (
-            "func update_pairs(pairs: Array, positions: Dictionary, delta: float)",
+            "func update_pairs(pairs: Array, viewport: Vector2, delta: float)",
             "var amplitude: float = _travel * (1.0 - 0.85 * proximity)",
             "a.lerp(b, along)",
             "smoothstep(0.55, 1.0, proximity)",
             "_warm_color.lerp(_hot_color, proximity)",
         ):
             self.assertIn(marker, self.bridge)
+
+    def test_bridge_draws_from_pair_endpoints_so_occlusion_survives(self):
+        # The bridge must not depend on both bodies being visible: it reads the
+        # pair's own endpoints, so a briefly occluded partner keeps it alive.
+        for marker in (
+            'float(p["ax"]) * viewport.x',
+            'float(p["by"]) * viewport.y',
+        ):
+            self.assertIn(marker, self.bridge)
+        self.assertNotIn("positions.has(a)", self.bridge)
 
     def test_bridge_fades_pairs_in_and_out(self):
         self.assertIn('bridge["alpha"] = minf(float(bridge["alpha"]) + delta / _fade_seconds, 1.0)', self.bridge)
