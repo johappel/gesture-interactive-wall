@@ -235,11 +235,20 @@ python capture/download_model.py
 
 python -m unittest discover -s tests -v
 python -m capture.tracker --sim
+python -m capture.tracker --sim --sim-scenario crowd_aura
 python -m capture.tracker --list-cameras
 python -m capture.tracker --camera 1
 ```
 
 Godot 4.7: `renderer/project.godot` importieren, mit **F5** starten.
+
+Für die visuelle Abnahme ohne Kamera gibt es `WIRKLICHT Simulation.cmd` bzw.
+`simulate.ps1`. Der Launcher startet Renderer und Simulator zusammen, öffnet
+keine Kamera und liest die Szenarioliste aus `capture/sim.py`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File simulate.ps1 -Scenario crowd_aura
+```
 
 ## Test-Pflicht (verbindlich)
 

@@ -799,6 +799,7 @@ function Invoke-WirklichtInstallation {
             Write-WirklichtLog -Path $log -Message ("Kamera noch nicht eingerichtet: " + $_.Exception.Message)
         }
         New-WirklichtShortcut -Name "WIRKLICHT starten" -ScriptName "start.ps1" -Description "WIRKLICHT starten" | Out-Null
+        New-WirklichtShortcut -Name "WIRKLICHT Simulation" -ScriptName "simulate.ps1" -Description "WIRKLICHT ohne Kamera im Simulator vorfuehren" | Out-Null
         New-WirklichtShortcut -Name "WIRKLICHT Kamera waehlen" -ScriptName "camera-select.ps1" -Description "WIRKLICHT Kamera auswaehlen und testen" | Out-Null
         New-WirklichtShortcut -Name "WIRKLICHT Bildschirm waehlen" -ScriptName "monitor-select.ps1" -Description "Fassaden-Bildschirm auswählen" | Out-Null
         New-WirklichtShortcut -Name "WIRKLICHT Nahraum-Monitor waehlen" -ScriptName "monitor-select.ps1" -Description "Nahraum-Monitor auswählen" -ScriptArguments "-Target monitor" | Out-Null
@@ -806,6 +807,7 @@ function Invoke-WirklichtInstallation {
         Write-WirklichtStep "Desktop-Verknuepfungen" "OK" Green
         Write-Host ("Start-Verknuepfungen: " + ((Get-WirklichtShortcutDirectories) -join ", "))
         Write-Host ("Direkter Doppelklick: " + (Join-Path $script:WirklichtRoot "WIRKLICHT starten.cmd"))
+        Write-Host ("Simulation ohne Kamera: " + (Join-Path $script:WirklichtRoot "WIRKLICHT Simulation.cmd"))
         Write-WirklichtLog -Path $log -Message "Installation erfolgreich. Version $(Get-WirklichtVersion)."
         Write-WirklichtHeader "INSTALLATION ERFOLGREICH"
         Write-Host "Danach genuegt ein Doppelklick auf: WIRKLICHT starten"

@@ -41,11 +41,33 @@ class WindowsScriptContractTest(unittest.TestCase):
         self.assertIn("KEY_ENTER", renderer)
 
     def test_operator_scripts_exist(self):
-        for name in ("install.ps1", "start.ps1", "camera-select.ps1", "monitor-select.ps1", "update.ps1", "diagnose.ps1"):
+        for name in ("install.ps1", "start.ps1", "simulate.ps1", "camera-select.ps1", "monitor-select.ps1", "update.ps1", "diagnose.ps1"):
             self.assertTrue((ROOT / name).is_file(), name)
-        for name in ("WIRKLICHT starten.cmd", "WIRKLICHT Kamera waehlen.cmd", "WIRKLICHT Bildschirm waehlen.cmd", "WIRKLICHT Nahraum-Monitor waehlen.cmd", "WIRKLICHT Diagnose.cmd"):
+        for name in ("WIRKLICHT starten.cmd", "WIRKLICHT Simulation.cmd", "WIRKLICHT Kamera waehlen.cmd", "WIRKLICHT Bildschirm waehlen.cmd", "WIRKLICHT Nahraum-Monitor waehlen.cmd", "WIRKLICHT Diagnose.cmd"):
             self.assertTrue((ROOT / name).is_file(), name)
         self.assertTrue((ROOT / "lib" / "common.ps1").is_file())
+
+    def test_simulation_launcher_starts_renderer_then_synthetic_capture(self):
+        simulate = (ROOT / "simulate.ps1").read_text(encoding="utf-8")
+        wrapper = (ROOT / "WIRKLICHT Simulation.cmd").read_text(encoding="utf-8")
+        self.assertIn("simulate.ps1", wrapper)
+        # The camera is never opened; only synthetic data is sent.
+        self.assertNotIn("Select-WirklichtCamera", simulate)
+        self.assertIn('"--sim"', simulate)
+        self.assertIn('"--sim-scenario"', simulate)
+        self.assertIn("LIFECYCLE_SCENARIOS", simulate)
+        self.assertIn("Ensure-WirklichtPythonEnvironment", simulate)
+        self.assertIn("Ensure-WirklichtGodot", simulate)
+        self.assertIn('"gl_compatibility"', simulate)
+        # The scenario list is read from capture/sim.py, not duplicated here.
+        self.assertIn("phase44", simulate)
+        self.assertIn("SIMULATION LAEUFT", simulate)
+        self.assertIn("Stop-WirklichtSimulation", simulate)
+
+    def test_installer_creates_simulation_shortcut(self):
+        common = (ROOT / "lib" / "common.ps1").read_text(encoding="utf-8")
+        self.assertIn('New-WirklichtShortcut -Name "WIRKLICHT Simulation"', common)
+        self.assertIn('"simulate.ps1"', common)
 
     def test_scripts_keep_operator_guarantees(self):
         common = (ROOT / "lib" / "common.ps1").read_text(encoding="utf-8")
@@ -106,7 +128,7 @@ class WindowsScriptContractTest(unittest.TestCase):
 
     @unittest.skipUnless(shutil.which("powershell"), "Windows PowerShell nicht verfuegbar")
     def test_powershell_scripts_parse(self):
-        files = ["install.ps1", "start.ps1", "camera-select.ps1", "monitor-select.ps1", "update.ps1", "diagnose.ps1", "lib\\common.ps1"]
+        files = ["install.ps1", "start.ps1", "simulate.ps1", "camera-select.ps1", "monitor-select.ps1", "update.ps1", "diagnose.ps1", "lib\\common.ps1"]
         command = ""
         for name in files:
             path = str(ROOT / name).replace("'", "''")

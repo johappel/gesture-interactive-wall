@@ -351,6 +351,36 @@ python -m capture.tracker --sim
 
 Es sollten Lichtgestalten über die Godot-Ausgabe wandern.
 
+### 3.2 Simulation ohne Kamera (empfohlen für die Abnahme)
+
+Für die Beurteilung von Effekten wie `crowd_aura` gibt es einen eigenen
+Doppelklick-Launcher. Er startet den Renderer und speist anschließend
+synthetische Daten ein — **ohne Kamera, ohne Publikum, ohne Abendlicht**:
+
+```text
+WIRKLICHT Simulation.cmd
+```
+
+Der Launcher fragt nach einem Szenario und zeigt die verfügbare Liste an. Die
+Szenarien selbst stehen ausschließlich in `capture/sim.py` und werden von dort
+gelesen, nicht im Skript dupliziert. Beispiele:
+
+| Szenario | Zeigt |
+|---|---|
+| `crowd_aura` | 0 → 14 Personen, Bewegung, Ruhe, Aufteilung, schrittweises Fortgehen |
+| `stay_resonance` | ruhiges Bleiben mit kurzer Erkennungslücke |
+| `aftereffect_waves` | einzelner und gemeinsamer Austritt |
+| `phase44` | Leerlauf → eine Person → mehrere Personen → Leerlauf |
+
+Auch nicht-interaktiv startbar:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File simulate.ps1 -Scenario crowd_aura
+```
+
+> Der Simulator ersetzt **keine** reale Fassadenabnahme. Helligkeit,
+> Distanzlesbarkeit und die Wirkung bei echtem Publikum bleiben offen.
+
 ### 3.1 Beamer und Nahraum-Monitor im Vollbild
 
 Die Ausgaben werden in `config/config.json` unter `station` gespeichert. Beim

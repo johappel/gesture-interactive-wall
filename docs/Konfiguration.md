@@ -361,6 +361,14 @@ python -m unittest discover -s tests -v
 python -m capture.tracker --sim
 ```
 
+Für die visuelle Abnahme ohne Kamera gibt es zusätzlich den Launcher
+`WIRKLICHT Simulation.cmd` bzw. `simulate.ps1`. Er startet Renderer und
+Simulator zusammen und liest die Szenarioliste aus `capture/sim.py`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File simulate.ps1 -Scenario crowd_aura
+```
+
 Visuelle Änderungen zusätzlich im Godot-Simulator prüfen. Für Monitor- und
 Promptlogik sind zusätzlich der deaktivierte Zustand, ein ungültiger
 `prompt_key`, eine fehlende Promptdatei und die sicheren Fallbacks zu testen.
