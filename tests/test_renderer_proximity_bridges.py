@@ -40,14 +40,18 @@ class ProximityBridgeRendererContractTest(unittest.TestCase):
 
     def test_disabled_bridge_is_not_created_and_not_simulated(self):
         for marker in (
-            "func _setup_proximity_bridges() -> void:",
-            'if not _effect_enabled("proximity_bridges", true):',
+            "func _refresh_proximity_bridges() -> void:",
+            'if _effect_enabled("proximity_bridges", true):',
             "ProximityBridgesScript.new()",
             "_proximity_bridges.update_pairs(_pairs, vp, delta)",
         ):
             self.assertIn(marker, self.main)
-        setup = self.main.split("func _setup_proximity_bridges()", 1)[1].split("func ", 1)[0]
-        self.assertLess(setup.index("return"), setup.index("ProximityBridgesScript.new()"))
+        refresh = self.main.split("func _refresh_proximity_bridges()", 1)[1].split("\nfunc ", 1)[0]
+        self.assertLess(
+            refresh.index('if _effect_enabled("proximity_bridges", true):'),
+            refresh.index("ProximityBridgesScript.new()"),
+        )
+        self.assertIn("queue_free()", refresh)
 
     def test_old_static_line_is_gone(self):
         # The inline draw_line bridge only refreshed on input and read as UI.

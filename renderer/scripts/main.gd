@@ -10,6 +10,8 @@ const AftereffectWavesScript := preload("res://scripts/aftereffect_waves.gd")
 const CrowdAuraScript := preload("res://scripts/crowd_aura.gd")
 const ProximityBridgesScript := preload("res://scripts/proximity_bridges.gd")
 const PromptCueScript := preload("res://scripts/prompt_cue.gd")
+const DebugOverlayScript := preload("res://scripts/debug_overlay.gd")
+const CONFIG_POLL_INTERVAL := 0.5  # seconds between config.json change checks
 
 var _udp := PacketPeerUDP.new()
 var _bodies := {}          # id -> BodyLight
@@ -39,16 +41,22 @@ var _crowd_aura
 var _proximity_bridges
 var _last_frame_time := -INF
 var _seen_departure_ids := {}
+var _effects_raw: Dictionary = {}
+var _config_path := ""
+var _config_mtime := 0
+var _config_poll_elapsed := 0.0
+var _debug_overlay
 
 func _ready() -> void:
 	_load_config()
 	_setup_facade_output()
 	_setup_background()
 	_setup_glow()
-	_setup_crowd_aura()
-	_setup_proximity_bridges()
-	_setup_aftereffect_waves()
+	_refresh_crowd_aura()
+	_refresh_proximity_bridges()
+	_refresh_aftereffect_waves()
 	_setup_station_monitor()
+	_setup_debug_overlay()
 	var err := _udp.bind(_port, "127.0.0.1")
 	if err != OK:
 		push_error("UDP-Bind auf Port %d fehlgeschlagen: %s" % [_port, err])
@@ -80,10 +88,19 @@ func _process(delta: float) -> void:
 
 	_update_monitor_prompt(delta)
 
+	_config_poll_elapsed += delta
+	if _config_poll_elapsed >= CONFIG_POLL_INTERVAL:
+		_config_poll_elapsed = 0.0
+		_poll_config_reload()
+
 func _unhandled_key_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.alt_pressed and event.keycode == KEY_ENTER:
 		_toggle_facade_fullscreen()
 		get_viewport().set_input_as_handled()
+	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_F3:
+		if _debug_overlay != null:
+			_debug_overlay.toggle()
+			get_viewport().set_input_as_handled()
 	queue_redraw()
 
 func _apply(data: Dictionary, delta: float) -> void:
@@ -174,27 +191,128 @@ func _apply_collective_weight() -> void:
 	for id in _bodies.keys():
 		_bodies[id].set_individual_weight(weight)
 
-func _setup_aftereffect_waves() -> void:
-	if not _effect_enabled("aftereffect_waves", false):
-		return
-	_aftereffect_waves = AftereffectWavesScript.new()
-	_aftereffect_waves.z_index = -1
-	_aftereffect_waves.configure(_effect_block("aftereffect_waves"))
-	add_child(_aftereffect_waves)
+# Effect nodes are created on demand and torn down when disabled, so an
+# enabled=false really means "not created and not simulated". The same refresh
+# path is used at startup and on every live config reload.
+func _refresh_aftereffect_waves() -> void:
+	if _effect_enabled("aftereffect_waves", false):
+		if _aftereffect_waves == null:
+			_aftereffect_waves = AftereffectWavesScript.new()
+			_aftereffect_waves.z_index = -1
+			add_child(_aftereffect_waves)
+		_aftereffect_waves.configure(_effect_block("aftereffect_waves"))
+	elif _aftereffect_waves != null:
+		_aftereffect_waves.queue_free()
+		_aftereffect_waves = null
+		_seen_departure_ids.clear()
 
-func _setup_crowd_aura() -> void:
-	if not _effect_enabled("crowd_aura", false):
-		return
-	_crowd_aura = CrowdAuraScript.new()
-	_crowd_aura.configure(_effect_block("crowd_aura"))
-	add_child(_crowd_aura)
+func _refresh_crowd_aura() -> void:
+	if _effect_enabled("crowd_aura", false):
+		if _crowd_aura == null:
+			_crowd_aura = CrowdAuraScript.new()
+			add_child(_crowd_aura)
+		_crowd_aura.configure(_effect_block("crowd_aura"))
+	elif _crowd_aura != null:
+		_crowd_aura.queue_free()
+		_crowd_aura = null
+		# Without the shared field, individuals return to full weight instead of
+		# staying stuck at their last dimmed value.
+		for id in _bodies.keys():
+			_bodies[id].set_individual_weight(1.0)
 
-func _setup_proximity_bridges() -> void:
-	if not _effect_enabled("proximity_bridges", true):
+func _refresh_proximity_bridges() -> void:
+	if _effect_enabled("proximity_bridges", true):
+		if _proximity_bridges == null:
+			_proximity_bridges = ProximityBridgesScript.new()
+			add_child(_proximity_bridges)
+		_proximity_bridges.configure(_effect_block("proximity_bridges"))
+	elif _proximity_bridges != null:
+		_proximity_bridges.queue_free()
+		_proximity_bridges = null
+
+func _setup_debug_overlay() -> void:
+	_debug_overlay = DebugOverlayScript.new()
+	_debug_overlay.bind_main(self)
+	add_child(_debug_overlay)
+
+# --- Live config reload -----------------------------------------------------
+
+func _poll_config_reload() -> void:
+	if _config_path == "" or not FileAccess.file_exists(_config_path):
 		return
-	_proximity_bridges = ProximityBridgesScript.new()
-	_proximity_bridges.configure(_effect_block("proximity_bridges"))
-	add_child(_proximity_bridges)
+	var mtime := FileAccess.get_modified_time(_config_path)
+	if mtime == _config_mtime:
+		return
+	_config_mtime = mtime
+	_reload_from_config()
+
+func _reload_from_config() -> void:
+	var file := FileAccess.open(_config_path, FileAccess.READ)
+	if file == null:
+		return
+	var json := JSON.new()
+	if json.parse(file.get_as_text()) != OK or not (json.get_data() is Dictionary):
+		push_warning("WIRKLICHT Live-Reload: Config ungültig; behalte aktuelle Werte.")
+		return
+	var config: Dictionary = json.get_data()
+	var configured_effects = config.get("effects", {})
+	var new_effects: Dictionary = configured_effects.duplicate(true) if configured_effects is Dictionary else _default_effects()
+	_apply_live_effects(new_effects)
+	if _debug_overlay != null:
+		_debug_overlay.sync_from_config()
+	print("WIRKLICHT Live-Reload übernommen.")
+
+# Re-applies a raw effects block to the running scene: nodes are created or
+# freed on enabled transitions, existing nodes are reconfigured and every body
+# light receives the fresh parameters.
+func _apply_live_effects(raw_effects: Dictionary) -> void:
+	_effects_raw = raw_effects.duplicate(true)
+	_effects = _resolve_effect_modes(_effects_raw.duplicate(true))
+	_refresh_crowd_aura()
+	_refresh_proximity_bridges()
+	_refresh_aftereffect_waves()
+	for id in _bodies.keys():
+		_bodies[id].configure_effects(_effects)
+	_print_effect_state()
+
+# Called by the debug overlay: the raw (pre-mode-resolution) effects block.
+func live_effects_raw() -> Dictionary:
+	return _effects_raw.duplicate(true)
+
+# Called by the debug overlay on every slider change: apply in memory only.
+func set_live_effects(new_effects: Dictionary) -> void:
+	_apply_live_effects(new_effects)
+
+# Called by the debug overlay's "Speichern": persist the current raw effects
+# block back into config.json without disturbing the other sections. Written
+# atomically (temp + rename) and with LF newlines to match the repo.
+func save_live_effects_to_config() -> bool:
+	if _config_path == "":
+		return false
+	var config: Dictionary = {}
+	if FileAccess.file_exists(_config_path):
+		var reader := FileAccess.open(_config_path, FileAccess.READ)
+		if reader != null:
+			var json := JSON.new()
+			if json.parse(reader.get_as_text()) == OK and json.get_data() is Dictionary:
+				config = json.get_data()
+	config["effects"] = _effects_raw
+	var text := JSON.stringify(config, "\t", false)
+	var tmp_path := _config_path + ".tmp"
+	var writer := FileAccess.open(tmp_path, FileAccess.WRITE)
+	if writer == null:
+		push_warning("WIRKLICHT: Config konnte nicht geschrieben werden: %s" % tmp_path)
+		return false
+	writer.store_string(text)
+	writer.close()
+	var err := DirAccess.rename_absolute(tmp_path, _config_path)
+	if err != OK:
+		push_warning("WIRKLICHT: Config-Rename fehlgeschlagen (%s)." % err)
+		return false
+	# Skip the poller's self-trigger for this write.
+	_config_mtime = FileAccess.get_modified_time(_config_path)
+	print("WIRKLICHT: Effekte in config.json gespeichert.")
+	return true
 
 func _consume_departures(data: Dictionary, frame_time: float) -> void:
 	if _aftereffect_waves == null:
@@ -260,15 +378,19 @@ func _fade_all(delta: float) -> void:
 
 func _load_config() -> void:
 	var config_path := ProjectSettings.globalize_path("res://../config/config.json")
+	_config_path = config_path
 	if not FileAccess.file_exists(config_path):
 		push_warning("WIRKLICHT config nicht gefunden: %s; Renderer nutzt Defaults." % config_path)
+		_effects_raw = _default_effects()
 		_effects = _default_effects()
 		_station = _normalize_station(_default_station())
 		return
+	_config_mtime = FileAccess.get_modified_time(config_path)
 
 	var file := FileAccess.open(config_path, FileAccess.READ)
 	if file == null:
 		push_warning("WIRKLICHT config konnte nicht geöffnet werden; Renderer nutzt Defaults.")
+		_effects_raw = _default_effects()
 		_effects = _default_effects()
 		_station = _normalize_station(_default_station())
 		return
@@ -277,6 +399,7 @@ func _load_config() -> void:
 	var error := json.parse(file.get_as_text())
 	if error != OK or not (json.get_data() is Dictionary):
 		push_warning("WIRKLICHT config ist ungültig; Renderer nutzt Defaults.")
+		_effects_raw = _default_effects()
 		_effects = _default_effects()
 		_station = _normalize_station(_default_station())
 		return
@@ -287,8 +410,8 @@ func _load_config() -> void:
 		_port = int(network.get("port", DEFAULT_PORT))
 
 	var configured_effects = config.get("effects", {})
-	_effects = configured_effects.duplicate(true) if configured_effects is Dictionary else _default_effects()
-	_effects = _resolve_effect_modes(_effects)
+	_effects_raw = configured_effects.duplicate(true) if configured_effects is Dictionary else _default_effects()
+	_effects = _resolve_effect_modes(_effects_raw.duplicate(true))
 
 	var configured_station = config.get("station", {})
 	_station = _normalize_station(configured_station)

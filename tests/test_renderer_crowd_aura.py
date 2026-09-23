@@ -87,16 +87,21 @@ class CrowdAuraRendererContractTest(unittest.TestCase):
 
     def test_disabled_aura_is_not_created_and_not_simulated(self):
         for marker in (
-            "func _setup_crowd_aura() -> void:",
-            'if not _effect_enabled("crowd_aura", false):',
+            "func _refresh_crowd_aura() -> void:",
+            'if _effect_enabled("crowd_aura", false):',
             "CrowdAuraScript.new()",
             "func _update_crowd_aura(",
             "if _crowd_aura == null:",
         ):
             self.assertIn(marker, self.main)
-        # The setup guard must return before creating the node.
-        setup = self.main.split("func _setup_crowd_aura()", 1)[1].split("func ", 1)[0]
-        self.assertLess(setup.index("return"), setup.index("CrowdAuraScript.new()"))
+        # Creation lives inside the enabled branch; the disabled branch frees
+        # the node instead of merely hiding it.
+        refresh = self.main.split("func _refresh_crowd_aura()", 1)[1].split("\nfunc ", 1)[0]
+        self.assertLess(
+            refresh.index('if _effect_enabled("crowd_aura", false):'),
+            refresh.index("CrowdAuraScript.new()"),
+        )
+        self.assertIn("queue_free()", refresh)
 
     def test_aura_is_derived_from_existing_anonymous_crowd_data(self):
         for marker in (
