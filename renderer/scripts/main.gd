@@ -107,8 +107,16 @@ func _apply(data: Dictionary, delta: float) -> void:
 	var frame_time = data.get("t", null)
 	if _is_finite_number(frame_time):
 		if float(frame_time) < _last_frame_time:
-			return
-		_last_frame_time = float(frame_time)
+			# A large backward jump means capture restarted its clock (a fresh
+			# simulator process). Accept the new timeline instead of freezing
+			# forever; small backward steps stay reordered-duplicate rejects.
+			if _last_frame_time - float(frame_time) > 1.0:
+				_last_frame_time = float(frame_time)
+				_seen_departure_ids.clear()
+			else:
+				return
+		else:
+			_last_frame_time = float(frame_time)
 		_consume_departures(data, _last_frame_time)
 	var vp := get_viewport_rect().size
 	var seen := {}
@@ -237,6 +245,24 @@ func _setup_debug_overlay() -> void:
 
 # --- Live config reload -----------------------------------------------------
 
+# Debug-only channel to the simulator process. The renderer never sends
+# production data; this only asks the simulator to switch its synthetic
+# scenario. The simulator listens on the production port + 1.
+func _sim_control_packet(scenario: String) -> PackedByteArray:
+	var payload := {"type": "sim_control", "scenario": scenario}
+	return JSON.stringify(payload).to_utf8_buffer()
+
+func request_sim_scenario(scenario: String) -> void:
+	var target_port := _port + 1
+	var peer := PacketPeerUDP.new()
+	var err := peer.set_dest_address("127.0.0.1", target_port)
+	if err == OK:
+		err = peer.put_packet(_sim_control_packet(scenario))
+	if err != OK:
+		push_warning("Simulations-Steuerbefehl konnte nicht gesendet werden (Port %d)." % target_port)
+	else:
+		print("WIRKLICHT Debug: Simulations-Szenario angefordert: %s" % scenario)
+
 func _poll_config_reload() -> void:
 	if _config_path == "" or not FileAccess.file_exists(_config_path):
 		return
@@ -286,24 +312,46 @@ func set_live_effects(new_effects: Dictionary) -> void:
 # Called by the debug overlay's "Speichern": persist the current raw effects
 # block back into config.json without disturbing the other sections. Written
 # atomically (temp + rename) and with LF newlines to match the repo.
+#
+# Only the effects VALUE is spliced in by brace depth. The file must not be
+# round-tripped through Godot's JSON parser: that would demote every integer in
+# camera/pose/features/station to a float and rewrite the whole file.
 func save_live_effects_to_config() -> bool:
-	if _config_path == "":
+	if _config_path == "" or not FileAccess.file_exists(_config_path):
 		return false
-	var config: Dictionary = {}
-	if FileAccess.file_exists(_config_path):
-		var reader := FileAccess.open(_config_path, FileAccess.READ)
-		if reader != null:
-			var json := JSON.new()
-			if json.parse(reader.get_as_text()) == OK and json.get_data() is Dictionary:
-				config = json.get_data()
-	config["effects"] = _effects_raw
-	var text := JSON.stringify(config, "\t", false)
+	var reader := FileAccess.open(_config_path, FileAccess.READ)
+	if reader == null:
+		return false
+	var text := reader.get_as_text()
+	var bounds := _effects_span(text)
+	if bounds.x < 0:
+		push_warning("WIRKLICHT: 'effects'-Block in config.json nicht gefunden; Speichern übersprungen.")
+		return false
+	var start: int = bounds.x
+	var end: int = bounds.y
+	# Keep the effects key's own indentation for the spliced block.
+	var line_start := text.rfind("\n", start) + 1
+	var indent := ""
+	for index in range(line_start, start):
+		var character := text[index]
+		if character == " " or character == "\t":
+			indent += character
+		else:
+			break
+	var block := JSON.stringify(_effects_raw, "    ", false)
+	var block_lines := block.split("\n")
+	var rebuilt := ""
+	for index in range(block_lines.size()):
+		if index > 0:
+			rebuilt += "\n" + indent
+		rebuilt += block_lines[index]
+	var new_text := text.substr(0, start) + rebuilt + text.substr(end + 1)
 	var tmp_path := _config_path + ".tmp"
 	var writer := FileAccess.open(tmp_path, FileAccess.WRITE)
 	if writer == null:
 		push_warning("WIRKLICHT: Config konnte nicht geschrieben werden: %s" % tmp_path)
 		return false
-	writer.store_string(text)
+	writer.store_string(new_text)
 	writer.close()
 	var err := DirAccess.rename_absolute(tmp_path, _config_path)
 	if err != OK:
@@ -313,6 +361,39 @@ func save_live_effects_to_config() -> bool:
 	_config_mtime = FileAccess.get_modified_time(_config_path)
 	print("WIRKLICHT: Effekte in config.json gespeichert.")
 	return true
+
+# Locates the "effects" value object and returns (open_brace, close_brace) or
+# (-1, -1). Brace matching is string-aware so braces inside string values (for
+# instance a device path) cannot end the block early.
+func _effects_span(text: String) -> Vector2i:
+	var key_at := text.find("\"effects\"")
+	if key_at < 0:
+		return Vector2i(-1, -1)
+	var open := text.find("{", key_at)
+	if open < 0:
+		return Vector2i(-1, -1)
+	var depth := 0
+	var in_string := false
+	var escaped := false
+	for index in range(open, text.length()):
+		var character := text[index]
+		if in_string:
+			if escaped:
+				escaped = false
+			elif character == "\\":
+				escaped = true
+			elif character == "\"":
+				in_string = false
+			continue
+		if character == "\"":
+			in_string = true
+		elif character == "{":
+			depth += 1
+		elif character == "}":
+			depth -= 1
+			if depth == 0:
+				return Vector2i(open, index)
+	return Vector2i(-1, -1)
 
 func _consume_departures(data: Dictionary, frame_time: float) -> void:
 	if _aftereffect_waves == null:

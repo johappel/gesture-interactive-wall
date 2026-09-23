@@ -16,6 +16,7 @@ import time
 from .features import BodyTracker, crowd_energy
 from .sim import LIFECYCLE_SCENARIOS
 from .net import UdpJsonSender
+from .control import SimControlServer
 
 _CONFIG_PATH = os.path.join(os.path.dirname(__file__), "..", "config", "config.json")
 
@@ -54,18 +55,42 @@ def _make_body_tracker(fcfg: dict) -> BodyTracker:
     )
 
 
+SIM_SCENARIO_CHOICES = ("phase44", *LIFECYCLE_SCENARIOS)
+
+
 def run_sim(cfg: dict, scenario: str = "phase44") -> None:
     from .sim import make_simulation_persons
 
     fcfg = cfg["features"]
     tracker = _make_body_tracker(fcfg)
     sender = UdpJsonSender(cfg["network"]["host"], cfg["network"]["port"])
+    # Debug-only control channel (loopback, port+1) lets the renderer's debug
+    # overlay switch the scenario live. Failure to bind is not fatal: the
+    # simulator simply runs with the start scenario.
+    control = None
+    try:
+        control = SimControlServer(cfg["network"]["port"] + 1, SIM_SCENARIO_CHOICES)
+    except OSError as exc:
+        print(f"Simulations-Steuerkanal nicht verfügbar ({exc}); Szenario bleibt fest.")
     print("Simulator läuft (Strg+C zum Beenden) ...")
     start = time.time()
+    # Two clocks on purpose. `t` (sent to the renderer) is a monotonic wall
+    # clock; the renderer rejects any packet whose timestamp moves backwards.
+    # `scenario_time` only drives the scenario phase, so a switch replays the
+    # new scenario from its beginning without ever rewinding `t`.
+    scenario_start = start
     try:
         while True:
-            t = time.time() - start
-            persons = make_simulation_persons(scenario, t)
+            now = time.time()
+            if control is not None:
+                new_scenario = control.poll()
+                if new_scenario is not None and new_scenario != scenario:
+                    scenario = new_scenario
+                    scenario_start = now
+                    print(f"Simulations-Szenario: {scenario}")
+            t = now - start
+            scenario_time = now - scenario_start
+            persons = make_simulation_persons(scenario, scenario_time)
             bodies = tracker.update(persons, t)
             pairs = tracker.compute_pairs(fcfg["proximity_threshold"])
             sender.send(
@@ -78,6 +103,8 @@ def run_sim(cfg: dict, scenario: str = "phase44") -> None:
     except KeyboardInterrupt:
         pass
     finally:
+        if control is not None:
+            control.close()
         sender.close()
 
 
@@ -180,7 +207,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--sim-scenario",
         default="phase44",
-        choices=("phase44", *LIFECYCLE_SCENARIOS),
+        choices=SIM_SCENARIO_CHOICES,
         help="Deterministisches Simulator-Szenario (nur mit --sim; Standard: phase44)",
     )
     parser.add_argument(

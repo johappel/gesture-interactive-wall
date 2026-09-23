@@ -11,11 +11,32 @@
 # immediately and can be written back to config/config.json with "Speichern".
 extends CanvasLayer
 
+# Single source of truth lives in capture/sim.py; this list mirrors it for the
+# dropdown. A wrong name is harmless: the simulator ignores unknown scenarios.
+const SIM_SCENARIOS := [
+	"phase44",
+	"stable",
+	"occlusion",
+	"flicker",
+	"crossing",
+	"center_loss",
+	"left_departure",
+	"right_departure",
+	"group_left_departure",
+	"departure_return",
+	"long_run",
+	"stay_resonance",
+	"aftereffect_waves",
+	"crowd_aura",
+	"proximity",
+]
+
 var _main
 var _rows: Array = []
 var _enabled_checks: Dictionary = {}
 var _global_enabled_check: CheckBox
 var _minimal_check: CheckBox
+var _sim_option: OptionButton
 var _status_label: Label
 var _working: Dictionary = {}
 var _suppress := false
@@ -151,6 +172,20 @@ func _build() -> void:
 	_minimal_check.text = "minimal_mode"
 	_minimal_check.toggled.connect(_on_minimal)
 	globals.add_child(_minimal_check)
+
+	var sim_row := HBoxContainer.new()
+	root.add_child(sim_row)
+	var sim_label := Label.new()
+	sim_label.text = "Simulations-Szenario"
+	sim_label.custom_minimum_size = Vector2(190, 0)
+	sim_row.add_child(sim_label)
+	_sim_option = OptionButton.new()
+	_sim_option.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	for index in range(SIM_SCENARIOS.size()):
+		_sim_option.add_item(SIM_SCENARIOS[index], index)
+	_sim_option.selected = 0
+	_sim_option.item_selected.connect(_on_sim_scenario_selected)
+	sim_row.add_child(_sim_option)
 
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(460, 680)
@@ -291,6 +326,16 @@ func _on_minimal(pressed: bool) -> void:
 		return
 	_working["minimal_mode"] = pressed
 	_apply()
+
+
+func _on_sim_scenario_selected(index: int) -> void:
+	if _suppress or _main == null:
+		return
+	if index < 0 or index >= SIM_SCENARIOS.size():
+		return
+	var scenario: String = SIM_SCENARIOS[index]
+	_main.request_sim_scenario(scenario)
+	_set_status("Szenario angefordert: %s (nur mit laufendem Simulator)." % scenario)
 
 
 func _on_save() -> void:

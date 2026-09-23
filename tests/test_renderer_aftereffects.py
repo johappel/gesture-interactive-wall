@@ -55,6 +55,13 @@ class AftereffectWaveRendererContractTest(unittest.TestCase):
             self.assertIn(marker, self.main)
         self.assertIn("_aftereffect_waves.queue_departure", self.main)
 
+    def test_restarted_capture_clock_unfreezes_the_renderer(self):
+        # A fresh simulator process restarts its timestamp, which must not
+        # freeze the renderer on the old guard forever.
+        apply_block = self.main.split("func _apply(data: Dictionary", 1)[1].split("\nfunc ", 1)[0]
+        self.assertIn("_last_frame_time - float(frame_time) > 1.0", apply_block)
+        self.assertIn("_seen_departure_ids.clear()", apply_block)
+
     def test_wave_renderer_aggregates_without_storing_ids_and_uses_shader_field(self):
         self.assertNotIn('"id"', self.waves)
         for marker in (

@@ -57,12 +57,19 @@ class LiveReloadRendererContractTest(unittest.TestCase):
         # Temp file + rename keeps the poller from reading a torn file.
         self.assertIn('_config_path + ".tmp"', save)
         self.assertIn("DirAccess.rename_absolute", save)
-        # Only the effects section is replaced; other sections are preserved.
-        self.assertIn('config["effects"] = _effects_raw', save)
-        # sort_keys=false keeps section order and Godot writes LF newlines.
-        self.assertIn('JSON.stringify(config, "\\t", false)', save)
+        # The effects value is spliced in place by brace span; the rest of the
+        # file (and its integer types) is left byte-for-byte untouched.
+        self.assertIn("_effects_span(text)", save)
+        self.assertIn('JSON.stringify(_effects_raw, "    ", false)', save)
         # Avoid self-triggering the poller after our own write.
         self.assertIn("_config_mtime = FileAccess.get_modified_time", save)
+
+    def test_save_never_round_trips_the_whole_config_through_json(self):
+        # Round-tripping would demote every int in camera/pose/features/station
+        # to a float (the regression that broke the Windows operations test).
+        save = self.main.split("func save_live_effects_to_config()", 1)[1].split("\nfunc ", 1)[0]
+        self.assertNotIn("json.parse", save)
+        self.assertNotIn("config[\"effects\"] = _effects_raw", save)
 
     def test_f3_toggles_the_overlay(self):
         self.assertIn("keycode == KEY_F3", self.main)
