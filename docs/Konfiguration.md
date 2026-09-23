@@ -103,7 +103,7 @@ Reine Mathematik, ohne ML-Abhängigkeit — vollständig unit-testbar.
 
 | Parameter | Typ | Wirkung |
 |---|---|---|
-| `proximity_threshold` | 0..1 | Abstand, unter dem zwei Personen als „nah“ gelten und ein `pair` bilden. Größer = mehr Brücken. |
+| `proximity_threshold` | 0..1 | Abstand, unter dem zwei Personen als „nah“ gelten und ein `pair` bilden. Größer = mehr Brücken. Muss deutlich über der realen Pose-Ungenauigkeit liegen, sonst springt die Brücke zwischen Personen; ab etwa 0.42 statt 0.35. |
 
 ### Track-Lebenszyklus
 
@@ -234,6 +234,8 @@ nach Rot, Helligkeit steigt mit `intensity`.
 | `max_alpha` | 0..1 | Maximale Helligkeit der Kugeln (additiv). |
 | `field_strength` | 0..1 | Stärke des verdichteten gemeinsamen Paar-Felds, sobald zwei Personen zusammen stehen. |
 | `fade_seconds` | Sekunden | Ein-/Ausblendzeit, wenn ein Paar entsteht oder auseinandergeht. |
+| `smoothing` | Sekunden | Trägheit von Endpunkten und Nähe. Ein neuer Messwert wird nur mit `delta / smoothing` Anteil übernommen. Größer = ruhiger; bei niedriger Abtastrate gegen Pose-Jitter erhöhen. |
+| `min_distance` | 0..1 | Normalisierter Abstand, ab dem zwei Personen als wirklich zusammenstehend gelten. Erst darunter verdichten sich die Kugeln zum Paar-Feld; die bloße Nähe-Schwelle genügt nicht. |
 | `warm_color` | Hex | Farbe bei Annäherung. |
 | `hot_color` | Hex | Farbe bei großer Nähe; die Kugeln wandern von warm nach heiß. |
 
@@ -242,6 +244,14 @@ Feuerkugeln im Zwischenraum, bei wachsender Nähe werden sie langsamer, wärmer
 und verdichten sich zu einem kleinen gemeinsamen Feld — dem Paar-„Wir", eine
 Ebene unter `crowd_aura`. Der Effekt hat eine eigene Bewegungszeit und zeichnet
 jeden Frame neu (die frühere Linie aktualisierte sich nur bei Eingaben).
+
+Endpunkte und Nähe werden bewusst geglättet (`smoothing`) und die Nähe aus dem
+eigenen, geglätteten Abstand neu berechnet. Reale Pose-Zentren schwanken zwischen
+zwei Abtastungen um einige Prozent des Bildes; ungeglättet ließen sie die Kugeln
+zwischen Personen springen und flackern. Zusammen mit dem größeren
+`proximity_threshold` bleibt eine Brücke auch bei geringer Abtastrate ruhig,
+während die Paar-Schwelle in `features` weiterhin bestimmt, **welche** Paare
+überhaupt existieren.
 
 ### `stillness_resonance` — Antwort auf Bleiben
 

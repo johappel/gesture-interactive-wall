@@ -9,6 +9,14 @@
 # The manager owns its motion time and redraws every frame, so the bridge stays
 # live (the old inline line only refreshed on input). Disabled means the node is
 # never created, so nothing is drawn or simulated.
+#
+# The endpoints and the closeness are deliberately smoothed, and a pair only
+# condenses into its field once the two are genuinely close (min_distance).
+# MediaPipe pose centres jitter by a few percent of the frame from one sample to
+# the next; on a real camera that alone made the orbs jump between partners and
+# flicker on and off. Smoothed inputs keep a bridge continuous even at a low
+# sampling rate, while the threshold gate in capture still decides which pairs
+# exist at all.
 class_name ProximityBridges
 extends Node2D
 
@@ -21,6 +29,8 @@ var _wobble := 0.06
 var _max_alpha := 0.85
 var _field_strength := 0.6
 var _fade_seconds := 0.6
+var _smoothing := 0.15
+var _min_distance := 0.22
 var _warm_color := Color("#ffcd79")
 var _hot_color := Color("#ff9a3c")
 
@@ -49,6 +59,8 @@ func configure(config: Dictionary) -> void:
 	_max_alpha = clampf(_number(config, "max_alpha", 0.85), 0.0, 1.0)
 	_field_strength = clampf(_number(config, "field_strength", 0.6), 0.0, 1.0)
 	_fade_seconds = maxf(_number(config, "fade_seconds", 0.6), 0.05)
+	_smoothing = clampf(_number(config, "smoothing", 0.15), 0.01, 1.0)
+	_min_distance = clampf(_number(config, "min_distance", 0.22), 0.0, 1.0)
 	_warm_color = _color_value(config, "warm_color", Color("#ffcd79"))
 	_hot_color = _color_value(config, "hot_color", Color("#ff9a3c"))
 
@@ -57,6 +69,9 @@ func configure(config: Dictionary) -> void:
 # stay drawn while one partner is briefly occluded (only one visible body).
 func update_pairs(pairs: Array, viewport: Vector2, delta: float) -> void:
 	var seen := {}
+	# One blend factor per packet, not per bridge: all pairs move with the same
+	# sampling rate, and a shared step keeps the smoothing predictable.
+	var blend := clampf(delta / _smoothing, 0.0, 1.0)
 	for p in pairs:
 		if not (p is Dictionary) or not p.has("a") or not p.has("b"):
 			continue
@@ -68,14 +83,27 @@ func update_pairs(pairs: Array, viewport: Vector2, delta: float) -> void:
 		var pb := Vector2(float(p["bx"]) * viewport.x, float(p["by"]) * viewport.y)
 		var key := "%d-%d" % [mini(a, b), maxi(a, b)]
 		seen[key] = true
-		var proximity: float = clampf(float(p.get("proximity", 0.0)), 0.0, 1.0)
+		# Recompute closeness from the normalised separation (same metric the
+		# capture side uses) instead of trusting the raw per-packet value: a
+		# pair merely sitting near the threshold must not make the orbs flicker
+		# between loose and condensed.
+		var dx := float(p["bx"]) - float(p["ax"])
+		var dy := float(p["by"]) - float(p["ay"])
+		var proximity := _proximity_for(sqrt(dx * dx + dy * dy))
 		if _bridges.has(key):
 			var bridge: Dictionary = _bridges[key]
-			bridge["pa"] = pa
-			bridge["pb"] = pb
-			bridge["proximity"] = proximity
+			# Typed locals first: assigning a Variant into a typed variable is
+			# checked, and it keeps the lerp unambiguous.
+			var smoothed_pa: Vector2 = bridge["pa"]
+			var smoothed_pb: Vector2 = bridge["pb"]
+			var smoothed_prox: float = bridge["proximity"]
+			bridge["pa"] = smoothed_pa.lerp(pa, blend)
+			bridge["pb"] = smoothed_pb.lerp(pb, blend)
+			bridge["proximity"] = smoothed_prox + (proximity - smoothed_prox) * blend
 			bridge["alpha"] = minf(float(bridge["alpha"]) + delta / _fade_seconds, 1.0)
 		else:
+			# A new pair starts already placed: easing in from the screen origin
+			# would read as the orbs flying across the whole façade.
 			_bridges[key] = {
 				"pa": pa,
 				"pb": pb,
@@ -91,6 +119,15 @@ func update_pairs(pairs: Array, viewport: Vector2, delta: float) -> void:
 			if float(bridge["alpha"]) <= 0.0:
 				_bridges.erase(key)
 	queue_redraw()
+
+
+# Closeness 0..1 for a separation in normalised x units. `min_distance` is the
+# separation at which two people count as truly standing together, so the pair
+# field forms only on real closeness rather than on the bridge threshold.
+func _proximity_for(distance: float) -> float:
+	if _min_distance <= 0.0:
+		return 1.0 if distance <= 0.0 else 0.0
+	return clampf(1.0 - distance / _min_distance, 0.0, 1.0)
 
 
 func _finite01(value) -> bool:

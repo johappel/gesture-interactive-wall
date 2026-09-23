@@ -30,7 +30,7 @@
     "features":  {
                      "intensity_scale":  1.5,
                      "intensity_smoothing":  0.4,
-                     "proximity_threshold":  0.35,
+                     "proximity_threshold":  0.42,
                      "track_max_dist":  0.35,
                      "track_timeout":  1.5,
                      "track_grace_period":  1.0,
@@ -112,25 +112,27 @@
                                    "activation_intensity":  0.09
                                },
                     "proximity_bridges":  {
-                                              "enabled":  true,
-                                              "orbs_min":  8,
-                                              "orbs_max":  9,
-                                              "travel":  0.99,
-                                              "speed":  6.0,
-                                              "orb_size":  26.0,
-                                              "wobble":  0.05,
-                                              "max_alpha":  0.43,
-                                              "field_strength":  0.84,
-                                              "fade_seconds":  1.05,
-                                              "warm_color":  "#ffcd79",
-                                              "hot_color":  "#ff9a3c"
-                                          },
+                                    "enabled":  true,
+                                    "orbs_min":  8,
+                                    "orbs_max":  9,
+                                    "travel":  0.99,
+                                    "speed":  6.0,
+                                    "orb_size":  26.0,
+                                    "wobble":  0.05,
+                                    "max_alpha":  0.43,
+                                    "field_strength":  0.84,
+                                    "fade_seconds":  1.05,
+                                    "smoothing":  0.15,
+                                    "min_distance":  0.22,
+                                    "warm_color":  "#ffcd79",
+                                    "hot_color":  "#ff9a3c"
+                                },
                     "stillness_resonance":  {
-                                                "enabled":  true,
-                                                "min_presence_seconds":  3.0,
-                                                "pulse_seconds":  6.0,
-                                                "max_scale":  2.3
-                                            },
+                                        "enabled":  true,
+                                        "min_presence_seconds":  3.0,
+                                        "pulse_seconds":  6.0,
+                                        "max_scale":  2.3
+                                    },
                     "crowd_aura":  {
                                        "enabled":  true,
                                        "min_people":  4,
@@ -150,27 +152,27 @@
                                        "cool_color":  "#5caeff"
                                    },
                     "aftereffect_waves":  {
-                                              "enabled":  true,
-                                              "group_window_seconds":  0.22,
-                                              "group_distance":  0.18,
-                                              "group_width_per_departure":  0.1,
-                                              "duration_seconds":  4.7,
-                                              "initial_origin_outset":  0.03,
-                                              "origin_escape_distance":  0.5,
-                                              "start_radius":  0.029,
-                                              "propagation_speed":  0.35,
-                                              "band_width":  0.09,
-                                              "source_glow_radius":  0.26,
-                                              "echo_spacing":  0.15,
-                                              "echo_strength":  0.058,
-                                              "max_alpha":  0.26,
-                                              "fade_start_progress":  0.15,
-                                              "fade_end_progress":  0.99,
-                                              "glow_strength":  1.55,
-                                              "warm_color":  "#ffcd79",
-                                              "blue_color":  "#164155",
-                                              "dedupe_seconds":  5.0
-                                          }
+                                    "enabled":  true,
+                                    "group_window_seconds":  0.22,
+                                    "group_distance":  0.18,
+                                    "group_width_per_departure":  0.1,
+                                    "duration_seconds":  4.7,
+                                    "initial_origin_outset":  0.03,
+                                    "origin_escape_distance":  0.5,
+                                    "start_radius":  0.029,
+                                    "propagation_speed":  0.35,
+                                    "band_width":  0.09,
+                                    "source_glow_radius":  0.26,
+                                    "echo_spacing":  0.15,
+                                    "echo_strength":  0.058,
+                                    "max_alpha":  0.26,
+                                    "fade_start_progress":  0.15,
+                                    "fade_end_progress":  0.99,
+                                    "glow_strength":  1.55,
+                                    "warm_color":  "#ffcd79",
+                                    "blue_color":  "#164155",
+                                    "dedupe_seconds":  5.0
+                                }
                 },
     "debug":  {
                   "preview":  true

@@ -2,6 +2,7 @@
 
 import math
 import os
+import random
 import sys
 import unittest
 
@@ -273,6 +274,48 @@ class PresenceAndStillnessTest(unittest.TestCase):
         self.assertLess(moving["stillness"], quiet["stillness"])
         self.assertGreater(moving["stillness"], 0.0)
 
+class JitteryApproachPairTest(unittest.TestCase):
+    """A near threshold plus real pose jitter used to make bridges flicker.
+
+    MediaPipe torso centres wobble by a few percent of the frame between two
+    samples. This pins the calibration reason for the raised threshold: at the
+    old 0.35 the pair appears and vanishes several times per approach, at 0.42
+    it stays continuous.
+    """
+
+    def _keys(self, threshold, jitter=0.02, seconds=6.0, fps=15.0):
+        rnd = random.Random(7)
+        tracker = BodyTracker(max_dist=0.35, grace_period=1.0, confirmation_frames=1)
+        keys = []
+        steps = int(fps * seconds)
+        for step in range(steps):
+            t = step / fps
+            f = min(step / steps, 1.0)
+            left = 0.32 + (0.35 - 0.32) * f
+            right = 0.68 + (0.65 - 0.68) * f
+            tracker.update(
+                [self._jittered(left, rnd, jitter), self._jittered(right, rnd, jitter)], t
+            )
+            pairs = tracker.compute_pairs(threshold)
+            keys.append(tuple(sorted((pair["a"], pair["b"]) for pair in pairs)))
+        return keys
+
+    def _jittered(self, cx, rnd, jitter):
+        return [
+            (x + rnd.uniform(-jitter, jitter), y + rnd.uniform(-jitter, jitter), v)
+            for x, y, v in person(cx, 0.5)
+        ]
+
+    def _switches(self, keys):
+        return sum(1 for a, b in zip(keys, keys[1:]) if a != b)
+
+    def test_knife_edge_threshold_flickers(self):
+        self.assertGreaterEqual(self._switches(self._keys(0.35)), 8)
+
+    def test_configured_threshold_stays_continuous(self):
+        keys = self._keys(0.42)
+        self.assertEqual(self._switches(keys), 0)
+        self.assertTrue(all(key for key in keys), "Brücke darf nicht zwischendurch verschwinden")
 
 class PairsTest(unittest.TestCase):
     def _bodies(self, x_a, x_b):

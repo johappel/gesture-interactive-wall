@@ -57,7 +57,7 @@ Standard: `127.0.0.1:4242`. Es werden ausschließlich abstrakte Zahlenwerte
 | `bodies[].presence_time` | Sekunden | Dauer der aktuellen anonymen Anwesenheitsepisode; zählt auch über einen begrenzten Detection-Ausfall weiter |
 | `bodies[].stillness` | 0..1 | Geglättete, beobachtete Bewegungsruhe; 0 = zuletzt bewegt, 1 = über Zeit ruhig |
 | `pairs[].a/b`      | int       | IDs der nahen Personen |
-| `pairs[].proximity`| 0..1      | 1 = sehr nah |
+| `pairs[].proximity`| 0..1      | 1 = sehr nah, bezogen auf die Nähe-Schwelle; die Brücke nutzt ihn als Startwert und leitet die Nähe danach aus den geglätteten Endpunkten ab |
 | `pairs[].mx/my`    | 0..1      | Mittelpunkt für die Lichtbrücke |
 | `pairs[].ax/ay`    | 0..1      | Position von `a` (die Brücke zeichnet aus diesen Endpunkten, unabhängig von der Body-Sichtbarkeit) |
 | `pairs[].bx/by`    | 0..1      | Position von `b` |
@@ -91,6 +91,12 @@ seiner zuletzt bekannten Position weiterhin **Endpunkt eines Paares** sein —
 sofern mindestens ein Endpunkt aktuell erkannt ist und der Abstand unter der
 Schwelle bleibt. Zwei gleichzeitig verdeckte Personen werden nie verbunden. Der
 verdeckte Partner erscheint dabei trotzdem nicht in `bodies` oder Crowd-Daten.
+
+Die Nähe-Schwelle `features.proximity_threshold` muss deutlich über der realen
+Pose-Ungenauigkeit liegen. Torso-Zentren schwanken zwischen zwei Abtastungen um
+einige Prozent des Bildes; liegt die Schwelle zu knapp darüber, entstehen und
+verschwinden Paare im Sekundenrhythmus. Der Renderer glättet zusätzlich
+Endpunkte und Nähe, damit die Brücke auch bei geringer Abtastrate ruhig bleibt.
 
 Nach Ablauf der Grace Period wird ein Track beendet. Ein Eintrag in
 `events.departures` entsteht dabei **nur**, wenn die letzte valide Position in

@@ -22,15 +22,27 @@ class ProximityBridgeConfigTest(unittest.TestCase):
         self.assertTrue(self.bridge["enabled"])
         for key in (
             "orbs_min", "orbs_max", "travel", "speed", "orb_size", "wobble",
-            "max_alpha", "field_strength", "fade_seconds", "warm_color", "hot_color",
+            "max_alpha", "field_strength", "fade_seconds", "smoothing",
+            "min_distance", "warm_color", "hot_color",
         ):
             self.assertIn(key, self.bridge)
         self.assertGreaterEqual(self.bridge["orbs_min"], 1)
         self.assertGreaterEqual(self.bridge["orbs_max"], self.bridge["orbs_min"])
         self.assertGreater(self.bridge["fade_seconds"], 0)
+        self.assertGreater(self.bridge["smoothing"], 0)
+        self.assertGreater(self.bridge["min_distance"], 0)
         self.assertLessEqual(self.bridge["max_alpha"], 1.0)
         for key in ("warm_color", "hot_color"):
             self.assertRegex(self.bridge[key], r"^#[0-9a-fA-F]{6}$")
+
+    def test_proximity_threshold_clears_real_pose_jitter(self):
+        # MediaPipe torso centres wobble by a few percent of the frame between
+        # samples. A threshold barely above the true separation turns that
+        # jitter into bridges appearing and vanishing every second.
+        self.assertGreaterEqual(self.config["features"]["proximity_threshold"], 0.40)
+        self.assertGreater(
+            self.config["features"]["proximity_threshold"], self.bridge["min_distance"]
+        )
 
 
 class ProximityBridgeRendererContractTest(unittest.TestCase):
@@ -89,6 +101,36 @@ class ProximityBridgeRendererContractTest(unittest.TestCase):
     def test_bridge_fades_pairs_in_and_out(self):
         self.assertIn('bridge["alpha"] = minf(float(bridge["alpha"]) + delta / _fade_seconds, 1.0)', self.bridge)
         self.assertIn('bridge["alpha"] = float(bridge["alpha"]) - delta / _fade_seconds', self.bridge)
+
+    def test_bridge_is_smoothed_against_pose_jitter(self):
+        # Endpoints and closeness are eased instead of snapped, so a jittery
+        # pose centre cannot make the orbs jump between partners.
+        for marker in (
+            "var _smoothing := 0.15",
+            'clampf(_number(config, "smoothing", 0.15), 0.01, 1.0)',
+            "var blend := clampf(delta / _smoothing, 0.0, 1.0)",
+            'var smoothed_pa: Vector2 = bridge["pa"]',
+            "bridge[\"pa\"] = smoothed_pa.lerp(pa, blend)",
+            "bridge[\"pb\"] = smoothed_pb.lerp(pb, blend)",
+            'bridge["proximity"] = smoothed_prox + (proximity - smoothed_prox) * blend',
+        ):
+            self.assertIn(marker, self.bridge)
+        # A brand-new pair is placed immediately; easing in from (0, 0) would
+        # read as the orbs flying across the whole facade.
+        self.assertNotIn('"pa": Vector2.ZERO', self.bridge)
+
+    def test_pair_field_requires_real_closeness_not_the_bridge_threshold(self):
+        for marker in (
+            "var _min_distance := 0.22",
+            'clampf(_number(config, "min_distance", 0.22), 0.0, 1.0)',
+            "func _proximity_for(distance: float) -> float:",
+            "return clampf(1.0 - distance / _min_distance, 0.0, 1.0)",
+        ):
+            self.assertIn(marker, self.bridge)
+        # Closeness is derived from the smoothed endpoints, not from the raw
+        # per-packet value that capture computed against its own threshold.
+        self.assertIn('var dx := float(p["bx"]) - float(p["ax"])', self.bridge)
+        self.assertIn("var proximity := _proximity_for(sqrt(dx * dx + dy * dy))", self.bridge)
 
 
 if __name__ == "__main__":

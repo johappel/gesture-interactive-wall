@@ -860,6 +860,8 @@ func _default_effects() -> Dictionary:
 			"max_alpha": 0.85,
 			"field_strength": 0.6,
 			"fade_seconds": 0.6,
+			"smoothing": 0.15,
+			"min_distance": 0.22,
 			"warm_color": "#ffcd79",
 			"hot_color": "#ff9a3c",
 		},
