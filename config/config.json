@@ -17,8 +17,8 @@
     "pose" :    {
                     "model_path":  "models/pose_landmarker_full.task",
                     "num_poses":  12,
-                    "min_detection_confidence":  0.5,
-                    "min_torso_visibility":  0.6,
+                    "min_detection_confidence":  0.4,
+                    "min_torso_visibility":  0.4,
                     "active_region":  {
                         "enabled":  false,
                         "x_min":  0.0,
@@ -36,7 +36,8 @@
                     "track_grace_period": 1.0,
                     "departure_edge_margin": 0.08,
                     "departure_min_speed": 0.05,
-                    "track_confirmation_frames": 8,
+                    "track_confirmation_frames": 4,
+                    "position_smoothing": 0.5,
                     "stillness_speed_threshold": 0.08,
                     "stillness_rise_seconds": 2.5,
                     "stillness_fall_seconds": 0.8

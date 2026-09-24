@@ -63,7 +63,12 @@ class PromptPresentationContractTest(unittest.TestCase):
         self.assertIn('prompt["prompt_keys"] = []', self.main)
 
     def test_transient_tracks_require_longer_confirmation_and_do_not_emit_sparks_at_rest(self):
-        self.assertEqual(self.config["features"]["track_confirmation_frames"], 8)
+        # Longer than the reactive default of 1 (suppresses 1-3 frame ghosts),
+        # but kept low enough that a real arrival lights up without a visible
+        # confirmation lag.
+        confirmation = self.config["features"]["track_confirmation_frames"]
+        self.assertGreaterEqual(confirmation, 3)
+        self.assertLessEqual(confirmation, 8)
         self.assertGreater(self.config["effects"]["sparks"]["activation_intensity"], 0)
         self.assertIn("var should_emit := intensity >= activation_intensity", self.body_light)
         self.assertIn("_particles.emitting = should_emit", self.body_light)

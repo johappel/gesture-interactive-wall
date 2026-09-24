@@ -104,6 +104,7 @@ class _Track:
     __slots__ = (
         "id",
         "centroid",
+        "smooth",
         "wrists",
         "t",
         "intensity",
@@ -119,6 +120,10 @@ class _Track:
     def __init__(self, tid: int, c: tuple[float, float], wrists, t: float) -> None:
         self.id = tid
         self.centroid = c
+        # ``centroid`` stays the raw last observation (matching, prediction,
+        # departure edge test); ``smooth`` is the low-pass position that leaves
+        # the tracker so pose jitter does not make the rendered body jump.
+        self.smooth = c
         self.wrists = wrists
         self.t = t
         self.intensity = 0.0
@@ -154,6 +159,7 @@ class BodyTracker:
         stillness_speed_threshold: float = 0.08,
         stillness_rise_seconds: float = 2.5,
         stillness_fall_seconds: float = 0.8,
+        position_smoothing: float = 1.0,
     ) -> None:
         self.max_dist = max_dist
         # ``timeout`` remains accepted for existing callers.  New configs use
@@ -162,6 +168,9 @@ class BodyTracker:
         self.grace_period = timeout if grace_period is None else grace_period
         self.intensity_scale = intensity_scale
         self.smoothing = smoothing
+        # 1.0 forwards the raw centroid unchanged; smaller values low-pass the
+        # emitted position (EMA blend factor per matched frame).
+        self.position_smoothing = min(max(float(position_smoothing), 1e-3), 1.0)
         self.departure_edge_margin = departure_edge_margin
         self.departure_min_speed = departure_min_speed
         self.confirmation_frames = max(int(confirmation_frames), 1)
@@ -297,6 +306,16 @@ class BodyTracker:
                 # the next contiguous observation resumes the smooth update.
                 if not reassociated_after_gap:
                     self._update_stillness(tr, speed, dt)
+                # A gap freezes the smoothed position; on reassociation snap it
+                # to the fresh observation instead of gliding across the gap.
+                if reassociated_after_gap:
+                    tr.smooth = c
+                else:
+                    beta = self.position_smoothing
+                    tr.smooth = (
+                        tr.smooth[0] + (c[0] - tr.smooth[0]) * beta,
+                        tr.smooth[1] + (c[1] - tr.smooth[1]) * beta,
+                    )
                 tr.centroid, tr.wrists, tr.t = c, wrists[i], t
                 tr.vx, tr.vy = vx, vy
                 tr.state = "active"
@@ -314,8 +333,8 @@ class BodyTracker:
                 bodies.append(
                     {
                         "id": tr.id,
-                        "x": round(c[0], 4),
-                        "y": round(c[1], 4),
+                        "x": round(tr.smooth[0], 4),
+                        "y": round(tr.smooth[1], 4),
                         "vx": round(vx, 4),
                         "vy": round(vy, 4),
                         "intensity": round(tr.intensity, 4),
@@ -364,7 +383,7 @@ class BodyTracker:
                 continue
             if tr.state not in ("active", "temporarily_missing"):
                 continue
-            endpoints.append((tr.id, tr.centroid[0], tr.centroid[1], tr.state == "active"))
+            endpoints.append((tr.id, tr.smooth[0], tr.smooth[1], tr.state == "active"))
 
         pairs: list[dict] = []
         for i in range(len(endpoints)):

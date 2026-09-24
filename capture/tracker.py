@@ -52,6 +52,7 @@ def _make_body_tracker(fcfg: dict) -> BodyTracker:
         stillness_speed_threshold=fcfg.get("stillness_speed_threshold", 0.08),
         stillness_rise_seconds=fcfg.get("stillness_rise_seconds", 2.5),
         stillness_fall_seconds=fcfg.get("stillness_fall_seconds", 0.8),
+        position_smoothing=fcfg.get("position_smoothing", 1.0),
     )
 
 

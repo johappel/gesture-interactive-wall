@@ -392,6 +392,51 @@ class PairGracePersistenceTest(unittest.TestCase):
         self.assertEqual(tracker.compute_pairs(0.35), [])
 
 
+class PositionSmoothingTest(unittest.TestCase):
+    """A low-pass on the emitted position tames pose-centre jitter."""
+
+    def test_default_is_raw_passthrough(self):
+        tracker = BodyTracker(confirmation_frames=1)
+        tracker.update([person(0.5, 0.5)], 0.0)
+        body = tracker.update([person(0.6, 0.5)], 0.1)[0]
+        self.assertAlmostEqual(body["x"], 0.6, places=4)
+
+    def test_first_position_is_not_glided_from_origin(self):
+        tracker = BodyTracker(confirmation_frames=1, position_smoothing=0.3)
+        body = tracker.update([person(0.5, 0.5)], 0.0)[0]
+        self.assertAlmostEqual(body["x"], 0.5, places=4)
+        self.assertAlmostEqual(body["y"], 0.55, places=4)
+
+    def test_smoothing_lags_towards_new_position(self):
+        tracker = BodyTracker(confirmation_frames=1, position_smoothing=0.5)
+        tracker.update([person(0.5, 0.5)], 0.0)
+        body = tracker.update([person(0.7, 0.5)], 0.1)[0]
+        # Halfway between the previous 0.5 and the new 0.7.
+        self.assertAlmostEqual(body["x"], 0.6, places=4)
+
+    def test_smoothing_reduces_jitter_amplitude(self):
+        rnd = random.Random(3)
+        raw_tracker = BodyTracker(confirmation_frames=1, position_smoothing=1.0)
+        smooth_tracker = BodyTracker(confirmation_frames=1, position_smoothing=0.3)
+        raw_dev = 0.0
+        smooth_dev = 0.0
+        for step in range(60):
+            t = step * 0.066
+            x = 0.5 + rnd.uniform(-0.03, 0.03)
+            raw = raw_tracker.update([person(x, 0.5)], t)[0]["x"]
+            smooth = smooth_tracker.update([person(x, 0.5)], t)[0]["x"]
+            if step > 5:  # let the smoother settle
+                raw_dev += abs(raw - 0.5)
+                smooth_dev += abs(smooth - 0.5)
+        self.assertLess(smooth_dev, raw_dev)
+
+    def test_position_snaps_after_a_detection_gap(self):
+        tracker = BodyTracker(confirmation_frames=1, grace_period=1.0, position_smoothing=0.3)
+        tracker.update([person(0.3, 0.5)], 0.0)
+        tracker.update([], 0.1)  # brief occlusion, track frozen
+        recovered = tracker.update([person(0.7, 0.5)], 0.3)[0]
+        self.assertAlmostEqual(recovered["x"], 0.7, places=4)
+
 
 class CrowdTest(unittest.TestCase):
     def test_empty_is_zero(self):
