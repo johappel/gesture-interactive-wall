@@ -52,31 +52,71 @@ def is_plausible_person(
     gate; no identity or body interpretation is inferred.  A region is only
     active when explicitly enabled in configuration.
     """
+    return classify_person(landmarks, min_torso_visibility, active_region) == POSE_ACCEPTED
+
+
+# Non-biometric rejection reasons, surfaced only for diagnostics.
+POSE_ACCEPTED = "accepted"
+REJECT_INVALID_LANDMARKS = "invalid_landmarks"
+REJECT_TORSO_VISIBILITY = "torso_visibility"
+REJECT_ACTIVE_REGION = "active_region"
+
+
+def classify_person(
+    landmarks: Person,
+    min_torso_visibility: float = 0.5,
+    active_region: dict | None = None,
+) -> str:
+    """Return ``POSE_ACCEPTED`` or the first failing quality-gate reason.
+
+    Splitting acceptance from the reason lets the diagnostic mode report *why*
+    a pose was dropped (e.g. a partly occluded torso) without changing the
+    non-biometric gate itself.
+    """
     if len(landmarks) <= R_HIP:
-        return False
+        return REJECT_INVALID_LANDMARKS
     for index in TORSO_LANDMARKS:
         landmark = landmarks[index]
         if len(landmark) < 3:
-            return False
+            return REJECT_INVALID_LANDMARKS
         x, y, visibility = float(landmark[0]), float(landmark[1]), float(landmark[2])
         if not all(math.isfinite(value) for value in (x, y, visibility)):
-            return False
-        if not 0.0 <= x <= 1.0 or not 0.0 <= y <= 1.0 or visibility < min_torso_visibility:
-            return False
+            return REJECT_INVALID_LANDMARKS
+        if not 0.0 <= x <= 1.0 or not 0.0 <= y <= 1.0:
+            return REJECT_INVALID_LANDMARKS
+        if visibility < min_torso_visibility:
+            return REJECT_TORSO_VISIBILITY
 
     if not active_region or not active_region.get("enabled", False):
-        return True
+        return POSE_ACCEPTED
     try:
         x_min = float(active_region["x_min"])
         x_max = float(active_region["x_max"])
         y_min = float(active_region["y_min"])
         y_max = float(active_region["y_max"])
     except (KeyError, TypeError, ValueError):
-        return False
+        return REJECT_ACTIVE_REGION
     if not (0.0 <= x_min < x_max <= 1.0 and 0.0 <= y_min < y_max <= 1.0):
-        return False
+        return REJECT_ACTIVE_REGION
     x, y = centroid(landmarks)
-    return x_min <= x <= x_max and y_min <= y <= y_max
+    if x_min <= x <= x_max and y_min <= y <= y_max:
+        return POSE_ACCEPTED
+    return REJECT_ACTIVE_REGION
+
+
+def torso_visibilities(landmarks: Person) -> dict[str, float]:
+    """LS/RS/LH/RH visibility, for a compact diagnostic on a rejected pose."""
+    labels = ("LS", "RS", "LH", "RH")
+    result: dict[str, float] = {}
+    for label, index in zip(labels, TORSO_LANDMARKS):
+        if index < len(landmarks) and len(landmarks[index]) >= 3:
+            try:
+                result[label] = round(float(landmarks[index][2]), 2)
+            except (TypeError, ValueError):
+                result[label] = float("nan")
+        else:
+            result[label] = float("nan")
+    return result
 
 
 def filter_plausible_persons(
@@ -88,6 +128,33 @@ def filter_plausible_persons(
         for person in persons
         if is_plausible_person(person, min_torso_visibility, active_region)
     ]
+
+
+def filter_with_diagnostics(
+    persons: list[Person],
+    min_torso_visibility: float = 0.5,
+    active_region: dict | None = None,
+) -> tuple[list[Person], dict[str, int], list[dict]]:
+    """Filter poses and report why any were rejected.
+
+    Returns the accepted poses, a per-reason rejection count, and a small
+    per-rejection detail list (torso visibilities + threshold) for the
+    diagnostic mode. No identity or image data is retained.
+    """
+    accepted: list[Person] = []
+    counts: dict[str, int] = {}
+    details: list[dict] = []
+    for person in persons:
+        reason = classify_person(person, min_torso_visibility, active_region)
+        if reason == POSE_ACCEPTED:
+            accepted.append(person)
+            continue
+        counts[reason] = counts.get(reason, 0) + 1
+        detail: dict = {"reason": reason, "threshold": round(float(min_torso_visibility), 2)}
+        if reason == REJECT_TORSO_VISIBILITY:
+            detail["visibility"] = torso_visibilities(person)
+        details.append(detail)
+    return accepted, counts, details
 
 
 def shoulder_width(landmarks: Person) -> float:
@@ -396,9 +463,11 @@ class BodyTracker:
                 if d >= threshold:
                     continue
                 if id_i <= id_j:
-                    a_id, ax, ay, b_id, bx, by = id_i, xi, yi, id_j, xj, yj
+                    a_id, ax, ay, a_vis = id_i, xi, yi, active_i
+                    b_id, bx, by, b_vis = id_j, xj, yj, active_j
                 else:
-                    a_id, ax, ay, b_id, bx, by = id_j, xj, yj, id_i, xi, yi
+                    a_id, ax, ay, a_vis = id_j, xj, yj, active_j
+                    b_id, bx, by, b_vis = id_i, xi, yi, active_i
                 pairs.append(
                     {
                         "a": a_id,
@@ -410,6 +479,13 @@ class BodyTracker:
                         "ay": round(ay, 4),
                         "bx": round(bx, 4),
                         "by": round(by, 4),
+                        # Visibility of each endpoint this frame. ``occluded``
+                        # means one partner is only remembered (grace period):
+                        # the renderer must then freeze the bridge instead of
+                        # inventing motion for an unobserved person.
+                        "a_visible": bool(a_vis),
+                        "b_visible": bool(b_vis),
+                        "occluded": not (a_vis and b_vis),
                     }
                 )
         return pairs

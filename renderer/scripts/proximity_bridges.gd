@@ -29,6 +29,7 @@ var _wobble := 0.06
 var _max_alpha := 0.85
 var _field_strength := 0.6
 var _fade_seconds := 0.6
+var _occluded_fade_seconds := 0.3
 var _smoothing := 0.15
 var _min_distance := 0.22
 var _warm_color := Color("#ffcd79")
@@ -59,6 +60,7 @@ func configure(config: Dictionary) -> void:
 	_max_alpha = clampf(_number(config, "max_alpha", 0.85), 0.0, 1.0)
 	_field_strength = clampf(_number(config, "field_strength", 0.6), 0.0, 1.0)
 	_fade_seconds = maxf(_number(config, "fade_seconds", 0.6), 0.05)
+	_occluded_fade_seconds = maxf(_number(config, "occluded_fade_seconds", 0.3), 0.05)
 	_smoothing = clampf(_number(config, "smoothing", 0.15), 0.01, 1.0)
 	_min_distance = clampf(_number(config, "min_distance", 0.22), 0.0, 1.0)
 	_warm_color = _color_value(config, "warm_color", Color("#ffcd79"))
@@ -90,17 +92,25 @@ func update_pairs(pairs: Array, viewport: Vector2, delta: float) -> void:
 		var dx := float(p["bx"]) - float(p["ax"])
 		var dy := float(p["by"]) - float(p["ay"])
 		var proximity := _proximity_for(sqrt(dx * dx + dy * dy))
+		var occluded := bool(p.get("occluded", false))
 		if _bridges.has(key):
 			var bridge: Dictionary = _bridges[key]
 			# Typed locals first: assigning a Variant into a typed variable is
 			# checked, and it keeps the lerp unambiguous.
 			var smoothed_pa: Vector2 = bridge["pa"]
 			var smoothed_pb: Vector2 = bridge["pb"]
-			var smoothed_prox: float = bridge["proximity"]
 			bridge["pa"] = smoothed_pa.lerp(pa, blend)
 			bridge["pb"] = smoothed_pb.lerp(pb, blend)
-			bridge["proximity"] = smoothed_prox + (proximity - smoothed_prox) * blend
-			bridge["alpha"] = minf(float(bridge["alpha"]) + delta / _fade_seconds, 1.0)
+			bridge["occluded"] = occluded
+			if occluded:
+				# One partner is only remembered, not observed: freeze the
+				# closeness and quickly damp the bridge instead of inventing
+				# motion or spawning orbs for an unseen person.
+				bridge["alpha"] = maxf(float(bridge["alpha"]) - delta / _occluded_fade_seconds, 0.0)
+			else:
+				var smoothed_prox: float = bridge["proximity"]
+				bridge["proximity"] = smoothed_prox + (proximity - smoothed_prox) * blend
+				bridge["alpha"] = minf(float(bridge["alpha"]) + delta / _fade_seconds, 1.0)
 		else:
 			# A new pair starts already placed: easing in from the screen origin
 			# would read as the orbs flying across the whole façade.
@@ -109,6 +119,8 @@ func update_pairs(pairs: Array, viewport: Vector2, delta: float) -> void:
 				"pb": pb,
 				"proximity": proximity,
 				"alpha": 0.0,
+				"occluded": occluded,
+				"motion_time": 0.0,
 				"seeds": _make_seeds(),
 			}
 
@@ -144,6 +156,12 @@ func clear() -> void:
 
 func _process(delta: float) -> void:
 	_time += delta
+	for key in _bridges.keys():
+		var bridge: Dictionary = _bridges[key]
+		# A frozen (occluded) bridge does not advance its motion clock, so its
+		# orbs hold still instead of animating an unobserved person.
+		if not bool(bridge.get("occluded", false)):
+			bridge["motion_time"] = float(bridge.get("motion_time", 0.0)) + delta
 	# Fading pairs keep receding even without fresh packets.
 	if not _bridges.is_empty():
 		queue_redraw()
@@ -179,10 +197,11 @@ func _draw_bridge(bridge: Dictionary) -> void:
 	var orb_count: int = int(round(lerp(float(_orbs_min), float(_orbs_max), proximity)))
 	var colour := _warm_color.lerp(_hot_color, proximity)
 	var size := _orb_size * (0.7 + 0.6 * proximity)
+	var motion_time: float = float(bridge.get("motion_time", 0.0))
 
 	for i in range(orb_count):
 		var seed := seeds[i % seeds.size()]
-		var phase := _time * _speed * (0.6 + 0.4 * proximity) + seed * TAU
+		var phase := motion_time * _speed * (0.6 + 0.4 * proximity) + seed * TAU
 		var along := 0.5 + 0.5 * amplitude * sin(phase)
 		var sway := _wobble * length * sin(phase * 0.7 + seed * 4.0)
 		var centre := a.lerp(b, along) + perp * sway

@@ -392,6 +392,34 @@ class PairGracePersistenceTest(unittest.TestCase):
         self.assertEqual(tracker.compute_pairs(0.35), [])
 
 
+class PairVisibilityStateTest(unittest.TestCase):
+    """A pair reports whether each endpoint is currently observed.
+
+    The renderer needs this to freeze a bridge while one partner is only
+    remembered, instead of animating an unobserved person.
+    """
+
+    def _tracker(self):
+        return BodyTracker(max_dist=0.3, grace_period=1.0, confirmation_frames=1)
+
+    def test_both_visible_is_not_occluded(self):
+        tracker = self._tracker()
+        tracker.update([person(0.46, 0.5), person(0.54, 0.5)], 0.0)
+        pair = tracker.compute_pairs(0.35)[0]
+        self.assertTrue(pair["a_visible"])
+        self.assertTrue(pair["b_visible"])
+        self.assertFalse(pair["occluded"])
+
+    def test_one_occluded_partner_marks_pair_occluded(self):
+        tracker = self._tracker()
+        tracker.update([person(0.46, 0.5), person(0.54, 0.5)], 0.0)
+        # Only a single merged pose remains: one endpoint is remembered only.
+        tracker.update([person(0.50, 0.5)], 0.2)
+        pair = tracker.compute_pairs(0.35)[0]
+        self.assertTrue(pair["occluded"])
+        self.assertNotEqual(pair["a_visible"], pair["b_visible"])
+
+
 class PositionSmoothingTest(unittest.TestCase):
     """A low-pass on the emitted position tames pose-centre jitter."""
 

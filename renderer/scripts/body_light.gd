@@ -107,9 +107,10 @@ func update_state(pos: Vector2, intensity: float, openness: float, presence_time
 	if _stillness_resonance != null:
 		_stillness_resonance.update_state(pos, presence_time, stillness)
 
-func fade(delta: float) -> bool:
-	# Returns true when fully faded and safe to remove.
-	_alpha = max(_alpha - delta * 1.2, 0.0)
+func fade(delta: float, rate := 1.2) -> bool:
+	# Returns true when fully faded and safe to remove. A faster rate is used
+	# for a body that lost detection, so a technical occlusion clears quickly.
+	_alpha = max(_alpha - delta * rate, 0.0)
 	modulate.a = _alpha
 	return _alpha <= 0.0
 

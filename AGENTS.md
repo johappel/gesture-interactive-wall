@@ -141,6 +141,47 @@ Zeitliche Zielrichtung:
 presence → relation → collective → memory
 ```
 
+### Tracking-Persistenz ≠ visuelle Persistenz (verbindlich)
+
+WIRKLICHT darf Unsicherheit **intern** kurz erinnern, aber nicht **sichtbar**
+als beobachtete Bewegung ausgeben:
+
+```text
+tracking persistence ≠ visual persistence
+```
+
+- Der Track-Layer darf eine Person während einer kurzen Grace-Period
+  wiederfinden wollen (`active → temporarily_missing → active`, gleiche ID).
+- Der Renderer darf währenddessen **keine** Bewegung, Beziehung oder Aktivität
+  erfinden, die nicht mehr beobachtet wird.
+- Ein kurz nicht erkannter Körper wird nur knapp gehalten
+  (`renderer.missing_hold_seconds`) und danach **deutlich schneller** ausgeblendet
+  (`renderer.missing_fade_rate`) als der bewusste Departure-Nachlauf — kein
+  Geisterkörper über die ganze Grace-Period.
+- Eine Beziehung darf eine kurze Verdeckung überleben, aber ein Paar mit
+  verdecktem Partner (`pair.occluded`) wird **eingefroren/abgedämpft**: kein
+  Wobble, keine neuen Orbs, keine Verstärkung. Bei Wiedererkennung weich fort.
+- `capture` liefert je Paar `a_visible`/`b_visible`/`occluded`; der Renderer
+  interpretiert das, statt aus der bloßen Existenz eines Paar-Eintrags Bewegung
+  abzuleiten.
+
+### Capture-Latenz und Diagnose (verbindlich)
+
+- Die Pipeline ist auf **niedrige Latenz statt Frame-Vollständigkeit** ausgelegt:
+  ein aktuelles Bild ist wichtiger als jedes einzelne Kamerabild. Der
+  Kamera-Grab-Thread hält **latest-frame-wins** (`camera.latest_frame_wins`),
+  niemals eine wachsende Warteschlange.
+- MediaPipe-Timestamps bleiben monoton steigend.
+- Inferenz ist von der Kameraauflösung entkoppelbar
+  (`pose.inference_width/height`); normalisierte Koordinaten bleiben gültig.
+- **Wichtig:** MediaPipe Tasks (Python) nutzt standardmäßig den **CPU**-Delegate;
+  eine GPU beschleunigt die Inferenz hier nicht automatisch. Latenz zuerst über
+  Auflösung, Inferenz-Downscale und `pose.num_poses` steuern — Letzteres nicht
+  pauschal hoch setzen, sondern per `python -m capture.bench` messen.
+- Diagnose aktivierbar per `--diagnostics` bzw. `debug.diagnostics`: eine
+  kompakte Zeile/Sekunde (FPS, Stage-Zeiten, Roh-/akzeptierte Posen,
+  Ablehnungsgründe). **Keine** Bilder, **keine** Log-Flut pro Frame.
+
 ### Visuelles Vokabular und Projektionstauglichkeit
 
 Vorgesehene Materialitäten sind u. a. Lichtkörper, Funken, Trails,

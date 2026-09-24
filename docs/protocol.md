@@ -23,7 +23,7 @@ Standard: `127.0.0.1:4242`. Es werden ausschließlich abstrakte Zahlenwerte
     }
   ],
   "pairs": [
-    { "a": 0, "b": 1, "proximity": 0.8, "mx": 0.5, "my": 0.5, "ax": 0.42, "ay": 0.5, "bx": 0.58, "by": 0.5 }
+    { "a": 0, "b": 1, "proximity": 0.8, "mx": 0.5, "my": 0.5, "ax": 0.42, "ay": 0.5, "bx": 0.58, "by": 0.5, "a_visible": true, "b_visible": true, "occluded": false }
   ],
   "crowd": { "count": 2, "energy": 0.4 },
   "events": {
@@ -61,6 +61,9 @@ Standard: `127.0.0.1:4242`. Es werden ausschließlich abstrakte Zahlenwerte
 | `pairs[].mx/my`    | 0..1      | Mittelpunkt für die Lichtbrücke |
 | `pairs[].ax/ay`    | 0..1      | Position von `a` (die Brücke zeichnet aus diesen Endpunkten, unabhängig von der Body-Sichtbarkeit) |
 | `pairs[].bx/by`    | 0..1      | Position von `b` |
+| `pairs[].a_visible` | bool     | Ob Endpunkt `a` in diesem Frame beobachtet wurde (sonst nur aus der Grace-Period erinnert) |
+| `pairs[].b_visible` | bool     | Ob Endpunkt `b` in diesem Frame beobachtet wurde |
+| `pairs[].occluded`  | bool     | `true`, wenn ein Partner nur erinnert ist; der Renderer friert die Brücke dann ein und dämpft sie, statt Bewegung zu erfinden |
 | `crowd.count`      | int       | Anzahl erkannter Personen |
 | `crowd.energy`     | 0..1      | Mittlere Intensität aller Personen |
 | `tracking.temporarily_missing` | int[] | Bestätigte anonyme IDs innerhalb der kurzen Track-Grace-Period; hält nur ihren bereits sichtbaren Lichtzustand |
@@ -127,10 +130,14 @@ aktualisiert.
 
 `tracking.temporarily_missing` enthält während derselben Grace-Period nur die
 bereits bestätigten, momentan nicht erkannten Track-IDs. Diese IDs sind keine
-Bodies und fließen nicht in Pairs oder Crowd ein. Der Renderer hält dafür allein
-den zuletzt sichtbaren Lichtzustand, damit ein kurzer Pose-Ausfall nicht als
-sichtbares Verschwinden erscheint. Nach Ablauf der Grace-Period entfällt die ID
-und der Renderer blendet den Lichtpunkt regulär aus.
+Bodies und fließen nicht in Pairs oder Crowd ein. Der Renderer hält dafür den
+zuletzt sichtbaren Lichtzustand nur **kurz** (`renderer.missing_hold_seconds`)
+und blendet ihn danach **deutlich schneller** aus (`renderer.missing_fade_rate`)
+als den bewussten Departure-Nachlauf. So erscheint ein kurzer Pose-Ausfall nicht
+als hartes Verschwinden, ohne dass eine „Geisterperson" die ganze Grace-Period
+stehen bleibt. Das trennt Tracking-Persistenz (intern) von visueller Persistenz
+(sichtbar): eine kurz erinnerte Unsicherheit wird nicht als beobachtete Bewegung
+ausgegeben. Nach Ablauf der Grace-Period entfällt die ID.
 
 ## Tracking-Konfiguration
 

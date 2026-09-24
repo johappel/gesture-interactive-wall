@@ -103,25 +103,25 @@ Der GitHub-Workflow `.github/workflows/installer.yml` baut dasselbe Paket bei
 einem Tag `v*` und haengt es an das Release.
 
 > **Wichtig: Tag und `VERSION` muessen uebereinstimmen.**
->
+> 
 > Der Tag benennt das Release, die `VERSION`-Datei den Inhalt der `setup.exe`.
 > Ein Release heisst also `v0.5.4` und enthaelt `WIRKLICHT-Setup-0.5.4.exe`.
 > Laufen beide auseinander, haengt unter dem Release `v0.0.2` eine Datei mit
 > der Version `0.5.4` — der Workflow bricht deshalb ab, statt ein solches
 > Release zu erzeugen.
->
+> 
 > **Setze den Tag deshalb nicht von Hand**, sondern ueber `release.ps1`. Das
 > Skript leitet den Tag aus `VERSION` ab, sodass beide nicht mehr auseinander
 > laufen koennen:
->
+> 
 > ```powershell
 > # VERSION bleibt wie sie ist; Tag daraus ableiten:
 > powershell -ExecutionPolicy Bypass -File release.ps1
->
+> 
 > # VERSION erhoehen (patch/minor/major) und direkt veroeffentlichen:
 > powershell -ExecutionPolicy Bypass -File release.ps1 -Bump patch
 > ```
->
+> 
 > Das Skript prueft vor jeder Aenderung, ob der Arbeitsbaum sauber ist, ob der
 > Tag schon existiert und ob der Commit gepusht ist. Es fragt vor dem Push nach
 > Bestaetigung (`-Yes` ueberspringt die Rueckfrage).
@@ -372,12 +372,12 @@ Der Launcher fragt nach einem Szenario und zeigt die verfügbare Liste an. Die
 Szenarien selbst stehen ausschließlich in `capture/sim.py` und werden von dort
 gelesen, nicht im Skript dupliziert. Beispiele:
 
-| Szenario | Zeigt |
-|---|---|
-| `crowd_aura` | 0 → 14 Personen, Bewegung, Ruhe, Aufteilung, schrittweises Fortgehen |
-| `stay_resonance` | ruhiges Bleiben mit kurzer Erkennungslücke |
-| `aftereffect_waves` | einzelner und gemeinsamer Austritt |
-| `phase44` | Leerlauf → eine Person → mehrere Personen → Leerlauf |
+| Szenario            | Zeigt                                                                |
+| ------------------- | -------------------------------------------------------------------- |
+| `crowd_aura`        | 0 → 14 Personen, Bewegung, Ruhe, Aufteilung, schrittweises Fortgehen |
+| `stay_resonance`    | ruhiges Bleiben mit kurzer Erkennungslücke                           |
+| `aftereffect_waves` | einzelner und gemeinsamer Austritt                                   |
+| `phase44`           | Leerlauf → eine Person → mehrere Personen → Leerlauf                 |
 
 Auch nicht-interaktiv startbar:
 

@@ -46,6 +46,12 @@ var _config_path := ""
 var _config_mtime := 0
 var _config_poll_elapsed := 0.0
 var _debug_overlay
+# Visual grace is separate from Capture's tracking grace: a briefly undetected
+# body is held for a short beat, then fades quickly, so a technical occlusion
+# never lingers as an observed "ghost person".
+var _missing_since := {}          # id -> seconds a body has gone undetected
+var _missing_hold_seconds := 0.15
+var _missing_fade_rate := 4.0
 
 func _ready() -> void:
 	_load_config()
@@ -139,6 +145,7 @@ func _apply(data: Dictionary, delta: float) -> void:
 			continue
 		var id := int(b["id"])
 		seen[id] = true
+		_missing_since.erase(id)
 		var pos := Vector2(float(b["x"]) * vp.x, float(b["y"]) * vp.y)
 		_positions[id] = pos
 		normalized_positions.append(Vector2(float(b["x"]), float(b["y"])))
@@ -161,15 +168,20 @@ func _apply(data: Dictionary, delta: float) -> void:
 		)
 
 	for id in _bodies.keys():
-		if not seen.has(id):
-			# Preserve an already-rendered light only inside Capture's bounded
-			# grace period, so a brief pose loss is not visibly interpreted as
-			# immediate departure.
-			if temporarily_missing.has(id):
-				continue
-			if _bodies[id].fade(delta):
-				_bodies[id].queue_free()
-				_bodies.erase(id)
+		if seen.has(id):
+			continue
+		# The track may still be recoverable inside Capture's grace period, but
+		# the light does not stand still for that whole window. It holds for a
+		# short beat, then fades quickly - persistence of tracking is not
+		# persistence of a visibly observed person.
+		var elapsed: float = float(_missing_since.get(id, 0.0)) + delta
+		_missing_since[id] = elapsed
+		if temporarily_missing.has(id) and elapsed < _missing_hold_seconds:
+			continue
+		if _bodies[id].fade(delta, _missing_fade_rate):
+			_bodies[id].queue_free()
+			_bodies.erase(id)
+			_missing_since.erase(id)
 
 	var raw_pairs = data.get("pairs", [])
 	_pairs = raw_pairs if raw_pairs is Array and _effect_enabled("proximity_bridges", true) else []
@@ -448,6 +460,7 @@ func _fade_all(delta: float) -> void:
 		if _bodies[id].fade(delta):
 			_bodies[id].queue_free()
 			_bodies.erase(id)
+			_missing_since.erase(id)
 	_pairs = []
 	_positions.clear()
 	# No packets means no observed crowd: the shared field fades out on its own
@@ -496,6 +509,10 @@ func _load_config() -> void:
 
 	var configured_station = config.get("station", {})
 	_station = _normalize_station(configured_station)
+	var renderer_cfg = config.get("renderer", {})
+	if renderer_cfg is Dictionary:
+		_missing_hold_seconds = maxf(float(renderer_cfg.get("missing_hold_seconds", 0.15)), 0.0)
+		_missing_fade_rate = maxf(float(renderer_cfg.get("missing_fade_rate", 4.0)), 0.1)
 	_load_prompts()
 
 func _load_prompts() -> void:

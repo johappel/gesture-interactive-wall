@@ -1,8 +1,11 @@
 {
     "camera":  {
                    "index":  701,
-                   "width":  1920,
-                   "height":  1080,
+                   "width":  1280,
+                   "height":  720,
+                   "fps":  30,
+                   "fourcc":  "MJPG",
+                   "latest_frame_wins":  true,
                    "flip":  true,
                    "backend":  "any",
                    "name":  "Logitech StreamCam",
@@ -16,9 +19,13 @@
                 },
     "pose":  {
                  "model_path":  "models/pose_landmarker_full.task",
-                 "num_poses":  12,
+                 "num_poses":  6,
                  "min_detection_confidence":  0.4,
+                 "min_presence_confidence":  0.5,
+                 "min_tracking_confidence":  0.5,
                  "min_torso_visibility":  0.4,
+                 "inference_width":  0,
+                 "inference_height":  0,
                  "active_region":  {
                                        "enabled":  false,
                                        "x_min":  0.0,
@@ -123,6 +130,7 @@
                                               "max_alpha":  0.43,
                                               "field_strength":  0.84,
                                               "fade_seconds":  1.05,
+                                              "occluded_fade_seconds":  0.3,
                                               "smoothing":  0.15,
                                               "min_distance":  0.22,
                                               "warm_color":  "#ffcd79",
@@ -175,8 +183,14 @@
                                               "dedupe_seconds":  5.0
                                           }
                 },
+    "renderer":  {
+                     "missing_hold_seconds":  0.15,
+                     "missing_fade_rate":  4.0
+                 },
     "debug":  {
-                  "preview":  true
+                  "preview":  true,
+                  "diagnostics":  false,
+                  "diagnostics_interval":  1.0
               },
     "updates":  {
                     "enabled":  false

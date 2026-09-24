@@ -109,15 +109,17 @@ def run_sim(cfg: dict, scenario: str = "phase44") -> None:
         sender.close()
 
 
-def run_camera(cfg: dict) -> None:
+def run_camera(cfg: dict, diagnostics_enabled: bool = False) -> None:
     import cv2
 
     from .camera import Camera, choose_camera, list_cameras
+    from .diagnostics import CaptureDiagnostics
     from .pose import PoseTracker
 
     fcfg = cfg["features"]
     ccfg = cfg["camera"]
     pcfg = cfg["pose"]
+    dcfg = cfg.get("debug", {})
 
     selected = choose_camera(ccfg, list_cameras(backend=ccfg.get("backend", "any")))
     if selected is not None:
@@ -132,7 +134,14 @@ def run_camera(cfg: dict) -> None:
     if selected is None:
         print(f"Kamera-Index {ccfg['index']} (backend={ccfg.get('backend', 'any')}).")
     camera = Camera(
-        ccfg["index"], ccfg["width"], ccfg["height"], ccfg["flip"], ccfg.get("backend", "any")
+        ccfg["index"],
+        ccfg["width"],
+        ccfg["height"],
+        ccfg["flip"],
+        ccfg.get("backend", "any"),
+        fps=ccfg.get("fps", 30),
+        fourcc=ccfg.get("fourcc", "MJPG"),
+        latest_frame_wins=ccfg.get("latest_frame_wins", True),
     )
     pose = PoseTracker(
         model_path,
@@ -140,28 +149,79 @@ def run_camera(cfg: dict) -> None:
         pcfg["min_detection_confidence"],
         pcfg.get("min_torso_visibility", 0.5),
         pcfg.get("active_region"),
+        min_presence_confidence=pcfg.get("min_presence_confidence"),
+        min_tracking_confidence=pcfg.get("min_tracking_confidence"),
+        inference_width=pcfg.get("inference_width", 0),
+        inference_height=pcfg.get("inference_height", 0),
     )
     tracker = _make_body_tracker(fcfg)
     sender = UdpJsonSender(cfg["network"]["host"], cfg["network"]["port"])
-    preview = cfg["debug"]["preview"]
+    preview = dcfg.get("preview", True)
+
+    diag = CaptureDiagnostics(
+        enabled=diagnostics_enabled or bool(dcfg.get("diagnostics", False)),
+        interval=float(dcfg.get("diagnostics_interval", 1.0)),
+    )
+    negotiated = camera.describe()
+    diag.set_camera_info(
+        backend=str(ccfg.get("backend", "any")),
+        fourcc=negotiated.get("fourcc", ""),
+        width=negotiated.get("width", 0),
+        height=negotiated.get("height", 0),
+        fps=negotiated.get("fps", 0.0),
+    )
 
     print("Webcam-Tracker läuft. 'q' im Vorschaufenster zum Beenden.")
     start = time.time()
+    prev_dropped = 0
     try:
         while True:
+            loop_now = time.perf_counter()
+            read_start = loop_now
             frame = camera.read()
+            read_ms = time.perf_counter() - read_start
             if frame is None:
-                break
+                # Latest-frame-wins can briefly have no new frame; that is not an
+                # end-of-stream. Only stop when the device is gone.
+                if not camera.cap.isOpened():
+                    break
+                continue
             t = time.time() - start
+
+            pose_start = time.perf_counter()
             persons = pose.process(frame, int(t * 1000))
+            pose_ms = time.perf_counter() - pose_start
+
+            feat_start = time.perf_counter()
             bodies = tracker.update(persons, t)
             pairs = tracker.compute_pairs(fcfg["proximity_threshold"])
+            feat_ms = time.perf_counter() - feat_start
+
+            udp_start = time.perf_counter()
             sender.send(
                 build_frame(
                     bodies, pairs, crowd_energy(bodies), t, tracker.take_departures(),
                     tracker.temporarily_missing_ids(),
                 )
             )
+            udp_ms = time.perf_counter() - udp_start
+
+            diag.record_stage("read", read_ms)
+            diag.record_stage("pose", pose_ms)
+            diag.record_stage("features", feat_ms)
+            diag.record_stage("udp", udp_ms)
+            dropped_now = camera.dropped_frames
+            diag.record_frame(
+                time.perf_counter(),
+                raw_poses=pose.last_raw_poses,
+                accepted=pose.last_accepted,
+                tracks=tracker.track_count,
+                temporarily_missing=len(tracker.temporarily_missing_ids()),
+                rejections=pose.last_rejections,
+                dropped=dropped_now - prev_dropped,
+            )
+            prev_dropped = dropped_now
+            diag.maybe_report(time.perf_counter())
 
             if preview:
                 _draw_overlay(cv2, frame, bodies)
@@ -225,6 +285,11 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="OpenCV-Kamera-Backend (Windows: 'dshow' listet physische Webcams zuverlässig)",
     )
+    parser.add_argument(
+        "--diagnostics",
+        action="store_true",
+        help="Kompakte Capture-Diagnose (1x/s: FPS, Stage-Zeiten, Posen, Ablehnungsgründe)",
+    )
     return parser
 
 
@@ -267,7 +332,7 @@ def main() -> None:
     if args.sim:
         run_sim(cfg, args.sim_scenario)
     else:
-        run_camera(cfg)
+        run_camera(cfg, diagnostics_enabled=bool(getattr(args, "diagnostics", False)))
 
 
 if __name__ == "__main__":
