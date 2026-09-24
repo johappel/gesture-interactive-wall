@@ -68,10 +68,17 @@ class VisualGraceRendererContractTest(unittest.TestCase):
         for marker in (
             'var occluded := bool(p.get("occluded", false))',
             "_occluded_fade_seconds",
-            "float(bridge[\"alpha\"]) - delta / _occluded_fade_seconds",
+            # A brief occlusion must be survivable: an established bridge is
+            # damped down to a visible floor and held, not faded to nothing.
+            "const OCCLUDED_FLOOR",
+            "maxf(cur_alpha - delta / _occluded_fade_seconds, OCCLUDED_FLOOR)",
             'bridge["motion_time"] = float(bridge.get("motion_time", 0.0)) + delta',
         ):
             self.assertIn(marker, self.bridge)
+        # The old behaviour faded the occluded bridge all the way to zero.
+        self.assertNotIn(
+            'maxf(float(bridge["alpha"]) - delta / _occluded_fade_seconds, 0.0)', self.bridge
+        )
 
     def test_bridge_motion_uses_per_bridge_frozen_clock(self):
         # Wobble must read the bridge's own motion clock (frozen when occluded),

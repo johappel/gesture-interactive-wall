@@ -276,6 +276,28 @@ class BodyTracker:
         """Number of active or temporarily missing tracks, for diagnostics."""
         return len(self._tracks)
 
+    def nearest_track_distance(self) -> float | None:
+        """Smallest normalized distance between two confirmed tracks, or None.
+
+        Diagnostic only: it shows whether people are actually close enough to
+        form a proximity pair, independent of the pair threshold. If this stays
+        above ``proximity_threshold`` while people look "together", the camera
+        frames a wider area than the threshold assumes.
+        """
+        points = [
+            tr.smooth
+            for tr in self._tracks.values()
+            if tr.seen_frames >= self.confirmation_frames
+            and tr.state in ("active", "temporarily_missing")
+        ]
+        if len(points) < 2:
+            return None
+        nearest = float("inf")
+        for i in range(len(points)):
+            for j in range(i + 1, len(points)):
+                nearest = min(nearest, math.hypot(points[i][0] - points[j][0], points[i][1] - points[j][1]))
+        return round(nearest, 4)
+
     def _predicted_centroid(self, tr: _Track, t: float) -> tuple[float, float]:
         elapsed = max(t - tr.t, 0.0)
         return tr.centroid[0] + tr.vx * elapsed, tr.centroid[1] + tr.vy * elapsed

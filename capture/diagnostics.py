@@ -57,6 +57,8 @@ class CaptureDiagnostics:
         self._dropped = 0
         self._tracks_last = 0
         self._missing_last = 0
+        self._pairs_last = 0
+        self._nearest_last: float | None = None
         self._rejections: dict[str, int] = {}
         self._window_start: float | None = None
         # Camera facts are latched once negotiated and reprinted every interval.
@@ -96,6 +98,8 @@ class CaptureDiagnostics:
         temporarily_missing: int = 0,
         rejections: dict[str, int] | None = None,
         dropped: int = 0,
+        pairs: int = 0,
+        nearest: float | None = None,
     ) -> None:
         if not self.enabled:
             return
@@ -107,6 +111,8 @@ class CaptureDiagnostics:
         self._dropped += int(dropped)
         self._tracks_last = int(tracks)
         self._missing_last = int(temporarily_missing)
+        self._pairs_last = int(pairs)
+        self._nearest_last = nearest
         if rejections:
             for reason, count in rejections.items():
                 self._rejections[reason] = self._rejections.get(reason, 0) + int(count)
@@ -138,6 +144,8 @@ class CaptureDiagnostics:
         parts.append(f"accepted={avg_acc:.1f}")
         parts.append(f"tracks={self._tracks_last}")
         parts.append(f"missing={self._missing_last}")
+        parts.append(f"pairs={self._pairs_last}")
+        parts.append("nearest=" + ("-" if self._nearest_last is None else f"{self._nearest_last:.3f}"))
         parts.append(f"dropped={self._dropped}")
         if self._rejections:
             reasons = ",".join(

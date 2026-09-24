@@ -219,6 +219,8 @@ def run_camera(cfg: dict, diagnostics_enabled: bool = False) -> None:
                 temporarily_missing=len(tracker.temporarily_missing_ids()),
                 rejections=pose.last_rejections,
                 dropped=dropped_now - prev_dropped,
+                pairs=len(pairs),
+                nearest=tracker.nearest_track_distance(),
             )
             prev_dropped = dropped_now
             diag.maybe_report(time.perf_counter())

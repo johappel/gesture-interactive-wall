@@ -25,6 +25,12 @@ extends Node2D
 # bridge was born with. Must be >= the overlay's orbs_max slider maximum.
 const SEED_POOL := 24
 
+# A relationship may survive a brief occlusion: while one partner is only
+# remembered, the bridge is damped down to this visible floor and held there,
+# not faded to nothing. A real departure prunes the pair in capture, and the
+# renderer then fades it out through the normal not-seen path instead.
+const OCCLUDED_FLOOR := 0.55
+
 var _orbs_min := 2
 var _orbs_max := 6
 var _travel := 0.8
@@ -108,10 +114,13 @@ func update_pairs(pairs: Array, viewport: Vector2, delta: float) -> void:
 			bridge["pb"] = smoothed_pb.lerp(pb, blend)
 			bridge["occluded"] = occluded
 			if occluded:
-				# One partner is only remembered, not observed: freeze the
-				# closeness and quickly damp the bridge instead of inventing
-				# motion or spawning orbs for an unseen person.
-				bridge["alpha"] = maxf(float(bridge["alpha"]) - delta / _occluded_fade_seconds, 0.0)
+				# One partner is only remembered, not observed: hold the bridge
+				# (frozen closeness, no new orbs, no strengthening) instead of
+				# inventing motion. Damp an established bridge down to a visible
+				# floor so a short occlusion survives; a weaker one just holds.
+				var cur_alpha: float = float(bridge["alpha"])
+				if cur_alpha > OCCLUDED_FLOOR:
+					bridge["alpha"] = maxf(cur_alpha - delta / _occluded_fade_seconds, OCCLUDED_FLOOR)
 			else:
 				var smoothed_prox: float = bridge["proximity"]
 				bridge["proximity"] = smoothed_prox + (proximity - smoothed_prox) * blend

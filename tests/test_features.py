@@ -420,6 +420,24 @@ class PairVisibilityStateTest(unittest.TestCase):
         self.assertNotEqual(pair["a_visible"], pair["b_visible"])
 
 
+class NearestTrackDistanceTest(unittest.TestCase):
+    """Diagnostic distance, independent of the pair threshold."""
+
+    def test_none_with_fewer_than_two_confirmed_tracks(self):
+        tracker = BodyTracker(confirmation_frames=1)
+        self.assertIsNone(tracker.nearest_track_distance())
+        tracker.update([person(0.5, 0.5)], 0.0)
+        self.assertIsNone(tracker.nearest_track_distance())
+
+    def test_reports_closest_separation_even_beyond_threshold(self):
+        tracker = BodyTracker(confirmation_frames=1)
+        # 0.6 apart is wider than any pair threshold, but the distance is still
+        # observable so an operator can see people are simply too far apart.
+        tracker.update([person(0.2, 0.5), person(0.8, 0.5)], 0.0)
+        self.assertAlmostEqual(tracker.nearest_track_distance(), 0.6, places=4)
+        self.assertEqual(tracker.compute_pairs(0.42), [])
+
+
 class PositionSmoothingTest(unittest.TestCase):
     """A low-pass on the emitted position tames pose-centre jitter."""
 

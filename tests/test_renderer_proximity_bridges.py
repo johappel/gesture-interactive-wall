@@ -41,11 +41,10 @@ class ProximityBridgeConfigTest(unittest.TestCase):
     def test_proximity_threshold_clears_real_pose_jitter(self):
         # MediaPipe torso centres wobble by a few percent of the frame between
         # samples. A threshold barely above the true separation turns that
-        # jitter into bridges appearing and vanishing every second.
+        # jitter into bridges appearing and vanishing every second. min_distance
+        # is an independent renderer-side closeness scale (an operator may set it
+        # larger than the pair threshold), so it is not coupled here.
         self.assertGreaterEqual(self.config["features"]["proximity_threshold"], 0.40)
-        self.assertGreater(
-            self.config["features"]["proximity_threshold"], self.bridge["min_distance"]
-        )
 
 
 class ProximityBridgeRendererContractTest(unittest.TestCase):

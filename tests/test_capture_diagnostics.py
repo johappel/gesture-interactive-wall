@@ -54,6 +54,24 @@ class CaptureDiagnosticsTest(unittest.TestCase):
         # Window reset: a fresh short window does not immediately report again.
         self.assertIsNone(diag.maybe_report(1.2))
 
+    def test_pairs_and_nearest_distance_are_reported(self):
+        # These make the real-world "why is there no bridge?" question testable:
+        # pairs shows whether any pair formed, nearest shows how far apart the
+        # closest two confirmed people actually are (independent of threshold).
+        diag = self._diag()
+        for _ in range(5):
+            diag.record_frame(0.0, tracks=2, pairs=1, nearest=0.31)
+        line = diag.maybe_report(1.0)
+        self.assertIn("pairs=1", line)
+        self.assertIn("nearest=0.310", line)
+
+    def test_nearest_is_a_dash_when_fewer_than_two_people(self):
+        diag = self._diag()
+        diag.record_frame(0.0, tracks=1, pairs=0, nearest=None)
+        line = diag.maybe_report(1.0)
+        self.assertIn("pairs=0", line)
+        self.assertIn("nearest=-", line)
+
     def test_rejection_reasons_are_aggregated(self):
         diag = self._diag()
         diag.record_frame(0.0, raw_poses=3, accepted=2, rejections={"torso_visibility": 1})
