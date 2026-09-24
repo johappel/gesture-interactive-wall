@@ -20,6 +20,11 @@
 class_name ProximityBridges
 extends Node2D
 
+# Fixed pool of phase seeds so a live orbs_max increase adds distinct orbs to
+# existing bridges instead of reusing (overlapping) the seeds of the count the
+# bridge was born with. Must be >= the overlay's orbs_max slider maximum.
+const SEED_POOL := 24
+
 var _orbs_min := 2
 var _orbs_max := 6
 var _travel := 0.8
@@ -224,7 +229,7 @@ func _draw_orb(centre: Vector2, diameter: float, colour: Color) -> void:
 
 func _make_seeds() -> PackedFloat32Array:
 	var seeds := PackedFloat32Array()
-	for i in range(_orbs_max):
+	for i in range(SEED_POOL):
 		seeds.append(randf())
 	return seeds
 

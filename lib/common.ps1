@@ -44,6 +44,28 @@ function Write-WirklichtLog {
     Limit-WirklichtLog -Path $Path
 }
 
+function Clear-WirklichtRendererPort {
+    # A leftover renderer from an earlier run keeps holding the receive port, so
+    # a freshly launched renderer cannot bind it and would run blind (no capture
+    # data at all). Free the port up front by stopping only a stale WIRKLICHT
+    # process (Godot or the Python tracker) that still owns it.
+    param([int]$Port = 4242)
+    try {
+        $endpoints = Get-NetUDPEndpoint -LocalPort $Port -ErrorAction SilentlyContinue
+    } catch {
+        return
+    }
+    foreach ($endpoint in @($endpoints)) {
+        $ownerId = $endpoint.OwningProcess
+        if (-not $ownerId) { continue }
+        $owner = Get-Process -Id $ownerId -ErrorAction SilentlyContinue
+        if ($null -eq $owner) { continue }
+        if ($owner.ProcessName -match 'Godot|python') {
+            Stop-Process -Id $ownerId -Force -ErrorAction SilentlyContinue
+        }
+    }
+}
+
 function Write-WirklichtHeader {
     param([string]$Title)
     Write-Host ""

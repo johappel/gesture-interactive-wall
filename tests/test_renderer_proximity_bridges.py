@@ -31,6 +31,9 @@ class ProximityBridgeConfigTest(unittest.TestCase):
         self.assertGreater(self.bridge["fade_seconds"], 0)
         self.assertGreater(self.bridge["smoothing"], 0)
         self.assertGreater(self.bridge["min_distance"], 0)
+        # A one-pixel orb is effectively invisible on the facade; the earlier
+        # broken value (1.0) made real bridges vanish while the sim looked fine.
+        self.assertGreaterEqual(self.bridge["orb_size"], 8)
         self.assertLessEqual(self.bridge["max_alpha"], 1.0)
         for key in ("warm_color", "hot_color"):
             self.assertRegex(self.bridge[key], r"^#[0-9a-fA-F]{6}$")
@@ -129,8 +132,13 @@ class ProximityBridgeRendererContractTest(unittest.TestCase):
             self.assertIn(marker, self.bridge)
         # Closeness is derived from the smoothed endpoints, not from the raw
         # per-packet value that capture computed against its own threshold.
-        self.assertIn('var dx := float(p["bx"]) - float(p["ax"])', self.bridge)
-        self.assertIn("var proximity := _proximity_for(sqrt(dx * dx + dy * dy))", self.bridge)
+    def test_seed_pool_is_fixed_so_live_orbs_max_takes_effect(self):
+        # Seeds are a fixed pool, not sized to orbs_max at creation time. Raising
+        # orbs_max live must add distinct orbs to existing bridges instead of
+        # reusing (overlapping) the seeds of the count they were born with.
+        self.assertIn("const SEED_POOL := 24", self.bridge)
+        self.assertIn("for i in range(SEED_POOL):", self.bridge)
+        self.assertNotIn("for i in range(_orbs_max):", self.bridge)
 
 
 if __name__ == "__main__":

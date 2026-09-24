@@ -76,6 +76,7 @@ try {
     $failureArea = "Renderer"
     $rendererLog = Get-WirklichtLogPath "renderer.log"
     $captureLog = Get-WirklichtLogPath "capture.log"
+    Clear-WirklichtRendererPort -Port ((Read-WirklichtJson (Join-Path $script:WirklichtRoot "config\config.json")).network.port)
     Write-Host "Renderer wird gestartet ..."
     $rendererPath = Join-Path $script:WirklichtRoot "renderer"
     $renderer = Start-Process -FilePath $godot -WorkingDirectory $script:WirklichtRoot -ArgumentList @(

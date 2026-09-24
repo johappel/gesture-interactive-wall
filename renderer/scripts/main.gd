@@ -12,8 +12,11 @@ const ProximityBridgesScript := preload("res://scripts/proximity_bridges.gd")
 const PromptCueScript := preload("res://scripts/prompt_cue.gd")
 const DebugOverlayScript := preload("res://scripts/debug_overlay.gd")
 const CONFIG_POLL_INTERVAL := 0.5  # seconds between config.json change checks
+const UDP_REBIND_INTERVAL := 1.0  # seconds between retries while the port is busy
 
 var _udp := PacketPeerUDP.new()
+var _udp_bound := false
+var _rebind_elapsed := 0.0
 var _bodies := {}          # id -> BodyLight
 var _positions := {}       # id -> Vector2 (screen space)
 var _pairs: Array = []
@@ -63,15 +66,33 @@ func _ready() -> void:
 	_refresh_aftereffect_waves()
 	_setup_station_monitor()
 	_setup_debug_overlay()
-	var err := _udp.bind(_port, "127.0.0.1")
-	if err != OK:
-		push_error("UDP-Bind auf Port %d fehlgeschlagen: %s" % [_port, err])
-	else:
-		print("WIRKLICHT lauscht auf udp://127.0.0.1:%d" % _port)
+	_bind_udp()
 	_print_effect_state()
 	_print_station_state()
 
+# Binds the receive socket, retried from _process while the port is busy. A busy
+# port almost always means a previous WIRKLICHT renderer is still running and
+# holding it; retrying lets this instance recover on its own once that stale
+# process exits, instead of silently running forever without any capture data.
+func _bind_udp() -> bool:
+	if _udp_bound:
+		return true
+	_udp.close()
+	var err := _udp.bind(_port, "127.0.0.1")
+	if err == OK:
+		_udp_bound = true
+		print("WIRKLICHT lauscht auf udp://127.0.0.1:%d" % _port)
+		return true
+	push_warning("UDP-Port %d belegt (Fehler %s) - vermutlich laeuft noch ein alter WIRKLICHT-Renderer. Es werden keine Daten empfangen; neuer Bindungsversuch laeuft." % [_port, err])
+	return false
+
 func _process(delta: float) -> void:
+	if not _udp_bound:
+		_rebind_elapsed += delta
+		if _rebind_elapsed >= UDP_REBIND_INTERVAL:
+			_rebind_elapsed = 0.0
+			_bind_udp()
+
 	var frames: Array[Dictionary] = []
 	while _udp.get_available_packet_count() > 0:
 		var packet := _udp.get_packet().get_string_from_utf8()
@@ -358,6 +379,11 @@ func save_live_effects_to_config() -> bool:
 			rebuilt += "\n" + indent
 		rebuilt += block_lines[index]
 	var new_text := text.substr(0, start) + rebuilt + text.substr(end + 1)
+	# Prefer an atomic temp+rename, but a rename can fail transiently on Windows
+	# when a virus scanner or the search indexer briefly locks the fresh file.
+	# Retry a few times, then fall back to a direct overwrite so a manual save
+	# does not silently fail. The write happens in the single render thread, so
+	# the config poller never reads a half-written file.
 	var tmp_path := _config_path + ".tmp"
 	var writer := FileAccess.open(tmp_path, FileAccess.WRITE)
 	if writer == null:
@@ -365,10 +391,21 @@ func save_live_effects_to_config() -> bool:
 		return false
 	writer.store_string(new_text)
 	writer.close()
-	var err := DirAccess.rename_absolute(tmp_path, _config_path)
+	var err := FAILED
+	for attempt in range(3):
+		err = DirAccess.rename_absolute(tmp_path, _config_path)
+		if err == OK:
+			break
+		OS.delay_msec(30)
 	if err != OK:
-		push_warning("WIRKLICHT: Config-Rename fehlgeschlagen (%s)." % err)
-		return false
+		# Rename stayed blocked; overwrite the config in place instead.
+		DirAccess.remove_absolute(tmp_path)
+		var direct := FileAccess.open(_config_path, FileAccess.WRITE)
+		if direct == null:
+			push_warning("WIRKLICHT: Config-Speichern fehlgeschlagen (Rename %s, kein Schreibzugriff)." % err)
+			return false
+		direct.store_string(new_text)
+		direct.close()
 	# Skip the poller's self-trigger for this write.
 	_config_mtime = FileAccess.get_modified_time(_config_path)
 	print("WIRKLICHT: Effekte in config.json gespeichert.")

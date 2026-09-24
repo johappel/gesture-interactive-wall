@@ -57,6 +57,12 @@ class LiveReloadRendererContractTest(unittest.TestCase):
         # Temp file + rename keeps the poller from reading a torn file.
         self.assertIn('_config_path + ".tmp"', save)
         self.assertIn("DirAccess.rename_absolute", save)
+        # A rename can be blocked transiently on Windows (AV / search indexer),
+        # so it is retried and then falls back to a direct overwrite instead of
+        # failing the save outright.
+        self.assertIn("for attempt in range(3):", save)
+        self.assertIn("OS.delay_msec", save)
+        self.assertIn("FileAccess.open(_config_path, FileAccess.WRITE)", save)
         # The effects value is spliced in place by brace span; the rest of the
         # file (and its integer types) is left byte-for-byte untouched.
         self.assertIn("_effects_span(text)", save)

@@ -69,6 +69,35 @@ class WindowsScriptContractTest(unittest.TestCase):
         self.assertIn('New-WirklichtShortcut -Name "WIRKLICHT Simulation"', common)
         self.assertIn('"simulate.ps1"', common)
 
+    def test_renderer_retries_udp_bind_instead_of_running_blind(self):
+        # A busy receive port (a leftover renderer still holding it) must not
+        # leave the renderer silently running without any capture data. It has
+        # to keep retrying the bind so it recovers once the stale process exits.
+        renderer = (ROOT / "renderer" / "scripts" / "main.gd").read_text(encoding="utf-8")
+        self.assertIn("func _bind_udp() -> bool:", renderer)
+        self.assertIn("UDP_REBIND_INTERVAL", renderer)
+        self.assertIn("var _udp_bound", renderer)
+        # The bind failure warns and retries rather than push_error-and-forget.
+        self.assertNotIn("UDP-Bind auf Port %d fehlgeschlagen", renderer)
+        process = renderer.split("func _process(delta: float) -> void:", 1)[1].split("\nfunc ", 1)[0]
+        self.assertIn("if not _udp_bound:", process)
+        self.assertIn("_bind_udp()", process)
+
+    def test_launchers_free_receive_port_before_starting_renderer(self):
+        # Stale WIRKLICHT processes that still hold the receive port are cleared
+        # before a fresh renderer is launched, so it can actually bind.
+        common = (ROOT / "lib" / "common.ps1").read_text(encoding="utf-8")
+        self.assertIn("function Clear-WirklichtRendererPort", common)
+        self.assertIn("Get-NetUDPEndpoint", common)
+        self.assertIn("OwningProcess", common)
+        self.assertIn("Godot|python", common)
+        for name in ("start.ps1", "simulate.ps1"):
+            script = (ROOT / name).read_text(encoding="utf-8")
+            clear_index = script.find("Clear-WirklichtRendererPort")
+            start_index = script.find("Renderer wird gestartet")
+            self.assertNotEqual(clear_index, -1, name)
+            self.assertLess(clear_index, start_index, name)
+
     def test_scripts_keep_operator_guarantees(self):
         common = (ROOT / "lib" / "common.ps1").read_text(encoding="utf-8")
         install = (ROOT / "install.ps1").read_text(encoding="utf-8")
