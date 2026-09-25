@@ -429,6 +429,13 @@ absichtlich backend-codiert und stabiler als ein roher Index wie `1`):
 python -m capture.tracker --camera 701 --backend any
 ```
 
+**Tracker testen:**
+
+```powershell
+python -m capture.tracker --diagnostics
+```
+
+
 Ohne `--camera` sucht WIRKLICHT die in `config/config.json` gespeicherte Kamera
 zuerst über Gerätepfad, dann USB-VID/PID und Namen; der Index ist nur noch der
 Rückfall. Mit `q` im Vorschaufenster beenden.
@@ -451,6 +458,8 @@ nach einem Realwelt-Test unter Dämmerungs-/Nachtbedingungen.
 - [ ] Phase 7 — Hardware-Entscheidung / Robustheit
 - [ ] Phase 8 — Klang (optional)
 - [ ] Phase 9 — DSGVO/Beschilderung & Betriebshandbuch
+
+
 
 Vollständiger Projektplan und Resonanzkonzept: [docs/plan.md](docs/plan.md).
 Theologisch-ästhetisches Diskussionspapier: [docs/Theologische-Aesthetik.md](docs/Theologische-Aesthetik.md).
