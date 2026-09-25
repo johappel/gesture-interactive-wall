@@ -198,9 +198,14 @@ class Camera:
         return info
 
     def _grab_loop(self) -> None:
+        import time
+
         while self._running:
             ok, frame = self.cap.read()
             if not ok or frame is None:
+                # A disconnected or stalled driver may fail immediately.
+                # Avoid saturating a core while the main loop checks the device.
+                time.sleep(0.01)
                 continue
             self._buffer.put(frame)
 

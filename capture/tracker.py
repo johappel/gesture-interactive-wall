@@ -185,6 +185,9 @@ def run_camera(cfg: dict, diagnostics_enabled: bool = False) -> None:
                 # end-of-stream. Only stop when the device is gone.
                 if not camera.cap.isOpened():
                     break
+                # Yield until the camera produces another frame instead of
+                # spinning on an empty single-slot buffer at full CPU load.
+                time.sleep(0.001)
                 continue
             t = time.time() - start
 

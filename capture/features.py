@@ -299,7 +299,11 @@ class BodyTracker:
         return round(nearest, 4)
 
     def _predicted_centroid(self, tr: _Track, t: float) -> tuple[float, float]:
-        elapsed = max(t - tr.t, 0.0)
+        # One noisy observation can produce a very large instantaneous
+        # velocity, especially when inference has a low or uneven frame rate.
+        # Keep prediction local; the last observed position remains a fallback
+        # for reassociation after a longer detection gap.
+        elapsed = min(max(t - tr.t, 0.0), 0.2)
         return tr.centroid[0] + tr.vx * elapsed, tr.centroid[1] + tr.vy * elapsed
 
     def _departure_event(self, tr: _Track) -> dict | None:
@@ -361,7 +365,7 @@ class BodyTracker:
                 continue
             predicted = self._predicted_centroid(tr, t)
             for i, c in enumerate(cents):
-                d = distance(predicted, c)
+                d = min(distance(predicted, c), distance(tr.centroid, c) + 0.02)
                 if d <= self.max_dist:
                     candidates.append((d, tid, i))
         used_tracks: set[int] = set()

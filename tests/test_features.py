@@ -81,6 +81,14 @@ class TrackerTest(unittest.TestCase):
         b1 = tr.update([person(0.52, 0.5)], t=0.1)
         self.assertEqual(b0[0]["id"], b1[0]["id"])
 
+    def test_noisy_velocity_does_not_break_reassociation_after_gap(self):
+        tr = BodyTracker(max_dist=0.15, grace_period=0.8)
+        first = tr.update([person(0.5, 0.5)], t=0.0)[0]
+        tr.update([person(0.62, 0.5)], t=0.1)
+        tr.update([], t=0.3)
+        recovered = tr.update([person(0.63, 0.5)], t=0.5)[0]
+        self.assertEqual(recovered["id"], first["id"])
+
     def test_new_id_for_distant_body(self):
         tr = BodyTracker(max_dist=0.1)
         first = tr.update([person(0.2, 0.2)], t=0.0)

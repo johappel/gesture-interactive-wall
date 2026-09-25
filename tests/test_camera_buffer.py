@@ -11,7 +11,8 @@ import unittest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from capture.camera import LatestFrameBuffer  # noqa: E402
+from capture.camera import Camera, LatestFrameBuffer  # noqa: E402
+from unittest.mock import patch
 
 
 class LatestFrameBufferTest(unittest.TestCase):
@@ -67,6 +68,21 @@ class LatestFrameBufferTest(unittest.TestCase):
         # since get() would itself increment ``consumed``.
         remaining = 1 if buf._frame is not None else 0
         self.assertEqual(buf.produced, buf.consumed + buf.dropped + remaining)
+
+
+class CameraFailureTest(unittest.TestCase):
+    def test_failed_grab_yields_before_retry(self):
+        class FailedCapture:
+            def read(self):
+                camera._running = False
+                return False, None
+
+        camera = Camera.__new__(Camera)
+        camera._running = True
+        camera.cap = FailedCapture()
+        with patch("time.sleep") as sleep:
+            camera._grab_loop()
+        sleep.assert_called_once_with(0.01)
 
 
 if __name__ == "__main__":
