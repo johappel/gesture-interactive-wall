@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b1020" />
+  <meta name="description" content="WIRKLICHT – Gesten-Resonanz auf der Fassade. Eine interaktive Lichtinstallation am Landeskirchenamt der EKKW." />
+  <title>WIRKLICHT – Resonanz auf der Fassade</title>
+
+  <style>
+    :root{
+      --bg:#080b14;
+      --bg-soft:#101726;
+      --panel:rgba(255,255,255,.055);
+      --panel-strong:rgba(255,255,255,.09);
+      --text:#f4f7fb;
+      --muted:#b9c1d0;
+      --line:rgba(255,255,255,.12);
+      --glow:#b8d7ff;
+      --glow-2:#d9c9ff;
+      --warm:#ffd7a1;
+      --max:1120px;
+      --radius:26px;
+      --shadow:0 24px 70px rgba(0,0,0,.28);
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 20% 0%, rgba(116,159,255,.12), transparent 35%),
+        radial-gradient(circle at 85% 15%, rgba(185,145,255,.10), transparent 30%),
+        linear-gradient(180deg,#070a12 0%,#0a0f1b 50%,#080b14 100%);
+      font-family:Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height:1.6;
+      overflow-x:hidden;
+    }
+
+    a{color:inherit}
+    img{max-width:100%;display:block}
+
+    .site-shell{position:relative;isolation:isolate}
+    .ambient{
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      z-index:-2;
+      overflow:hidden;
+    }
+
+    .orb{
+      position:absolute;
+      border-radius:50%;
+      filter:blur(28px);
+      opacity:.22;
+      mix-blend-mode:screen;
+      transition:transform .18s ease-out;
+      will-change:transform;
+    }
+    .orb.one{width:34vw;height:34vw;min-width:280px;min-height:280px;background:#6ea8ff;left:-10vw;top:10vh}
+    .orb.two{width:28vw;height:28vw;min-width:240px;min-height:240px;background:#b98cff;right:-7vw;top:37vh}
+    .orb.three{width:24vw;height:24vw;min-width:220px;min-height:220px;background:#ffd29a;left:36vw;bottom:-8vw;opacity:.14}
+
+    .grain{
+      position:fixed; inset:0; pointer-events:none; z-index:-1;
+      opacity:.035;
+      background-image:
+        radial-gradient(circle at 25% 25%, #fff 0 1px, transparent 1px),
+        radial-gradient(circle at 75% 75%, #fff 0 1px, transparent 1px);
+      background-size:26px 26px, 31px 31px;
+    }
+
+    .topbar{
+      position:sticky;
+      top:0;
+      z-index:20;
+      backdrop-filter:blur(18px);
+      background:linear-gradient(180deg,rgba(8,11,20,.82),rgba(8,11,20,.46));
+      border-bottom:1px solid rgba(255,255,255,.07);
+    }
+
+    .topbar-inner{
+      width:min(calc(100% - 32px),var(--max));
+      margin:auto;
+      min-height:72px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:24px;
+    }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      text-decoration:none;
+    }
+    .brand-mark{
+      width:9px;height:9px;border-radius:50%;
+      background:#eaf3ff;
+      box-shadow:0 0 20px 8px rgba(190,220,255,.36);
+    }
+    .brand strong{
+      letter-spacing:.18em;
+      font-size:.88rem;
+    }
+
+    nav{
+      display:flex;
+      gap:24px;
+      font-size:.94rem;
+      color:var(--muted);
+    }
+    nav a{
+      text-decoration:none;
+      transition:color .2s ease;
+    }
+    nav a:hover{color:#fff}
+
+    main{display:block}
+
+    section{
+      width:min(calc(100% - 32px),var(--max));
+      margin:auto;
+      padding:100px 0;
+      position:relative;
+    }
+
+    .hero{
+      min-height:calc(100vh - 72px);
+      display:grid;
+      grid-template-columns:1.2fr .8fr;
+      align-items:center;
+      gap:70px;
+      padding-top:72px;
+      padding-bottom:80px;
+    }
+
+    .eyebrow{
+      color:#c9d8ec;
+      text-transform:uppercase;
+      letter-spacing:.18em;
+      font-size:.78rem;
+      font-weight:700;
+      margin-bottom:18px;
+    }
+
+    h1{
+      font-size:clamp(3.6rem,10vw,8.4rem);
+      line-height:.92;
+      margin:0;
+      letter-spacing:-.055em;
+      font-weight:760;
+    }
+
+    .hero-sub{
+      font-size:clamp(1.45rem,2.3vw,2.25rem);
+      line-height:1.25;
+      max-width:780px;
+      margin:28px 0 0;
+      color:#eef5ff;
+      letter-spacing:-.02em;
+    }
+
+    .hero-copy{
+      margin-top:34px;
+      max-width:680px;
+      color:var(--muted);
+      font-size:1.12rem;
+    }
+
+    .hero-actions{
+      display:flex;
+      gap:14px;
+      flex-wrap:wrap;
+      margin-top:34px;
+    }
+
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:48px;
+      padding:0 20px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.04);
+      color:#fff;
+      text-decoration:none;
+      font-weight:650;
+      transition:.2s ease;
+    }
+    .btn:hover{
+      transform:translateY(-2px);
+      background:rgba(255,255,255,.09);
+    }
+    .btn.primary{
+      background:#f2f7ff;
+      color:#111827;
+      border-color:#f2f7ff;
+    }
+
+    .hero-visual{
+      position:relative;
+      min-height:500px;
+      display:grid;
+      place-items:center;
+    }
+
+    .resonance-stage{
+      width:min(100%,460px);
+      aspect-ratio:1/1.1;
+      position:relative;
+      border-radius:42px;
+      overflow:hidden;
+      border:1px solid rgba(255,255,255,.12);
+      background:
+        linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01)),
+        radial-gradient(circle at 50% 30%,rgba(130,176,255,.14),transparent 45%);
+      box-shadow:var(--shadow);
+    }
+
+    .resonance-stage::before{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
+      background-size:38px 38px;
+      mask-image:linear-gradient(to bottom,transparent,black 18%,black 82%,transparent);
+    }
+
+    .person{
+      position:absolute;
+      width:24px;
+      height:24px;
+      border-radius:50%;
+      background:#f8fbff;
+      box-shadow:0 0 18px 9px rgba(189,220,255,.26);
+      animation:drift 7s ease-in-out infinite alternate;
+    }
+
+    .person::after{
+      content:"";
+      position:absolute;
+      width:2px;
+      height:58px;
+      left:11px;
+      top:24px;
+      background:linear-gradient(#fff,rgba(255,255,255,.16));
+      border-radius:2px;
+    }
+
+    .person.p1{left:29%;top:46%}
+    .person.p2{left:61%;top:39%;animation-delay:-2.4s}
+    .person.p3{left:48%;top:64%;animation-delay:-4.1s;transform:scale(.82);opacity:.8}
+
+    .wave{
+      position:absolute;
+      border:1px solid rgba(201,222,255,.44);
+      border-radius:50%;
+      opacity:0;
+      animation:ripple 5.8s infinite;
+    }
+    .wave.w1{width:80px;height:80px;left:18%;top:38%}
+    .wave.w2{width:110px;height:110px;left:51%;top:29%;animation-delay:1.8s}
+    .wave.w3{width:140px;height:140px;left:31%;top:55%;animation-delay:3.3s}
+
+    .relation{
+      position:absolute;
+      height:1px;
+      width:170px;
+      left:31%;
+      top:48%;
+      transform:rotate(-12deg);
+      background:linear-gradient(90deg,transparent,rgba(221,231,255,.7),transparent);
+      box-shadow:0 0 14px rgba(187,210,255,.4);
+      animation:pulse 3.6s ease-in-out infinite;
+    }
+
+    .stage-caption{
+      position:absolute;
+      left:26px;right:26px;bottom:24px;
+      font-size:.95rem;
+      color:#c8d3e5;
+    }
+
+    @keyframes drift{
+      from{transform:translate3d(-4px,-3px,0)}
+      to{transform:translate3d(7px,9px,0)}
+    }
+    @keyframes ripple{
+      0%{transform:scale(.35);opacity:0}
+      18%{opacity:.55}
+      100%{transform:scale(2.8);opacity:0}
+    }
+    @keyframes pulse{
+      0%,100%{opacity:.25}
+      50%{opacity:1}
+    }
+
+    .section-head{
+      display:grid;
+      grid-template-columns:.65fr 1.35fr;
+      gap:50px;
+      align-items:start;
+      margin-bottom:46px;
+    }
+    .section-head h2{
+      margin:0;
+      font-size:clamp(2.2rem,4vw,4.4rem);
+      line-height:1.02;
+      letter-spacing:-.045em;
+    }
+    .section-head p{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:1.14rem;
+      max-width:720px;
+    }
+
+    .cards{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:18px;
+    }
+    .card{
+      border:1px solid var(--line);
+      background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.028));
+      border-radius:var(--radius);
+      padding:28px;
+      min-height:230px;
+      box-shadow:0 18px 50px rgba(0,0,0,.12);
+    }
+    .card .num{
+      font-size:.78rem;
+      letter-spacing:.16em;
+      color:#aeb8cb;
+      text-transform:uppercase;
+    }
+    .card h3{
+      margin:42px 0 12px;
+      font-size:1.5rem;
+      letter-spacing:-.02em;
+    }
+    .card p{
+      margin:0;
+      color:var(--muted);
+    }
+
+    .manifesto{
+      padding:120px 0;
+    }
+    .manifesto-box{
+      border-radius:34px;
+      padding:clamp(32px,6vw,72px);
+      background:
+        radial-gradient(circle at 15% 20%,rgba(147,184,255,.16),transparent 42%),
+        radial-gradient(circle at 85% 70%,rgba(206,164,255,.12),transparent 38%),
+        rgba(255,255,255,.045);
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+    }
+    .manifesto blockquote{
+      margin:0;
+      font-size:clamp(2rem,4.5vw,4.6rem);
+      line-height:1.12;
+      letter-spacing:-.04em;
+      max-width:960px;
+    }
+    .manifesto blockquote span{color:#d3deec}
+
+    .split{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:22px;
+    }
+
+    .text-panel{
+      padding:32px;
+      border-radius:var(--radius);
+      border:1px solid var(--line);
+      background:rgba(255,255,255,.035);
+    }
+    .text-panel h3{
+      margin:0 0 12px;
+      font-size:1.5rem;
+      letter-spacing:-.025em;
+    }
+    .text-panel p{
+      color:var(--muted);
+      margin:0 0 16px;
+    }
+    .text-panel p:last-child{margin-bottom:0}
+
+    .flow{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+      margin-top:34px;
+    }
+    .flow-item{
+      border-top:1px solid var(--line);
+      padding-top:18px;
+      font-size:1.08rem;
+      font-weight:650;
+    }
+    .flow-item small{
+      display:block;
+      margin-top:6px;
+      font-size:.88rem;
+      font-weight:400;
+      color:var(--muted);
+    }
+
+    .privacy{
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:34px;
+      display:grid;
+      grid-template-columns:.75fr 1.25fr;
+      gap:28px;
+    }
+    .privacy strong{
+      font-size:1.5rem;
+      letter-spacing:-.02em;
+    }
+    .privacy p{
+      margin:0;
+      color:var(--muted);
+    }
+
+    .closing{
+      text-align:center;
+      padding-top:120px;
+      padding-bottom:120px;
+    }
+    .closing h2{
+      font-size:clamp(2.7rem,7vw,6.5rem);
+      line-height:1;
+      letter-spacing:-.055em;
+      margin:0 auto 26px;
+      max-width:900px;
+    }
+    .closing p{
+      color:var(--muted);
+      font-size:1.15rem;
+      max-width:700px;
+      margin:0 auto 28px;
+    }
+
+    footer{
+      border-top:1px solid var(--line);
+      padding:34px 0 48px;
+    }
+    .footer-inner{
+      width:min(calc(100% - 32px),var(--max));
+      margin:auto;
+      display:grid;
+      grid-template-columns:1fr auto;
+      align-items:end;
+      gap:24px;
+      color:var(--muted);
+      font-size:.94rem;
+    }
+
+    .ekkw{
+      margin-bottom:18px;
+      display:inline-flex;
+      background:#fff;
+      border-radius:10px;
+      padding:9px 12px;
+    }
+    .ekkw img{
+      width:170px;
+      height:auto;
+    }
+
+    .credits strong{color:#fff}
+    .links{
+      display:flex; gap:16px; flex-wrap:wrap; justify-content:flex-end;
+    }
+    .links a{
+      text-decoration:none;
+      border-bottom:1px solid rgba(255,255,255,.25);
+    }
+
+    .reveal{
+      opacity:0;
+      transform:translateY(22px);
+      transition:opacity .7s ease, transform .7s ease;
+    }
+    .reveal.visible{
+      opacity:1;
+      transform:none;
+    }
+
+    @media (max-width:900px){
+      nav{display:none}
+      .hero{grid-template-columns:1fr;gap:36px}
+      .hero-visual{min-height:380px}
+      .resonance-stage{max-width:390px}
+      .section-head{grid-template-columns:1fr;gap:20px}
+      .cards{grid-template-columns:1fr}
+      .split{grid-template-columns:1fr}
+      .flow{grid-template-columns:1fr 1fr}
+      .privacy{grid-template-columns:1fr}
+      .footer-inner{grid-template-columns:1fr}
+      .links{justify-content:flex-start}
+    }
+
+    @media (max-width:560px){
+      section{padding:76px 0}
+      .hero{padding-top:44px}
+      .hero-sub{font-size:1.45rem}
+      .hero-copy{font-size:1.02rem}
+      .flow{grid-template-columns:1fr}
+      .manifesto{padding:86px 0}
+      .topbar-inner{min-height:64px}
+      .brand strong{font-size:.82rem}
+    }
+
+    @media (prefers-reduced-motion:reduce){
+      *{scroll-behavior:auto !important;animation:none !important;transition:none !important}
+      .reveal{opacity:1;transform:none}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="site-shell">
+    <div class="ambient" aria-hidden="true">
+      <div class="orb one"></div>
+      <div class="orb two"></div>
+      <div class="orb three"></div>
+    </div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="topbar">
+      <div class="topbar-inner">
+        <a class="brand" href="#top" aria-label="WIRKLICHT Startseite">
+          <span class="brand-mark"></span>
+          <strong>WIRKLICHT</strong>
+        </a>
+        <nav aria-label="Seitennavigation">
+          <a href="#idee">Idee</a>
+          <a href="#resonanz">Resonanz</a>
+          <a href="#theologie">Hintergrund</a>
+          <a href="#datenschutz">Datenschutz</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <section class="hero">
+        <div>
+          <div class="eyebrow reveal">Gesten-Resonanz auf der Fassade</div>
+          <h1 class="reveal">WIRKLICHT</h1>
+          <p class="hero-sub reveal">Deine Anwesenheit hinterlässt Spuren.</p>
+          <p class="hero-copy reveal">
+            Du bewegst dich. Du bleibst stehen. Andere kommen dazu.
+            Und die Fassade verändert sich. Nicht als Spiel mit der richtigen Geste,
+            sondern als Resonanz auf Anwesenheit, Bewegung und Beziehung.
+          </p>
+          <div class="hero-actions reveal">
+            <a class="btn primary" href="#idee">Was steckt dahinter?</a>
+            <a class="btn" href="https://github.com/johappel/gesture-interactive-wall/" target="_blank" rel="noopener">Projekt auf GitHub</a>
+          </div>
+        </div>
+
+        <div class="hero-visual reveal" aria-hidden="true">
+          <div class="resonance-stage">
+            <span class="wave w1"></span>
+            <span class="wave w2"></span>
+            <span class="wave w3"></span>
+            <span class="relation"></span>
+            <span class="person p1"></span>
+            <span class="person p2"></span>
+            <span class="person p3"></span>
+            <div class="stage-caption">Anwesenheit → Beziehung → Nachwirkung</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="idee">
+        <div class="section-head reveal">
+          <div class="eyebrow">Die Idee</div>
+          <div>
+            <h2>Du bist da – und das macht einen Unterschied.</h2>
+            <p>
+              WIRKLICHT macht nicht die „richtige“ Bewegung sichtbar. Die Installation
+              reagiert auf das, was ohnehin geschieht: Menschen treten in einen Raum,
+              verweilen, bewegen sich, begegnen einander und gehen wieder.
+            </p>
+          </div>
+        </div>
+
+        <div class="cards">
+          <article class="card reveal">
+            <div class="num">01 · Gegenwart</div>
+            <h3>Schon Anwesenheit wirkt.</h3>
+            <p>Auch wer stillsteht, ist da. Ruhe ist keine Leerstelle, sondern eine eigene Form von Präsenz.</p>
+          </article>
+
+          <article class="card reveal">
+            <div class="num">02 · Beziehung</div>
+            <h3>Zwischen Menschen entsteht etwas.</h3>
+            <p>Wenn weitere Menschen dazukommen, verändert sich nicht nur die Zahl der Lichtpunkte, sondern das gemeinsame Bild.</p>
+          </article>
+
+          <article class="card reveal">
+            <div class="num">03 · Nachwirkung</div>
+            <h3>Fortgehen beendet nicht alles.</h3>
+            <p>Eine Spur, eine Welle oder ein Nachleuchten kann noch einen Augenblick bleiben, wenn jemand längst weitergegangen ist.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="manifesto" id="resonanz">
+        <div class="manifesto-box reveal">
+          <blockquote>
+            Menschen steuern das Licht nicht.
+            <span>Menschen wirken wie Licht. Diese Wirkung wird sichtbar.</span>
+          </blockquote>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head reveal">
+          <div class="eyebrow">Resonanz statt Kontrolle</div>
+          <div>
+            <h2>Die richtige Geste?</h2>
+            <p>
+              WIRKLICHT ist keine Bedienoberfläche. Du musst nicht winken, springen
+              oder einen versteckten Befehl entdecken. Die Installation macht Unterschiede
+              sichtbar, ohne sie zu bewerten.
+            </p>
+          </div>
+        </div>
+
+        <div class="split">
+          <div class="text-panel reveal">
+            <h3>Was nicht bewertet wird</h3>
+            <p>Nähe ist nicht besser als Abstand.</p>
+            <p>Bewegung ist nicht besser als Stillstand.</p>
+            <p>Synchronität ist nicht das Ideal von Gemeinschaft.</p>
+            <p>Große Gesten sind nicht wichtiger als kleine.</p>
+          </div>
+          <div class="text-panel reveal">
+            <h3>Was sichtbar werden kann</h3>
+            <p>Licht kann Anwesenheit zeigen.</p>
+            <p>Spuren können Bewegung sichtbar machen.</p>
+            <p>Felder können Beziehungen andeuten.</p>
+            <p>Wellen können Nachwirkung ausdrücken.</p>
+          </div>
+        </div>
+
+        <div class="flow reveal">
+          <div class="flow-item">Ich<small>eine Person wird wahrnehmbar</small></div>
+          <div class="flow-item">Du<small>Beziehung verändert das Bild</small></div>
+          <div class="flow-item">Wir<small>die Gruppe prägt die Atmosphäre</small></div>
+          <div class="flow-item">Raum<small>etwas Gemeinsames bleibt zurück</small></div>
+        </div>
+      </section>
+
+      <section id="theologie">
+        <div class="section-head reveal">
+          <div class="eyebrow">Theologischer Horizont</div>
+          <div>
+            <h2>Was hat das mit Kirche zu tun?</h2>
+            <p>
+              WIRKLICHT zeigt kein Kreuz auf der Fassade und schreibt niemandem vor,
+              was religiös zu empfinden ist. Die theologische Idee liegt in der Art,
+              wie die Installation Menschsein sichtbar macht.
+            </p>
+          </div>
+        </div>
+
+        <div class="manifesto-box reveal">
+          <blockquote style="font-size:clamp(1.8rem,3.7vw,3.8rem)">
+            Sei da, wie du bist.<br>
+            Du wirkst. Du strahlst. Du bist Licht. Licht gehört zu dir.<br>
+            Du brauchst nichts zu leisten.<br>
+            Was immer du tust: Deine Geste ist richtig.<br>
+            Hier leuchtest du in aller Freiheit, ohne Bewertung.<br>
+            <span>Deine Anwesenheit hat Wirkung. Du hinterlässt Spuren, und um dich herum wird es heller.</span>
+          </blockquote>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-head reveal">
+          <div class="eyebrow">Schwellenraum</div>
+          <div>
+            <h2>Vom Vorübergehen zum Verweilen.</h2>
+            <p>
+              Vor dem Landeskirchenamt entsteht ein kleiner Resonanzraum. Die Fassade
+              antwortet auf Menschen, die eintreten, bleiben, sich zueinander verhalten
+              und den Raum wieder verlassen.
+            </p>
+          </div>
+        </div>
+
+        <div class="split">
+          <div class="text-panel reveal">
+            <h3>Die Lichtinsel</h3>
+            <p>
+              Ein zurückhaltend markierter Bereich macht erfahrbar: Hier kann man
+              einen Augenblick bleiben. Kein Bühnenpunkt, keine feste Position, keine
+              Anleitung – sondern ein offener Raum für einzelne Menschen und Gruppen.
+            </p>
+          </div>
+          <div class="text-panel reveal">
+            <h3>Der Nahraum</h3>
+            <p>
+              Ein kleiner Monitor kann die Resonanz unmittelbar zeigen. Nicht das
+              Kamerabild, sondern die visuelle Antwort der Installation. So wird schnell
+              verständlich: Das dort hat mit mir zu tun.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="datenschutz">
+        <div class="privacy reveal">
+          <strong>Wahrnehmen, ohne festzuhalten.</strong>
+          <p>
+            Kameras erfassen Bewegungen und Körperpositionen, damit WIRKLICHT reagieren kann.
+            Die Installation soll keine Personen identifizieren, keine Gesichter speichern
+            und Besucher:innen nicht dauerhaft wiedererkennen. Die Bildauswertung erfolgt lokal.
+            Sichtbar wird Wirkung – nicht Identität.
+          </p>
+        </div>
+      </section>
+
+      <section class="closing">
+        <div class="eyebrow reveal">WIRKLICHT</div>
+        <h2 class="reveal">Was geschieht, wenn du bleibst?</h2>
+        <p class="reveal">
+          Eine interaktive Lichtinstallation am Landeskirchenamt der
+          Evangelischen Kirche von Kurhessen-Waldeck.
+        </p>
+        <div class="hero-actions reveal" style="justify-content:center">
+          <a class="btn primary" href="#top">Nach oben</a>
+          <a class="btn" href="https://github.com/johappel/gesture-interactive-wall/" target="_blank" rel="noopener">Code & Dokumentation</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <div class="footer-inner">
+        <div class="credits">
+          <span class="ekkw">
+            <img src="https://www.ekkw.de/_assets/8cfcca1f0a4b1c067801a8126257ae57/Images/ekkw-logo.png"
+                 alt="Evangelische Kirche von Kurhessen-Waldeck">
+          </span>
+          <div><strong>WIRKLICHT</strong> · Gesten-Resonanz auf der Fassade</div>
+          <div>Pfrin. Anna-Maria Plischke · Pfr. Joachim Happel · Jonas-Maximilian Heidrich</div>
+        </div>
+
+        <div class="links">
+          <a href="https://github.com/johappel/gesture-interactive-wall/" target="_blank" rel="noopener">GitHub</a>
+          <a href="#datenschutz">Datenschutz</a>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Sanfte Einblendungen beim Scrollen
+    const items = document.querySelectorAll('.reveal');
+    if (!reducedMotion && 'IntersectionObserver' in window) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+            observer.unobserve(entry.target);
+          }
+        });
+      }, { threshold: 0.12 });
+
+      items.forEach((item, index) => {
+        item.style.transitionDelay = `${Math.min(index % 4, 3) * 70}ms`;
+        observer.observe(item);
+      });
+    } else {
+      items.forEach(item => item.classList.add('visible'));
+    }
+
+    // Sehr zurückhaltende "Resonanz" auf Maus-/Pointerbewegung
+    if (!reducedMotion) {
+      const orbs = [...document.querySelectorAll('.orb')];
+      window.addEventListener('pointermove', (event) => {
+        const x = (event.clientX / window.innerWidth - 0.5);
+        const y = (event.clientY / window.innerHeight - 0.5);
+
+        orbs.forEach((orb, i) => {
+          const strength = (i + 1) * 10;
+          orb.style.transform = `translate(${x * strength}px, ${y * strength}px)`;
+        });
+      }, { passive: true });
+    }
+  </script>
+</body>
+</html>
