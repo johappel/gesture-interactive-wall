@@ -78,7 +78,7 @@ Es wird **ein JSON-Paket pro Frame** gesendet, ohne Bilder oder Videos.
 | `model_path` | string | Pfad zum MediaPipe-PoseLandmarker-Modell (`.task`), relativ zum Projektwurzelverzeichnis. Fehlt die Datei, fällt Capture auf Einzelperson-Tracking zurück (Legacy-API). |
 | `num_poses` | int | Maximale Anzahl gleichzeitig erkannter Personen. Höher = mehr Rechenlast. Zielgröße der Installation: 2–20 Personen. |
 | `min_detection_confidence` | 0..1 | Mindestkonfidenz für Erkennung **und** Tracking. Niedriger = mehr (auch falsche) Treffer, höher = stabiler, aber empfindlicher gegen Verdeckung. |
-| `min_torso_visibility` | 0..1 | Qualitätsschwelle: Schultern und Hüften müssen mindestens so sichtbar sein. Filtert Objektkanten, die MediaPipe gelegentlich als Pose deutet. Bewusst klein und **nicht biometrisch**. |
+| `min_torso_visibility` | 0..1 | Qualitätsschwelle: Schultern und Hüften müssen mindestens so sichtbar sein. Filtert Objektkanten, die MediaPipe gelegentlich als Pose deutet. Bewusst klein und **nicht biometrisch**. Ein einzelner Torso-Punkt darf etwas außerhalb des Bildes liegen, solange die Torsomitte im Bild bleibt. |
 | `active_region.enabled` | bool | Schaltet einen rechteckigen Interaktionsbereich frei. Nur wenn `true`, wird der Bereich ausgewertet. |
 | `active_region.x_min/x_max/y_min/y_max` | 0..1 | Grenzen des Bereichs in normierten Bildkoordinaten. Nur Torsomitten innerhalb des Rechtecks werden übernommen. Ungültige Werte (`x_min >= x_max` usw.) verwerfen **alle** Personen. |
 

@@ -17,6 +17,7 @@ from capture.features import (  # noqa: E402
     POSE_ACCEPTED,
     REJECT_ACTIVE_REGION,
     REJECT_INVALID_LANDMARKS,
+    REJECT_OUTSIDE_FRAME,
     REJECT_TORSO_VISIBILITY,
     R_HIP,
     classify_person,
@@ -51,6 +52,24 @@ class ClassifyPersonTest(unittest.TestCase):
         candidate = person(0.5, 0.5)
         candidate[L_HIP] = (0.46, 0.6, 0.4)  # exactly at threshold -> accepted
         self.assertEqual(classify_person(candidate, min_torso_visibility=0.4), POSE_ACCEPTED)
+
+    def test_partly_outside_torso_landmark_keeps_visible_person(self):
+        candidate = person(0.05, 0.5)
+        candidate[L_SHOULDER] = (-0.04, 0.5, 0.9)
+        self.assertEqual(classify_person(candidate, 0.4), POSE_ACCEPTED)
+
+    def test_distant_extrapolation_is_rejected(self):
+        candidate = person(0.5, 0.5)
+        candidate[L_SHOULDER] = (-0.4, 0.5, 0.9)
+        self.assertEqual(classify_person(candidate, 0.4), REJECT_OUTSIDE_FRAME)
+
+    def test_torso_center_outside_image_is_rejected(self):
+        candidate = person(0.02, 0.5)
+        candidate[L_SHOULDER] = (-0.2, 0.5, 0.9)
+        candidate[12] = (-0.2, 0.5, 0.9)
+        candidate[L_HIP] = (-0.2, 0.6, 0.9)
+        candidate[R_HIP] = (-0.2, 0.6, 0.9)
+        self.assertEqual(classify_person(candidate, 0.4), REJECT_OUTSIDE_FRAME)
 
     def test_nan_landmark_is_invalid(self):
         candidate = person(0.5, 0.5)

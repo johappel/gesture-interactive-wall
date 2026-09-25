@@ -77,6 +77,11 @@ Deutung:
   `pose.num_poses` reduzieren.
 - `raw_poses` hoch, `accepted` niedrig, `rejected=torso_visibility` → eine
   reale Person wird herausgefiltert. `pose.min_torso_visibility` senken.
+- `rejected=outside_frame` → der berechnete Torsomittelpunkt liegt außerhalb
+  des Kamerabilds oder ein Torso-Punkt weit jenseits des Bildrands.
+- `rejected=invalid_landmarks` → MediaPipe lieferte fehlende oder nicht endliche
+  Landmark-Werte. Ein nur leicht außerhalb des Bilds geschätzter Schulter- oder
+  Hüftpunkt wird weiterhin angenommen, wenn der Torsomittelpunkt im Bild liegt.
 - `raw_poses` bereits niedrig → MediaPipe erkennt die Person gar nicht erst
   (Beleuchtung/Abstand/Gegenlicht prüfen), kein Filterproblem.
 - `dropped` groß ist normal und erwünscht: alte Kamerabilder werden bewusst
@@ -94,4 +99,3 @@ wählen, der die Ziel-Personenzahl bei ausreichender Update-Rate trägt.
 Hinweis: MediaPipe (Python) rechnet standardmäßig auf der **CPU**; eine starke
 GPU beschleunigt die Pose-Erkennung hier nicht automatisch. Latenz zuerst über
 Auflösung, Inferenz-Downscale und `num_poses` steuern.
-

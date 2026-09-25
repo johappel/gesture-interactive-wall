@@ -58,6 +58,7 @@ def is_plausible_person(
 # Non-biometric rejection reasons, surfaced only for diagnostics.
 POSE_ACCEPTED = "accepted"
 REJECT_INVALID_LANDMARKS = "invalid_landmarks"
+REJECT_OUTSIDE_FRAME = "outside_frame"
 REJECT_TORSO_VISIBILITY = "torso_visibility"
 REJECT_ACTIVE_REGION = "active_region"
 
@@ -82,10 +83,17 @@ def classify_person(
         x, y, visibility = float(landmark[0]), float(landmark[1]), float(landmark[2])
         if not all(math.isfinite(value) for value in (x, y, visibility)):
             return REJECT_INVALID_LANDMARKS
-        if not 0.0 <= x <= 1.0 or not 0.0 <= y <= 1.0:
-            return REJECT_INVALID_LANDMARKS
+        # MediaPipe may extrapolate a visible shoulder or hip a little beyond
+        # the image edge. This is a valid partial pose, provided its torso
+        # center stays in the camera image. Reject distant extrapolations.
+        if not -0.25 <= x <= 1.25 or not -0.25 <= y <= 1.25:
+            return REJECT_OUTSIDE_FRAME
         if visibility < min_torso_visibility:
             return REJECT_TORSO_VISIBILITY
+
+    x, y = centroid(landmarks)
+    if not 0.0 <= x <= 1.0 or not 0.0 <= y <= 1.0:
+        return REJECT_OUTSIDE_FRAME
 
     if not active_region or not active_region.get("enabled", False):
         return POSE_ACCEPTED
@@ -98,7 +106,6 @@ def classify_person(
         return REJECT_ACTIVE_REGION
     if not (0.0 <= x_min < x_max <= 1.0 and 0.0 <= y_min < y_max <= 1.0):
         return REJECT_ACTIVE_REGION
-    x, y = centroid(landmarks)
     if x_min <= x <= x_max and y_min <= y <= y_max:
         return POSE_ACCEPTED
     return REJECT_ACTIVE_REGION
