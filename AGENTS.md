@@ -31,7 +31,8 @@ Diskussions- und Prüfdokument zu verstehen, nicht als starre Dogmatik.
   - `features.py` — reine Python-Mathematik (ID-Tracking, Intensität, Paare) — **ohne** ML-Abhängigkeiten, damit unit-testbar.
   - `pose.py`, `camera.py`, `net.py`, `sim.py` — MediaPipe, Webcam (OpenCV), UDP, Simulator.
 - `renderer/` — Godot-4.7-Projekt (empfängt JSON/UDP, interpretiert Resonanzsignale als visuelle Materialitäten).
-- `config/config.json` — zentrale Konfiguration für Kamera, Netzwerk, Feature-Parameter, Stand-/Monitoroptionen und Renderer-Effekte.
+- `config/config.json` — zentrale Konfiguration für Kamera, Netzwerk, Feature-Parameter, Stand-/Monitoroptionen und Renderer-Effekte. Laufzeitdatei am Veranstaltungsort.
+- `config/config.example.json` — portable Referenz mit generischen Standardwerten (wird zur Laufzeit nie gelesen; siehe `docs/Konfiguration.md`).
 - `config/prompts.json` — kuratierte kurze Sprachimpulse für den Nahraum; keine technischen Bedienanweisungen.
 - `docs/Standkonzept.md` — räumliche, technische und vermittlungsbezogene Gestaltung des Resonanzraums.
 - `docs/plan.md` — verbindlicher Projektplan, Resonanzgrammatik, Roadmap und Realwelt-Test.

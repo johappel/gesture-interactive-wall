@@ -314,8 +314,10 @@ Dabei gilt:
   unabhängig davon verfügbar.
 - Neue Effektfamilien gelten erst dann als vollständig integriert, wenn ihr
   Config-Schalter vorhanden ist.
-- Änderungen an `config/config.json` werden derzeit beim Start des Godot-Renderers
-  eingelesen; für Änderungen im Betrieb muss der Renderer neu gestartet werden.
+- Änderungen am `effects`-Block in `config/config.json` übernimmt der laufende
+  Godot-Renderer innerhalb von etwa einer halben Sekunde (Live-Reload). Für
+  `renderer`, `station` und `network.port` muss der Renderer neu gestartet
+  werden; `camera`, `pose`, `features` und `debug` liest Capture nur beim Start.
 - Später können Presets wie `calm`, `full` oder `debug` hinzukommen; sie ersetzen
   die Einzel-Schalter nicht.
 
