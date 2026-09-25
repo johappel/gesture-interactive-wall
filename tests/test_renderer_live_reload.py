@@ -4,6 +4,7 @@ matter for safety: bounded sliders, atomic LF writes, effects-only reload
 (never capture/tracking parameters), and defensive handling of invalid config.
 """
 
+import json
 import re
 import unittest
 from pathlib import Path
@@ -129,6 +130,58 @@ class DebugOverlayContractTest(unittest.TestCase):
         for handler in ("_on_slider_changed", "_on_color_changed", "_on_enabled_toggled"):
             block = self.overlay.split("func %s(" % handler, 1)[1].split("\nfunc ", 1)[0]
             self.assertIn("if _suppress:", block)
+
+
+class OverlaySchemaCoverageTest(unittest.TestCase):
+    """Drift guard: every tunable effect key in the config must have a row in
+    the F3 overlay, so a new parameter can never ship without a live control."""
+
+    @classmethod
+    def setUpClass(cls):
+        overlay = (ROOT / "renderer" / "scripts" / "debug_overlay.gd").read_text(encoding="utf-8")
+        # Mirror of debug_overlay._schema(): effect group -> parameter keys.
+        cls.schema = {
+            m.group(1): set(re.findall(r'\{"key": "([^"]+)"', m.group(2)))
+            for m in re.finditer(
+                r'\{"effect": "(\w+)", "label": "[^"]*", "params": \[(.*?)\]\}',
+                overlay,
+                re.S,
+            )
+        }
+        cls.overlay = overlay
+        cls.configs = [
+            json.loads((ROOT / "config" / name).read_text(encoding="utf-8-sig"))
+            for name in ("config.json", "config.example.json")
+        ]
+
+    def test_every_configured_effect_has_a_group(self):
+        for config in self.configs:
+            for effect, block in config["effects"].items():
+                if not isinstance(block, dict):
+                    continue
+                self.assertIn(
+                    effect,
+                    self.schema,
+                    "Effekt %s steht in der Config, hat aber keine Gruppe im Overlay" % effect,
+                )
+
+    def test_every_configured_effect_key_has_a_slider(self):
+        for config in self.configs:
+            for effect, block in config["effects"].items():
+                if not isinstance(block, dict):
+                    continue
+                # "enabled" is the per-group checkbox, not a parameter row.
+                missing = set(block) - self.schema.get(effect, set()) - {"enabled"}
+                self.assertFalse(
+                    missing,
+                    "Config-Key ohne Live-Regler im Overlay: %s.%s"
+                    % (effect, sorted(missing)),
+                )
+
+    def test_global_effect_toggles_are_exposed(self):
+        # effects.enabled and effects.minimal_mode are checkboxes, not rows.
+        self.assertIn('"effects.enabled"', self.overlay)
+        self.assertIn('"minimal_mode"', self.overlay)
 
 
 if __name__ == "__main__":

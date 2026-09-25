@@ -86,6 +86,7 @@ func _schema() -> Array:
 			{"key": "max_alpha", "min": 0.0, "max": 1.0, "step": 0.01, "type": "float", "default": 0.85},
 			{"key": "field_strength", "min": 0.0, "max": 1.0, "step": 0.01, "type": "float", "default": 0.6},
 			{"key": "fade_seconds", "min": 0.05, "max": 5.0, "step": 0.05, "type": "float", "default": 0.6},
+			{"key": "occluded_fade_seconds", "min": 0.05, "max": 5.0, "step": 0.05, "type": "float", "default": 0.3},
 			{"key": "smoothing", "min": 0.01, "max": 1.0, "step": 0.01, "type": "float", "default": 0.15},
 			{"key": "min_distance", "min": 0.0, "max": 1.0, "step": 0.01, "type": "float", "default": 0.22},
 			{"key": "warm_color", "type": "color", "default": "#ffcd79"},
