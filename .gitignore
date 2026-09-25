@@ -1,0 +1,20 @@
+﻿# Python virtual environments and bytecode
+.venv/
+.kilo/
+__pycache__/
+*.py[cod]
+
+# Runtime output and local capture/model assets
+capture/
+dist/
+logs/
+models/
+
+# Godot editor/import/cache state
+renderer/.godot/
+
+# Local IDE state and downloaded Godot binaries
+.vs/
+tools/.vs/
+tools/Godot_*.exe
+tools/Godot_*.sln
