@@ -70,6 +70,13 @@ class CrowdAuraConfigTest(unittest.TestCase):
         self.assertIn("aftereffect_waves", self.effects)
         self.assertTrue(self.effects["aftereffect_waves"]["enabled"])
 
+    def test_aura_fade_out_stays_in_a_range_that_leaves_no_restlicht(self):
+        aura = self.effects["crowd_aura"]
+        # Five fade time constants make the field visually gone. That has to be
+        # seconds, not the half minute the asymptotic strength tail produced.
+        self.assertLess(aura["fade_out_seconds"] * 5.0, 30.0)
+        self.assertGreater(aura["fade_out_seconds"], 0.0)
+
 
 class CrowdAuraRendererContractTest(unittest.TestCase):
     def setUp(self):
@@ -181,6 +188,28 @@ class CrowdAuraRendererContractTest(unittest.TestCase):
             "func _update_body_positions(",
             "func _active_body_count() -> int:",
             "set_shader_parameter(\"body_positions\", _body_positions)",
+        ):
+            self.assertIn(marker, self.aura)
+
+    def test_min_alpha_is_not_left_as_a_plate_after_the_group_left(self):
+        # `strength` only approaches zero asymptotically. With the old single
+        # gate the field therefore stayed at the `min_alpha` floor (0.05 in
+        # config.json, tau = fade_out_seconds = 4 s) for around 29 s and was
+        # then switched off abruptly by the step() gate - visible as a soft
+        # plate of light exactly where the last bodies had been. The presence
+        # gate multiplies the whole field, floor included, and reaches zero.
+        self.assertIn("uniform float presence", self.shader)
+        self.assertIn(
+            "mix(min_alpha, max_alpha, alpha) * step(0.0001, strength) * clamp(presence, 0.0, 1.0)",
+            self.shader,
+        )
+        for marker in (
+            "const PRESENCE_EPSILON",
+            "var _presence := 0.0",
+            "var has_group := count > 0 or not positions.is_empty()",
+            "_presence = _approach(",
+            "if not has_group and _presence < PRESENCE_EPSILON:",
+            '_material.set_shader_parameter("presence", _presence)',
         ):
             self.assertIn(marker, self.aura)
 

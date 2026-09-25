@@ -247,6 +247,11 @@ löse sich in der Gemeinschaft zu einem Brei auf. Deshalb gilt:
 
 - Das Aura-Feld wird rund um jeden Körper ausgespart (`body_clearance`,
   `gap_emphasis`) und betont den Zwischenraum.
+- Beim Fortgehen läuft die Aura vollständig auf null aus (`fade_out_seconds`,
+  einschließlich `min_alpha`). `min_alpha` ist eine Untergrenze **innerhalb**
+  einer anwesenden Gruppe, kein Restlicht an der Stelle, an der Menschen
+  standen; die Nachwirkung nach dem Gehen ist allein Sache von
+  `aftereffect_waves`.
 - Personengebundene Effekte werden bei wachsender Gruppe nur über Größe und
   Helligkeit zurückgenommen — **nie über die Deckkraft**. Ein Mensch darf in
   der Gruppe nicht durchsichtig werden.

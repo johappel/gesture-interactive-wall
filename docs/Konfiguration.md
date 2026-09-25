@@ -274,11 +274,11 @@ Bleiben eine qualitativ andere Antwort als Vorübergehen.
 | `min_people` | int | Personenzahl, ab der die Aura überhaupt zu entstehen beginnt. Kein harter Schalter: die Stärke wächst geglättet. |
 | `full_strength_people` | int | Personenzahl, ab der die Aura ihre volle Stärke erreicht. |
 | `fade_in_seconds` | Sekunden | Zeitkonstante des Aufbaus. |
-| `fade_out_seconds` | Sekunden | Zeitkonstante des Abbaus. |
+| `fade_out_seconds` | Sekunden | Zeitkonstante des Abbaus. Die Aura läuft danach vollständig auf null aus — auch `min_alpha`; es bleibt kein Restlicht an der letzten Körperposition stehen. |
 | `pulse_seconds` | Sekunden | Periodendauer des langsamen atmenden Pulsierens. |
 | `padding` | 0..1 | Zusätzliche Ausdehnung um die räumliche Streuung der Gruppe. |
 | `softness` | 0..1 | Weichheit des äußeren Randes. Größer = diffuser. |
-| `min_alpha` | 0..1 | Untere Deckkraft der Aura. |
+| `min_alpha` | 0..1 | Untere Deckkraft der Aura **innerhalb einer anwesenden Gruppe**. Kein Restlicht: beim Fortgehen läuft das ganze Feld auf null aus. |
 | `max_alpha` | 0..1 | Obere Deckkraft. Bewusst niedrig gehalten (Nachtprojektion). |
 | `energy_influence` | 0..1 | Wie stark `crowd.energy` die innere Bewegung moduliert. Beeinflusst **nie** die Sichtbarkeit. |
 | `individual_dimming_max` | 0..1 | Maximale Abschwächung personengebundener Effekte bei voller Aura. Bleibt unter 1, damit Personen sichtbar bleiben. |

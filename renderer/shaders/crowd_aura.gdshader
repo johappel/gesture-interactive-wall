@@ -20,6 +20,11 @@ uniform float aspect_ratio = 1.0;
 uniform float softness = 0.18;
 uniform float padding = 0.12;
 uniform float strength = 0.0;
+// Overall presence of the group (0..1). `strength` only approaches zero
+// asymptotically, so it alone would leave the field's alpha floor standing
+// exactly where the last bodies were seen. presence recedes with the group's
+// own fade time and reaches exactly zero.
+uniform float presence = 1.0;
 uniform float min_alpha = 0.04;
 uniform float max_alpha = 0.20;
 uniform float energy = 0.0;
@@ -82,7 +87,10 @@ void fragment() {
 	float breath = breathe(pulse_phase);
 	float energy_sway = mix(1.0, 0.75 + 0.5 * breath, clamp(energy_influence, 0.0, 1.0) * clamp(energy, 0.0, 1.0));
 	float alpha = clamp(field * strength * energy_sway, 0.0, 1.0);
-	alpha = mix(min_alpha, max_alpha, alpha) * step(0.0001, strength);
+	// Two gates on purpose: strength means "a group exists at all", presence
+	// means "that group is still here". min_alpha is a floor *inside* a present
+	// group, never a plate of light left behind after it has gone.
+	alpha = mix(min_alpha, max_alpha, alpha) * step(0.0001, strength) * clamp(presence, 0.0, 1.0);
 
 	// Warm in the shared centre, gently cooler toward the outer atmosphere.
 	vec3 colour = mix(warm_color.rgb, cool_color.rgb, clamp(radial * 0.85, 0.0, 1.0));

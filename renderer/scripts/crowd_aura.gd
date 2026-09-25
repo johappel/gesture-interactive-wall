@@ -20,6 +20,9 @@ const SHAPE_SMOOTHING_SECONDS := 1.6
 # A compact group still needs a readable field, so the hull never collapses to
 # a point.
 const MIN_HALF_EXTENT := Vector2(0.16, 0.14)
+# Below this the presence gate is snapped to an exact zero, so the field really
+# ends instead of ringing out in an endless asymptotic tail.
+const PRESENCE_EPSILON := 0.002
 # Must match MAX_BODIES in the shader. The array is fixed so no allocation is
 # needed per frame.
 const MAX_BODIES := 16
@@ -45,6 +48,10 @@ var _warm_color := "#ffe3a1"
 var _cool_color := "#5caeff"
 
 var _strength := 0.0
+# 0..1 "is the group still here". Multiplies the whole field, so `min_alpha`
+# cannot survive as a faint plate of light where the last bodies stood: the
+# field recedes with fade_out_seconds and reaches exactly zero.
+var _presence := 0.0
 var _centre := Vector2(0.5, 0.5)
 var _half_extent := Vector2(0.35, 0.30)
 var _energy := 0.0
@@ -84,6 +91,19 @@ func configure(config: Dictionary) -> void:
 # no one is present; the field then fades out smoothly instead of vanishing.
 func update_crowd(positions: Array, count: int, energy: float, delta: float) -> void:
 	_elapsed += delta
+	var has_group := count > 0 or not positions.is_empty()
+	# Presence is tracked separately from strength. `_strength` approaches its
+	# target asymptotically, so without this gate the exponential tail kept the
+	# min_alpha floor glowing for about half a minute after the last person had
+	# left - visible as a soft plate of light exactly where the bodies had been.
+	_presence = _approach(
+		_presence,
+		1.0 if has_group else 0.0,
+		_fade_in_seconds if has_group else _fade_out_seconds,
+		delta
+	)
+	if not has_group and _presence < PRESENCE_EPSILON:
+		_presence = 0.0
 	var target_strength := _target_strength(count)
 	var smoothing := _fade_in_seconds if target_strength > _strength else _fade_out_seconds
 	_strength = _approach(_strength, target_strength, smoothing, delta)
@@ -154,6 +174,7 @@ func _push_parameters() -> void:
 	_material.set_shader_parameter("softness", _softness)
 	_material.set_shader_parameter("padding", _padding)
 	_material.set_shader_parameter("strength", _strength)
+	_material.set_shader_parameter("presence", _presence)
 	_material.set_shader_parameter("min_alpha", _min_alpha)
 	_material.set_shader_parameter("max_alpha", _max_alpha)
 	_material.set_shader_parameter("energy", _energy)
