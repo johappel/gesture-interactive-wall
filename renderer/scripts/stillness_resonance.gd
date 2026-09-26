@@ -5,14 +5,17 @@ class_name StillnessResonance
 extends Node2D
 
 const GOLD := Color(1.0, 0.78, 0.38)
-const RIPPLE_COLOR := Color(0.79, 0.87, 1.0)
+# Warm, luminous light that streams outward - not a cold tint that would read as
+# a dark cloud on the facade. The rings are drawn additively so they add light.
+const RIPPLE_COLOR := Color(1.0, 0.9, 0.66)
 const RING_SEGMENTS := 64
-const RIPPLE_START_SCALE := 0.35
-const RIPPLE_END_SCALE := 2.8
-const RIPPLE_VISIBLE_AT := 0.18
+const RIPPLE_START_SCALE := 0.25
+const RIPPLE_END_SCALE := 4.2
+const RIPPLE_VISIBLE_AT := 0.14
 
 var _sprite: Sprite2D
 var _rings: Array[Line2D] = []
+var _additive := CanvasItemMaterial.new()
 var _presence_time := 0.0
 var _stillness := 0.0
 var _min_presence_seconds := 3.0
@@ -21,15 +24,19 @@ var _max_scale := 1.3
 var _ripple_duration_seconds := 5.8
 var _ripple_interval_seconds := 3.3
 var _ripple_radius := 48.0
-var _ripple_alpha := 0.22
+var _ripple_alpha := 0.45
 var _ripple_threshold := 0.32
 var _elapsed := 0.0
 var _ripple_elapsed := 0.0
 var _strength := 0.0
 
 func _ready() -> void:
+	# Additive blending turns every layer into added light instead of a
+	# translucent dark wash, so the resonance reads as glow, never as a cloud.
+	_additive.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
 	_sprite = Sprite2D.new()
 	_sprite.texture = _make_field_texture(256)
+	_sprite.material = _additive
 	add_child(_sprite)
 	_create_rings()
 	_refresh()
@@ -41,7 +48,7 @@ func configure(config: Dictionary) -> void:
 	_ripple_duration_seconds = max(float(config.get("ripple_duration_seconds", 5.8)), 0.5)
 	_ripple_interval_seconds = max(float(config.get("ripple_interval_seconds", 3.3)), 0.5)
 	_ripple_radius = max(float(config.get("ripple_radius", 48.0)), 4.0)
-	_ripple_alpha = clamp(float(config.get("ripple_alpha", 0.22)), 0.0, 1.0)
+	_ripple_alpha = clamp(float(config.get("ripple_alpha", 0.45)), 0.0, 1.0)
 	_ripple_threshold = clamp(float(config.get("ripple_threshold", 0.32)), 0.0, 1.0)
 	if is_node_ready():
 		_refresh()
@@ -68,10 +75,11 @@ func _process(delta: float) -> void:
 func _create_rings() -> void:
 	for index in range(2):
 		var ring := Line2D.new()
-		ring.width = 1.5
+		ring.width = 2.0
 		ring.default_color = RIPPLE_COLOR
 		ring.closed = true
 		ring.antialiased = true
+		ring.material = _additive
 		ring.z_index = 1
 		for point_index in range(RING_SEGMENTS):
 			var angle := TAU * float(point_index) / float(RING_SEGMENTS)
@@ -89,14 +97,16 @@ func _update_rings() -> void:
 		var envelope := 0.0
 		if can_emit:
 			if phase < RIPPLE_VISIBLE_AT:
-				envelope = lerp(0.0, 0.55, phase / RIPPLE_VISIBLE_AT)
+				envelope = lerp(0.0, 1.0, phase / RIPPLE_VISIBLE_AT)
 			else:
-				envelope = 0.55 * (1.0 - (phase - RIPPLE_VISIBLE_AT) / (1.0 - RIPPLE_VISIBLE_AT))
+				envelope = 1.0 - (phase - RIPPLE_VISIBLE_AT) / (1.0 - RIPPLE_VISIBLE_AT)
 		ring.visible = can_emit and envelope > 0.005
 		if not ring.visible:
 			continue
-		var scale_factor := lerp(RIPPLE_START_SCALE, RIPPLE_END_SCALE, phase)
+		var scale_factor: float = lerp(RIPPLE_START_SCALE, RIPPLE_END_SCALE, phase)
 		ring.scale = Vector2(scale_factor, scale_factor)
+		# White modulate keeps the warm hue from default_color while the alpha
+		# drives additive brightness: a bright crest that fades as it travels out.
 		ring.modulate = Color(1.0, 1.0, 1.0, envelope * _ripple_alpha * _strength)
 
 func _refresh() -> void:
@@ -110,7 +120,9 @@ func _refresh() -> void:
 	var pulse: float = 0.92 + 0.08 * sin(TAU * _elapsed / _pulse_seconds)
 	var radius: float = (0.45 + strength * _max_scale) * pulse
 	_sprite.scale = Vector2(radius, radius)
-	_sprite.modulate = Color(GOLD.r * 1.3, GOLD.g * 1.3, GOLD.b * 1.3, 0.10 + strength * 0.32)
+	# A restrained warm core condensation; kept low so the travelling rings, not
+	# a static field, carry the resonance.
+	_sprite.modulate = Color(GOLD.r * 1.4, GOLD.g * 1.4, GOLD.b * 1.4, 0.06 + strength * 0.16)
 
 func _make_field_texture(size: int) -> GradientTexture2D:
 	var gradient := Gradient.new()

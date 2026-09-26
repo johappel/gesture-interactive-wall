@@ -46,11 +46,11 @@ Installationen — bestehende bleiben unberührt.
 
 Drei Dateien sind dabei zu unterscheiden:
 
-| Datei | Rolle |
-|---|---|
-| `config/config.json` | **Laufzeitkonfiguration.** Wird von Capture und Renderer gelesen und von den Auswahlskripten (`camera-select.ps1`, `monitor-select.ps1`) aktualisiert. |
-| `config/config.json.template` | Vorlage, die der Installer für **frische** Installationen anlegt. Entsteht beim Paketbau aus einer Config und ist nicht versioniert. |
-| `config/config.example.json` | Versionierte **Referenz** mit generischen Standardwerten. Wird zur Laufzeit **nie** gelesen. Für einen neuen Stand kopieren und danach Kamera und Bildschirme wählen. |
+| Datei                         | Rolle                                                                                                                                                                 |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `config/config.json`          | **Laufzeitkonfiguration.** Wird von Capture und Renderer gelesen und von den Auswahlskripten (`camera-select.ps1`, `monitor-select.ps1`) aktualisiert.                |
+| `config/config.json.template` | Vorlage, die der Installer für **frische** Installationen anlegt. Entsteht beim Paketbau aus einer Config und ist nicht versioniert.                                  |
+| `config/config.example.json`  | Versionierte **Referenz** mit generischen Standardwerten. Wird zur Laufzeit **nie** gelesen. Für einen neuen Stand kopieren und danach Kamera und Bildschirme wählen. |
 
 `config/local.json` wird von Installation und Update zusätzlich als lokaler
 Zustand behandelt: sie wird nie überschrieben oder mitgeliefert und vor
@@ -60,18 +60,18 @@ Zustand behandelt: sie wird nie überschrieben oder mitgeliefert und vor
 
 ## `camera` — Kameraquelle (Capture)
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `index` | int | OpenCV-Geräteindex. Unter Windows ist er **nicht stabil**: virtuelle Kameras (OBS, Handy-Webcam) und ein USB-Portwechsel verschieben ihn. Bei Backend `any` kodiert OpenCV das Backend in die hohen Stellen (z. B. `701` = DirectShow-Kamera 1). |
-| `width`, `height` | int | Angeforderte Auflösung. Die Kamera kann abweichende Werte liefern. Höhere Auflösung = bessere Pose-Erkennung, aber mehr CPU-Last. |
-| `fps` | int | Angeforderte Bildrate. Wird nur verwendet, wenn die Kamera sie unterstützt. |
-| `fourcc` | string | Angefordertes Pixelformat (Vier-Zeichen-Code, z. B. `"MJPG"`). `MJPG` erlaubt höhere Auflösungen über USB, weil weniger Daten anfallen. |
-| `latest_frame_wins` | bool | **Empfohlen `true`.** Ein Grab-Thread hält nur das jeweils neueste Bild; ältere Bilder werden verworfen (`dropped` in der Diagnose). Das verhindert, dass die sichtbare Pose hinter der Realität herhinkt, wenn die Inferenz langsamer ist als die Kamera. `false` liest direkt im Hauptthread und kann einen wachsenden Rückstand aufbauen. |
-| `flip` | bool | Spiegelt das Bild horizontal. Sinnvoll bei frontaler Webcam, damit Bewegung und Fassade nicht seitenverkehrt wirken. |
-| `backend` | `"any"` \| `"dshow"` \| `"msmf"` | OpenCV-Backend. `dshow` findet physische Webcams unter Windows am zuverlässigsten; `any` lässt OpenCV wählen. |
-| `name` | string | Menschenlesbarer Kameraname (z. B. `"Logitech StreamCam"`). Dient der Wiedererkennung nach Indexwechsel. |
-| `device_path` | string | Windows-Gerätepfad. **Präziseste** Identität: bleibt auch bei Index- und Portwechsel erhalten. |
-| `vid`, `pid` | string | USB-Hersteller-/Produkt-ID (Hex). Zweitbeste Identität, wenn der Gerätepfad fehlt. |
+| Parameter           | Typ                              | Wirkung                                                                                                                                                                                                                                                                                                                                      |
+| ------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index`             | int                              | OpenCV-Geräteindex. Unter Windows ist er **nicht stabil**: virtuelle Kameras (OBS, Handy-Webcam) und ein USB-Portwechsel verschieben ihn. Bei Backend `any` kodiert OpenCV das Backend in die hohen Stellen (z. B. `701` = DirectShow-Kamera 1).                                                                                             |
+| `width`, `height`   | int                              | Angeforderte Auflösung. Die Kamera kann abweichende Werte liefern. Höhere Auflösung = bessere Pose-Erkennung, aber mehr CPU-Last.                                                                                                                                                                                                            |
+| `fps`               | int                              | Angeforderte Bildrate. Wird nur verwendet, wenn die Kamera sie unterstützt.                                                                                                                                                                                                                                                                  |
+| `fourcc`            | string                           | Angefordertes Pixelformat (Vier-Zeichen-Code, z. B. `"MJPG"`). `MJPG` erlaubt höhere Auflösungen über USB, weil weniger Daten anfallen.                                                                                                                                                                                                      |
+| `latest_frame_wins` | bool                             | **Empfohlen `true`.** Ein Grab-Thread hält nur das jeweils neueste Bild; ältere Bilder werden verworfen (`dropped` in der Diagnose). Das verhindert, dass die sichtbare Pose hinter der Realität herhinkt, wenn die Inferenz langsamer ist als die Kamera. `false` liest direkt im Hauptthread und kann einen wachsenden Rückstand aufbauen. |
+| `flip`              | bool                             | Spiegelt das Bild horizontal. Sinnvoll bei frontaler Webcam, damit Bewegung und Fassade nicht seitenverkehrt wirken.                                                                                                                                                                                                                         |
+| `backend`           | `"any"` \| `"dshow"` \| `"msmf"` | OpenCV-Backend. `dshow` findet physische Webcams unter Windows am zuverlässigsten; `any` lässt OpenCV wählen.                                                                                                                                                                                                                                |
+| `name`              | string                           | Menschenlesbarer Kameraname (z. B. `"Logitech StreamCam"`). Dient der Wiedererkennung nach Indexwechsel.                                                                                                                                                                                                                                     |
+| `device_path`       | string                           | Windows-Gerätepfad. **Präziseste** Identität: bleibt auch bei Index- und Portwechsel erhalten.                                                                                                                                                                                                                                               |
+| `vid`, `pid`        | string                           | USB-Hersteller-/Produkt-ID (Hex). Zweitbeste Identität, wenn der Gerätepfad fehlt.                                                                                                                                                                                                                                                           |
 
 **Auflösungsreihenfolge der Kameraauswahl** (`capture/camera.py`):
 `device_path` → `vid`/`pid` → `name` → `index`+`backend`.
@@ -100,10 +100,10 @@ Kombination.
 
 ## `network` — Übertragung Capture → Renderer
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `host` | string | Zieladresse. Muss `127.0.0.1` bleiben — es verlassen nur abstrakte Zahlen den Rechner (Datenschutz-KO-Kriterium). |
-| `port` | int | UDP-Port. Capture sendet dorthin, der Renderer bindet denselben Port. Beide Seiten müssen übereinstimmen. |
+| Parameter | Typ    | Wirkung                                                                                                           |
+| --------- | ------ | ----------------------------------------------------------------------------------------------------------------- |
+| `host`    | string | Zieladresse. Muss `127.0.0.1` bleiben — es verlassen nur abstrakte Zahlen den Rechner (Datenschutz-KO-Kriterium). |
+| `port`    | int    | UDP-Port. Capture sendet dorthin, der Renderer bindet denselben Port. Beide Seiten müssen übereinstimmen.         |
 
 Es wird **ein JSON-Paket pro Frame** gesendet, ohne Bilder oder Videos. Das
 Datenformat ist in `docs/protocol.md` verbindlich beschrieben.
@@ -121,17 +121,17 @@ Simulator mit seinem Startszenario weiter.
 
 ## `pose` — Pose-Erkennung (Capture)
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `model_path` | string | Pfad zum MediaPipe-PoseLandmarker-Modell (`.task`), relativ zum Projektwurzelverzeichnis. Fehlt die Datei, fällt Capture auf Einzelperson-Tracking zurück (Legacy-API) und weist im Log darauf hin; dann ist nur **eine** Person erfassbar und `num_poses` wirkungslos. Modell holen: `python capture/download_model.py`. |
-| `num_poses` | int | Maximale Anzahl gleichzeitig erkannter Personen. Höher = mehr Rechenlast. Zielgröße der Installation: 2–20 Personen. Nicht pauschal hochsetzen, sondern mit `python -m capture.bench` messen. |
-| `min_detection_confidence` | 0..1 | Schwelle für eine **neue** Erkennung (`min_pose_detection_confidence`). Niedriger = mehr (auch falsche) Treffer, höher = stabiler, aber träger beim Erfassen neuer Personen. |
-| `min_presence_confidence` | 0..1 | Schwelle dafür, dass eine erkannte Pose als vorhanden gilt (`min_pose_presence_confidence`). Fehlt der Schlüssel, gilt `min_detection_confidence`. |
-| `min_tracking_confidence` | 0..1 | Schwelle für die Weiterverfolgung einer bereits erkannten Pose. Fehlt der Schlüssel, gilt `min_detection_confidence`. |
-| `min_torso_visibility` | 0..1 | Qualitätsschwelle: Schultern und Hüften müssen mindestens so sichtbar sein. Filtert Objektkanten, die MediaPipe gelegentlich als Pose deutet. Bewusst klein und **nicht biometrisch**. Ein einzelner Torso-Punkt darf etwas außerhalb des Bildes liegen, solange die Torsomitte im Bild bleibt. |
-| `inference_width`, `inference_height` | int | Auflösung, auf die das Kamerabild **vor** der Inferenz verkleinert wird. `0` = keine Verkleinerung (volles Kamerabild). Normalisierte Koordinaten bleiben gültig, deshalb ist Downscaling der erste Hebel gegen Latenz — ein aktuelles Bild ist wichtiger als ein scharfes. |
-| `active_region.enabled` | bool | Schaltet einen rechteckigen Interaktionsbereich frei. Nur wenn `true`, wird der Bereich ausgewertet. |
-| `active_region.x_min/x_max/y_min/y_max` | 0..1 | Grenzen des Bereichs in normierten Bildkoordinaten. Nur Torsomitten innerhalb des Rechtecks werden übernommen. Ungültige Werte (`x_min >= x_max` usw.) verwerfen **alle** Personen. |
+| Parameter                               | Typ    | Wirkung                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model_path`                            | string | Pfad zum MediaPipe-PoseLandmarker-Modell (`.task`), relativ zum Projektwurzelverzeichnis. Fehlt die Datei, fällt Capture auf Einzelperson-Tracking zurück (Legacy-API) und weist im Log darauf hin; dann ist nur **eine** Person erfassbar und `num_poses` wirkungslos. Modell holen: `python capture/download_model.py`. |
+| `num_poses`                             | int    | Maximale Anzahl gleichzeitig erkannter Personen. Höher = mehr Rechenlast. Zielgröße der Installation: 2–20 Personen. Nicht pauschal hochsetzen, sondern mit `python -m capture.bench` messen.                                                                                                                             |
+| `min_detection_confidence`              | 0..1   | Schwelle für eine **neue** Erkennung (`min_pose_detection_confidence`). Niedriger = mehr (auch falsche) Treffer, höher = stabiler, aber träger beim Erfassen neuer Personen.                                                                                                                                              |
+| `min_presence_confidence`               | 0..1   | Schwelle dafür, dass eine erkannte Pose als vorhanden gilt (`min_pose_presence_confidence`). Fehlt der Schlüssel, gilt `min_detection_confidence`.                                                                                                                                                                        |
+| `min_tracking_confidence`               | 0..1   | Schwelle für die Weiterverfolgung einer bereits erkannten Pose. Fehlt der Schlüssel, gilt `min_detection_confidence`.                                                                                                                                                                                                     |
+| `min_torso_visibility`                  | 0..1   | Qualitätsschwelle: Schultern und Hüften müssen mindestens so sichtbar sein. Filtert Objektkanten, die MediaPipe gelegentlich als Pose deutet. Bewusst klein und **nicht biometrisch**. Ein einzelner Torso-Punkt darf etwas außerhalb des Bildes liegen, solange die Torsomitte im Bild bleibt.                           |
+| `inference_width`, `inference_height`   | int    | Auflösung, auf die das Kamerabild **vor** der Inferenz verkleinert wird. `0` = keine Verkleinerung (volles Kamerabild). Normalisierte Koordinaten bleiben gültig, deshalb ist Downscaling der erste Hebel gegen Latenz — ein aktuelles Bild ist wichtiger als ein scharfes.                                               |
+| `active_region.enabled`                 | bool   | Schaltet einen rechteckigen Interaktionsbereich frei. Nur wenn `true`, wird der Bereich ausgewertet.                                                                                                                                                                                                                      |
+| `active_region.x_min/x_max/y_min/y_max` | 0..1   | Grenzen des Bereichs in normierten Bildkoordinaten. Nur Torsomitten innerhalb des Rechtecks werden übernommen. Ungültige Werte (`x_min >= x_max` usw.) verwerfen **alle** Personen.                                                                                                                                       |
 
 Der aktive Bereich ist das Mittel, um nur die beleuchtete Interaktionszone vor
 der Fassade zu erfassen und Passant:innen am Rand auszublenden.
@@ -151,28 +151,28 @@ Reine Mathematik, ohne ML-Abhängigkeit — vollständig unit-testbar.
 
 ### Intensität
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `intensity_scale` | float | Verstärkung der gemessenen Bewegung (Körper- plus Handgelenkgeschwindigkeit). Höher = schon kleine Bewegungen wirken intensiv. |
-| `intensity_smoothing` | 0..1 | Glättungsfaktor pro Frame. Klein = träge und ruhig, groß = schnell und zappelig. |
+| Parameter             | Typ   | Wirkung                                                                                                                        |
+| --------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `intensity_scale`     | float | Verstärkung der gemessenen Bewegung (Körper- plus Handgelenkgeschwindigkeit). Höher = schon kleine Bewegungen wirken intensiv. |
+| `intensity_smoothing` | 0..1  | Glättungsfaktor pro Frame. Klein = träge und ruhig, groß = schnell und zappelig.                                               |
 
 ### Nähe und Beziehung
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
+| Parameter             | Typ  | Wirkung                                                                                                                                                                                                                                                                 |
+| --------------------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `proximity_threshold` | 0..1 | Abstand, unter dem zwei Personen als „nah“ gelten und ein `pair` bilden. Größer = mehr Brücken. Muss deutlich über der realen Pose-Ungenauigkeit liegen (Pose-Zentren schwanken um einige Prozent des Bildes), sonst springt die Brücke zwischen benachbarten Personen. |
 
 ### Track-Lebenszyklus
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `track_max_dist` | 0..1 | Maximaler Abstand zwischen Vorhersage und neuer Erkennung, um sie demselben Track zuzuordnen. Zu klein = ID-Wechsel, zu groß = Verwechslung benachbarter Personen. Die Vorhersage nutzt die letzte Geschwindigkeit, aber höchstens die letzten 0.2 s — danach zählt wieder die zuletzt beobachtete Position. |
-| `track_timeout` | Sekunden | Veralteter Name für die Grace-Period; wird nur genutzt, wenn `track_grace_period` fehlt. Neue Configs setzen nur `track_grace_period`. |
-| `track_grace_period` | Sekunden | Wie lange ein kurz nicht erkannter Track intern erhalten bleibt und wieder zugeordnet werden kann. In dieser Zeit erscheint er **nicht** in `bodies`/`pairs`/`crowd`, nur in `tracking.temporarily_missing`. Verhindert, dass eine kurze Verdeckung als Austritt gilt. Sie ist **kein** Anzeigewert: wie lange die Person sichtbar nachklingt, bestimmt `renderer.missing_hold_seconds`. |
-| `track_confirmation_frames` | int | Anzahl Frames, bevor ein Track sichtbar wird und ein `departure` auslösen darf. Filtert Ein-Frame-Geister. Bei 30 FPS entsprechen 4 Frames etwa 0.13 s. |
-| `position_smoothing` | 0..1 | Glättung der **ausgegebenen** Position (EMA-Anteil pro erkanntem Frame). `1.0` gibt die rohe Torsomitte weiter, kleinere Werte dämpfen Pose-Zittern. Nach einem kurzen Ausfall springt die Position auf den frischen Messwert, statt über die Lücke zu gleiten. Betrifft nur die ausgegebene Position, nicht Matching oder Austrittsprüfung. |
-| `departure_edge_margin` | 0..1 | Randzone, in der ein Track als möglicher Austritt gilt. |
-| `departure_min_speed` | float | Mindestgeschwindigkeit **nach außen** durch denselben Rand. Beide Bedingungen müssen zutreffen — Nähe zum Rand allein genügt nicht, damit eine Verdeckung am Rand kein ästhetisch bedeutsames Ereignis wird. |
+| Parameter                   | Typ      | Wirkung                                                                                                                                                                                                                                                                                                                                                                                  |
+| --------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `track_max_dist`            | 0..1     | Maximaler Abstand zwischen Vorhersage und neuer Erkennung, um sie demselben Track zuzuordnen. Zu klein = ID-Wechsel, zu groß = Verwechslung benachbarter Personen. Die Vorhersage nutzt die letzte Geschwindigkeit, aber höchstens die letzten 0.2 s — danach zählt wieder die zuletzt beobachtete Position.                                                                             |
+| `track_timeout`             | Sekunden | Veralteter Name für die Grace-Period; wird nur genutzt, wenn `track_grace_period` fehlt. Neue Configs setzen nur `track_grace_period`.                                                                                                                                                                                                                                                   |
+| `track_grace_period`        | Sekunden | Wie lange ein kurz nicht erkannter Track intern erhalten bleibt und wieder zugeordnet werden kann. In dieser Zeit erscheint er **nicht** in `bodies`/`pairs`/`crowd`, nur in `tracking.temporarily_missing`. Verhindert, dass eine kurze Verdeckung als Austritt gilt. Sie ist **kein** Anzeigewert: wie lange die Person sichtbar nachklingt, bestimmt `renderer.missing_hold_seconds`. |
+| `track_confirmation_frames` | int      | Anzahl Frames, bevor ein Track sichtbar wird und ein `departure` auslösen darf. Filtert Ein-Frame-Geister. Bei 30 FPS entsprechen 4 Frames etwa 0.13 s.                                                                                                                                                                                                                                  |
+| `position_smoothing`        | 0..1     | Glättung der **ausgegebenen** Position (EMA-Anteil pro erkanntem Frame). `1.0` gibt die rohe Torsomitte weiter, kleinere Werte dämpfen Pose-Zittern. Nach einem kurzen Ausfall springt die Position auf den frischen Messwert, statt über die Lücke zu gleiten. Betrifft nur die ausgegebene Position, nicht Matching oder Austrittsprüfung.                                             |
+| `departure_edge_margin`     | 0..1     | Randzone, in der ein Track als möglicher Austritt gilt.                                                                                                                                                                                                                                                                                                                                  |
+| `departure_min_speed`       | float    | Mindestgeschwindigkeit **nach außen** durch denselben Rand. Beide Bedingungen müssen zutreffen — Nähe zum Rand allein genügt nicht, damit eine Verdeckung am Rand kein ästhetisch bedeutsames Ereignis wird.                                                                                                                                                                             |
 
 **Wann ein `departure` entsteht (wichtig für die Erwartung):** Geprüft wird die
 **zuletzt beobachtete** Geschwindigkeit des Tracks, ausgewertet erst nach Ablauf
@@ -186,11 +186,11 @@ grundsätzlich kein `departure`. Die abgenommenen Fälle stehen in
 
 ### Ruhe (Stillness)
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `stillness_speed_threshold` | float | Geschwindigkeit, unterhalb derer eine Person als „ruhig“ gilt. |
-| `stillness_rise_seconds` | Sekunden | Zeitkonstante, mit der `stillness` bei Ruhe ansteigt. Größer = Verweilen muss länger dauern, bevor es sichtbar wird. |
-| `stillness_fall_seconds` | Sekunden | Zeitkonstante, mit der `stillness` bei Bewegung wieder abfällt. Klein = Ruhe „bricht“ schnell ab. |
+| Parameter                   | Typ      | Wirkung                                                                                                              |
+| --------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
+| `stillness_speed_threshold` | float    | Geschwindigkeit, unterhalb derer eine Person als „ruhig“ gilt.                                                       |
+| `stillness_rise_seconds`    | Sekunden | Zeitkonstante, mit der `stillness` bei Ruhe ansteigt. Größer = Verweilen muss länger dauern, bevor es sichtbar wird. |
+| `stillness_fall_seconds`    | Sekunden | Zeitkonstante, mit der `stillness` bei Bewegung wieder abfällt. Klein = Ruhe „bricht“ schnell ab.                    |
 
 `stillness` ist ein kontinuierlicher, semantikfreier Wert (0 = zuletzt bewegt,
 1 = über Zeit ruhig). Er ist die Grundlage dafür, dass **Bleiben eine Antwort
@@ -213,25 +213,25 @@ Renderer selbst schreibt **nie** `station` zurück in die Datei.
 
 ### `station.facade` — Hauptausgabe
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `screen` | int | Bildschirmindex als **Rückfall**. Der Renderer sucht zuerst über `display`; `screen` greift nur, wenn die Signatur nicht mehr passt (mit Warnung im Log). Ist auch der Index ungültig, wird der Hauptbildschirm verwendet. |
-| `display` | object | Gespeicherte Position und Auflösung der gewählten Ausgabe (`x`, `y`, `width`, `height`, `primary`, zusätzlich `relative_x`/`relative_y` zum Hauptbildschirm). Der Renderer nutzt zuerst die absolute Signatur, dann die relative, damit eine geänderte Windows-Reihenfolge oder ein abweichender virtueller Ursprung nicht stillschweigend auf den falschen Bildschirm zeigt. Fehlt die Signatur oder ist sie unvollständig, entscheidet `screen`. |
-| `fullscreen` | bool | Vollbild auf dem gewählten Bildschirm. |
+| Parameter    | Typ    | Wirkung                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ------------ | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `screen`     | int    | Bildschirmindex als **Rückfall**. Der Renderer sucht zuerst über `display`; `screen` greift nur, wenn die Signatur nicht mehr passt (mit Warnung im Log). Ist auch der Index ungültig, wird der Hauptbildschirm verwendet.                                                                                                                                                                                                                         |
+| `display`    | object | Gespeicherte Position und Auflösung der gewählten Ausgabe (`x`, `y`, `width`, `height`, `primary`, zusätzlich `relative_x`/`relative_y` zum Hauptbildschirm). Der Renderer nutzt zuerst die absolute Signatur, dann die relative, damit eine geänderte Windows-Reihenfolge oder ein abweichender virtueller Ursprung nicht stillschweigend auf den falschen Bildschirm zeigt. Fehlt die Signatur oder ist sie unvollständig, entscheidet `screen`. |
+| `fullscreen` | bool   | Vollbild auf dem gewählten Bildschirm.                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 ### `station.monitor` — Nahraum der Rückkopplung
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `enabled` | bool | Schaltet den Publikumsmonitor. |
-| `mode` | string | Zielmodus ist `"facade_preview"`: dieselbe bzw. eng verwandte Resonanzdarstellung wie auf der Fassade. Unbekannte Modi lassen den Monitor aus. |
-| `show_camera_image` | bool | **Im Publikumsbetrieb `false`.** Der Renderer ignoriert `true` und warnt; das rohe Kamerabild bleibt verborgen. |
-| `title` | string | Fenstertitel. |
-| `screen` | int | Bildschirmindex des Monitors. Muss sich von `facade.screen` unterscheiden, sonst bleibt der Monitor aus. |
-| `display` | object | Gespeicherte Bildschirm-Signatur wie bei `station.facade`. Wird über **WIRKLICHT Nahraum-Monitor waehlen** gesetzt. |
-| `fullscreen` | bool | Vollbild oder Fenster. |
-| `width`, `height` | int | Fenstergröße im Fenstermodus. |
-| `prompt_font_size` | int | Schriftgröße des Sprachimpulses auf dem Monitor. |
+| Parameter           | Typ    | Wirkung                                                                                                                                        |
+| ------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`           | bool   | Schaltet den Publikumsmonitor.                                                                                                                 |
+| `mode`              | string | Zielmodus ist `"facade_preview"`: dieselbe bzw. eng verwandte Resonanzdarstellung wie auf der Fassade. Unbekannte Modi lassen den Monitor aus. |
+| `show_camera_image` | bool   | **Im Publikumsbetrieb `false`.** Der Renderer ignoriert `true` und warnt; das rohe Kamerabild bleibt verborgen.                                |
+| `title`             | string | Fenstertitel.                                                                                                                                  |
+| `screen`            | int    | Bildschirmindex des Monitors. Muss sich von `facade.screen` unterscheiden, sonst bleibt der Monitor aus.                                       |
+| `display`           | object | Gespeicherte Bildschirm-Signatur wie bei `station.facade`. Wird über **WIRKLICHT Nahraum-Monitor waehlen** gesetzt.                            |
+| `fullscreen`        | bool   | Vollbild oder Fenster.                                                                                                                         |
+| `width`, `height`   | int    | Fenstergröße im Fenstermodus.                                                                                                                  |
+| `prompt_font_size`  | int    | Schriftgröße des Sprachimpulses auf dem Monitor.                                                                                               |
 
 Der Monitor zeigt eine Vorschau der Fassadendarstellung, damit Menschen die
 Kopplung **Ich ↔ Resonanz ↔ Fassade** erkennen. Er darf die Fassade nicht als
@@ -249,17 +249,17 @@ ein anderer `mode`, nur ein erkannter Bildschirm, oder `screen` gleich
 
 ### `station.prompt` — Kurzer Sprachimpuls
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `enabled` | bool | Schaltet den Sprachimpuls. |
-| `source` | string | Pfad zur Promptdatei. Absolute Pfade und `..` werden abgelehnt. |
-| `prompt_key` | string | Einzelner Fallback-Key, falls `prompt_keys` leer oder ungültig ist. |
-| `prompt_keys` | string[] | Liste der kuratierten Keys, die im Wechsel gezeigt werden. Unbekannte Keys werden ignoriert. |
-| `fade_in_seconds` | Sekunden | Einblenddauer des Textes. |
-| `fade_out_seconds` | Sekunden | Ausblenddauer. |
-| `underline_seconds` | Sekunden | Dauer, in der die Lichtspur unter dem Text aufgebaut wird. |
-| `star_tail_fade_seconds` | Sekunden | Nachleuchten der Lichtspur nach dem Aufbau. |
-| `idle_cycle_seconds` | Sekunden | Ruhezeit ohne Personen, nach der der nächste Impuls angeboten wird. |
+| Parameter                | Typ      | Wirkung                                                                                      |
+| ------------------------ | -------- | -------------------------------------------------------------------------------------------- |
+| `enabled`                | bool     | Schaltet den Sprachimpuls.                                                                   |
+| `source`                 | string   | Pfad zur Promptdatei. Absolute Pfade und `..` werden abgelehnt.                              |
+| `prompt_key`             | string   | Einzelner Fallback-Key, falls `prompt_keys` leer oder ungültig ist.                          |
+| `prompt_keys`            | string[] | Liste der kuratierten Keys, die im Wechsel gezeigt werden. Unbekannte Keys werden ignoriert. |
+| `fade_in_seconds`        | Sekunden | Einblenddauer des Textes.                                                                    |
+| `fade_out_seconds`       | Sekunden | Ausblenddauer.                                                                               |
+| `underline_seconds`      | Sekunden | Dauer, in der die Lichtspur unter dem Text aufgebaut wird.                                   |
+| `star_tail_fade_seconds` | Sekunden | Nachleuchten der Lichtspur nach dem Aufbau.                                                  |
+| `idle_cycle_seconds`     | Sekunden | Ruhezeit ohne Personen, nach der der nächste Impuls angeboten wird.                          |
 
 **Verhalten:** Der Impuls erscheint nur, wenn **niemand** erfasst ist. Sobald
 Personen da sind, blendet er aus. Der Wechsel erfolgt nie in place: der alte
@@ -278,10 +278,10 @@ Trennt **Tracking-Persistenz** (intern, `features.track_grace_period`) von
 nicht mehr erkannt wird. Verbindliche Regel: `tracking persistence ≠ visual
 persistence` (siehe `AGENTS.md`, `docs/protocol.md`).
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `missing_hold_seconds` | Sekunden | Wie lange ein kurz nicht erkannter, aber in `tracking.temporarily_missing` gemeldeter Körper seinen zuletzt sichtbaren Zustand hält. Danach beginnt das Ausblenden. |
-| `missing_fade_rate` | 1/Sekunden | Ausblendrate des gehaltenen Lichts: `Deckkraft -= delta × missing_fade_rate`. Nach `1 / missing_fade_rate` Sekunden ist der Körper vollständig aus. |
+| Parameter              | Typ        | Wirkung                                                                                                                                                             |
+| ---------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `missing_hold_seconds` | Sekunden   | Wie lange ein kurz nicht erkannter, aber in `tracking.temporarily_missing` gemeldeter Körper seinen zuletzt sichtbaren Zustand hält. Danach beginnt das Ausblenden. |
+| `missing_fade_rate`    | 1/Sekunden | Ausblendrate des gehaltenen Lichts: `Deckkraft -= delta × missing_fade_rate`. Nach `1 / missing_fade_rate` Sekunden ist der Körper vollständig aus.                 |
 
 Zusammenspiel und Invarianten:
 
@@ -303,9 +303,9 @@ Zusammenspiel und Invarianten:
 
 ### Globale Schalter
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `enabled` | bool | Hauptschalter. `false` schaltet **alle** Effektfamilien ab, ohne sie zu erzeugen oder zu simulieren. |
+| Parameter      | Typ  | Wirkung                                                                                                                     |
+| -------------- | ---- | --------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`      | bool | Hauptschalter. `false` schaltet **alle** Effektfamilien ab, ohne sie zu erzeugen oder zu simulieren.                        |
 | `minimal_mode` | bool | Live-Fallback: lässt nur `body_glow`, `trails` und `proximity_bridges` aktiv und stellt so einen stabilen Grundzustand her. |
 
 Fehlt der `enabled`-Schlüssel innerhalb einer Familie, gilt der jeweilige
@@ -321,8 +321,8 @@ Debug-Overlay (F3) schreibt ausschließlich `effects` zurück.
 
 ### `body_glow` — Lichtkörper
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
+| Parameter | Typ  | Wirkung                       |
+| --------- | ---- | ----------------------------- |
 | `enabled` | bool | Zeigt den leuchtenden Körper. |
 
 Größe folgt `openness` und `intensity`, Farbe wandert mit `intensity` von Gold
@@ -333,11 +333,11 @@ Mensch in der Gruppe nicht durchsichtig wird.
 
 ### `trails` — Bewegungsspur
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `enabled` | bool | Zeigt die Spur. Beim Abschalten werden vorhandene Punkte gelöscht. |
-| `max_points` | int | Maximale Anzahl gespeicherter Spurpunkte. Mehr = längere Spur, mehr Speicher/Zeichenaufwand. |
-| `width` | float | Linienbreite der Spur. |
+| Parameter    | Typ   | Wirkung                                                                                      |
+| ------------ | ----- | -------------------------------------------------------------------------------------------- |
+| `enabled`    | bool  | Zeigt die Spur. Beim Abschalten werden vorhandene Punkte gelöscht.                           |
+| `max_points` | int   | Maximale Anzahl gespeicherter Spurpunkte. Mehr = längere Spur, mehr Speicher/Zeichenaufwand. |
+| `width`      | float | Linienbreite der Spur.                                                                       |
 
 Die Spur gehört zum Lichtkörper und wird pro gezeichnetem Frame um einen Punkt
 verlängert; ihre sichtbare Länge ist deshalb `max_points` × Frameabstand (bei
@@ -346,13 +346,13 @@ des kurzen Nachhaltens nach einem Trackingverlust (`renderer.missing_*`).
 
 ### `sparks` — Funken
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `enabled` | bool | Zeigt Funken. |
-| `amount_min`, `amount_max` | int | Partikelanzahl bei minimaler bzw. maximaler Intensität (dazwischen interpoliert). |
-| `lifetime` | Sekunden | Lebensdauer eines Partikels. |
-| `velocity_min`, `velocity_max` | float | Startgeschwindigkeit bei minimaler bzw. maximaler Intensität. |
-| `activation_intensity` | 0..1 | Schwelle, ab der Funken überhaupt entstehen. Verhindert, dass ein kurzer Kamera-Geist als Partikelblitz aufleuchtet. |
+| Parameter                      | Typ      | Wirkung                                                                                                              |
+| ------------------------------ | -------- | -------------------------------------------------------------------------------------------------------------------- |
+| `enabled`                      | bool     | Zeigt Funken.                                                                                                        |
+| `amount_min`, `amount_max`     | int      | Partikelanzahl bei minimaler bzw. maximaler Intensität (dazwischen interpoliert).                                    |
+| `lifetime`                     | Sekunden | Lebensdauer eines Partikels.                                                                                         |
+| `velocity_min`, `velocity_max` | float    | Startgeschwindigkeit bei minimaler bzw. maximaler Intensität.                                                        |
+| `activation_intensity`         | 0..1     | Schwelle, ab der Funken überhaupt entstehen. Verhindert, dass ein kurzer Kamera-Geist als Partikelblitz aufleuchtet. |
 
 Die Anzahl wird zwischen `amount_min` und `amount_max` mit der beobachteten
 Intensität interpoliert und zusätzlich mit der Gruppengewichtung multipliziert
@@ -362,22 +362,22 @@ ein Lichtkörper ohne Partikel.
 
 ### `proximity_bridges` — Nähe-Brücken
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `enabled` | bool | Zeigt die Nähe-Brücke. Beim Abschalten wird der Effekt-Node nicht erzeugt und nicht simuliert; `pairs` werden verworfen. |
-| `orbs_min`, `orbs_max` | int | Anzahl schwebender Feuerkugeln bei geringer bzw. hoher Nähe (dazwischen interpoliert). Praktische Obergrenze ist 24 (fester Seed-Pool); darüber wiederholen sich die Bahnen. |
-| `travel` | 0..1 | Wie weit die Kugeln bei Annäherung zwischen beiden Personen pendeln. Bei Zusammenstehen kollabiert der Weg, die Kugeln verdichten sich. |
-| `speed` | float | Pendelgeschwindigkeit der Kugeln. |
-| `orb_size` | float | Basisgröße einer Kugel in Pixeln. |
-| `wobble` | 0..1 | Seitliches Schweben quer zur Verbindung (Anteil der Verbindungslänge). |
-| `max_alpha` | 0..1 | Maximale Helligkeit der Kugeln (additiv). |
-| `field_strength` | 0..1 | Stärke des verdichteten gemeinsamen Paar-Felds, sobald zwei Personen zusammen stehen. |
-| `fade_seconds` | Sekunden | Ein-/Ausblendzeit, wenn ein Paar entsteht oder auseinandergeht. |
+| Parameter               | Typ      | Wirkung                                                                                                                                                                             |
+| ----------------------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`               | bool     | Zeigt die Nähe-Brücke. Beim Abschalten wird der Effekt-Node nicht erzeugt und nicht simuliert; `pairs` werden verworfen.                                                            |
+| `orbs_min`, `orbs_max`  | int      | Anzahl schwebender Feuerkugeln bei geringer bzw. hoher Nähe (dazwischen interpoliert). Praktische Obergrenze ist 24 (fester Seed-Pool); darüber wiederholen sich die Bahnen.        |
+| `travel`                | 0..1     | Wie weit die Kugeln bei Annäherung zwischen beiden Personen pendeln. Bei Zusammenstehen kollabiert der Weg, die Kugeln verdichten sich.                                             |
+| `speed`                 | float    | Pendelgeschwindigkeit der Kugeln.                                                                                                                                                   |
+| `orb_size`              | float    | Basisgröße einer Kugel in Pixeln.                                                                                                                                                   |
+| `wobble`                | 0..1     | Seitliches Schweben quer zur Verbindung (Anteil der Verbindungslänge).                                                                                                              |
+| `max_alpha`             | 0..1     | Maximale Helligkeit der Kugeln (additiv).                                                                                                                                           |
+| `field_strength`        | 0..1     | Stärke des verdichteten gemeinsamen Paar-Felds, sobald zwei Personen zusammen stehen.                                                                                               |
+| `fade_seconds`          | Sekunden | Ein-/Ausblendzeit, wenn ein Paar entsteht oder auseinandergeht.                                                                                                                     |
 | `occluded_fade_seconds` | Sekunden | Ausblendzeit, wenn ein Partner nur noch erinnert wird (`pair.occluded`). Die Brücke wird bis auf den sichtbaren Boden abgedämpft und dort **gehalten**, statt ganz zu verschwinden. |
-| `smoothing` | Sekunden | Trägheit von Endpunkten und Nähe. Ein neuer Messwert wird nur mit `delta / smoothing` Anteil übernommen. Größer = ruhiger; bei niedriger Abtastrate gegen Pose-Jitter erhöhen. |
-| `min_distance` | 0..1 | Normalisierter Abstand, ab dem zwei Personen als wirklich zusammenstehend gelten. Erst darunter verdichten sich die Kugeln zum Paar-Feld; die bloße Nähe-Schwelle genügt nicht. |
-| `warm_color` | Hex | Farbe bei Annäherung. |
-| `hot_color` | Hex | Farbe bei großer Nähe; die Kugeln wandern von warm nach heiß. |
+| `smoothing`             | Sekunden | Trägheit von Endpunkten und Nähe. Ein neuer Messwert wird nur mit `delta / smoothing` Anteil übernommen. Größer = ruhiger; bei niedriger Abtastrate gegen Pose-Jitter erhöhen.      |
+| `min_distance`          | 0..1     | Normalisierter Abstand, ab dem zwei Personen als wirklich zusammenstehend gelten. Erst darunter verdichten sich die Kugeln zum Paar-Feld; die bloße Nähe-Schwelle genügt nicht.     |
+| `warm_color`            | Hex      | Farbe bei Annäherung.                                                                                                                                                               |
+| `hot_color`             | Hex      | Farbe bei großer Nähe; die Kugeln wandern von warm nach heiß.                                                                                                                       |
 
 Die Brücke ist **keine Verbindungslinie**: Bei Annäherung pendeln warme
 Feuerkugeln im Zwischenraum, bei wachsender Nähe werden sie langsamer, wärmer
@@ -403,12 +403,12 @@ ohne dass eine unbeobachtete Person weiter animiert wird.
 
 ### `stillness_resonance` — Antwort auf Bleiben
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `enabled` | bool | Zeigt das ruhige Feld. Beim Abschalten wird der Prozess-Node entfernt (nicht nur versteckt). |
-| `min_presence_seconds` | Sekunden | Anwesenheitsdauer, ab der das Feld seine volle Reife erreicht. |
-| `pulse_seconds` | Sekunden | Periodendauer des langsamen Pulsierens. |
-| `max_scale` | float | Maximale Feldgröße bei voller Reife und Ruhe. |
+| Parameter              | Typ      | Wirkung                                                                                      |
+| ---------------------- | -------- | -------------------------------------------------------------------------------------------- |
+| `enabled`              | bool     | Zeigt das ruhige Feld. Beim Abschalten wird der Prozess-Node entfernt (nicht nur versteckt). |
+| `min_presence_seconds` | Sekunden | Anwesenheitsdauer, ab der das Feld seine volle Reife erreicht.                               |
+| `pulse_seconds`        | Sekunden | Periodendauer des langsamen Pulsierens.                                                      |
+| `max_scale`            | float    | Maximale Feldgröße bei voller Reife und Ruhe.                                                |
 
 Das Feld ist **keine Belohnung für eine Geste**: Anwesenheitszeit und beobachtete
 Ruhe blenden kontinuierlich in ein langsames Pulsieren ein. Damit bekommt
@@ -421,24 +421,24 @@ während eines kurzen Trackingverlusts. `max_scale` bestimmt den Radiusfaktor
 
 ### `crowd_aura` — gemeinsamer Resonanzraum der Gruppe
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `enabled` | bool | Zeigt die gemeinsame Aura. Beim Abschalten wird sie weder erzeugt noch simuliert und schwächt auch keine anderen Effekte ab. |
-| `min_people` | int | Personenzahl, ab der die Aura überhaupt zu entstehen beginnt. Kein harter Schalter: die Stärke wächst geglättet. |
-| `full_strength_people` | int | Personenzahl, ab der die Aura ihre volle Stärke erreicht. |
-| `fade_in_seconds` | Sekunden | Zeitkonstante des Aufbaus. |
-| `fade_out_seconds` | Sekunden | Zeitkonstante des Abbaus. Die Aura läuft danach vollständig auf null aus — auch `min_alpha`; es bleibt kein Restlicht an der letzten Körperposition stehen. |
-| `pulse_seconds` | Sekunden | Periodendauer des langsamen atmenden Pulsierens. |
-| `padding` | 0..1 | Zusätzliche Ausdehnung um die räumliche Streuung der Gruppe. |
-| `softness` | 0..1 | Weichheit des äußeren Randes. Größer = diffuser. |
-| `min_alpha` | 0..1 | Untere Deckkraft der Aura **innerhalb einer anwesenden Gruppe**. Kein Restlicht: beim Fortgehen läuft das ganze Feld auf null aus. |
-| `max_alpha` | 0..1 | Obere Deckkraft. Bewusst niedrig gehalten (Nachtprojektion). |
-| `energy_influence` | 0..1 | Wie stark `crowd.energy` die innere Bewegung moduliert. Beeinflusst **nie** die Sichtbarkeit. |
-| `individual_dimming_max` | 0..1 | Maximale Abschwächung personengebundener Effekte bei voller Aura. Bleibt unter 1, damit Personen sichtbar bleiben. |
-| `body_clearance` | 0..1 | Radius um jede Person, in dem das Aura-Feld ausgespart bleibt. Verhindert, dass Körper in der Atmosphäre verwischen. |
-| `gap_emphasis` | 0..1 | Wie stark das Feld im Zwischenraum betont und um die Körper herum zurückgenommen wird. |
-| `warm_color` | Hex | Farbe im gemeinsamen Zentrum. |
-| `cool_color` | Hex | Farbe in den äußeren Bereichen. |
+| Parameter                | Typ      | Wirkung                                                                                                                                                     |
+| ------------------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`                | bool     | Zeigt die gemeinsame Aura. Beim Abschalten wird sie weder erzeugt noch simuliert und schwächt auch keine anderen Effekte ab.                                |
+| `min_people`             | int      | Personenzahl, ab der die Aura überhaupt zu entstehen beginnt. Kein harter Schalter: die Stärke wächst geglättet.                                            |
+| `full_strength_people`   | int      | Personenzahl, ab der die Aura ihre volle Stärke erreicht.                                                                                                   |
+| `fade_in_seconds`        | Sekunden | Zeitkonstante des Aufbaus.                                                                                                                                  |
+| `fade_out_seconds`       | Sekunden | Zeitkonstante des Abbaus. Die Aura läuft danach vollständig auf null aus — auch `min_alpha`; es bleibt kein Restlicht an der letzten Körperposition stehen. |
+| `pulse_seconds`          | Sekunden | Periodendauer des langsamen atmenden Pulsierens.                                                                                                            |
+| `padding`                | 0..1     | Zusätzliche Ausdehnung um die räumliche Streuung der Gruppe.                                                                                                |
+| `softness`               | 0..1     | Weichheit des äußeren Randes. Größer = diffuser.                                                                                                            |
+| `min_alpha`              | 0..1     | Untere Deckkraft der Aura **innerhalb einer anwesenden Gruppe**. Kein Restlicht: beim Fortgehen läuft das ganze Feld auf null aus.                          |
+| `max_alpha`              | 0..1     | Obere Deckkraft. Bewusst niedrig gehalten (Nachtprojektion).                                                                                                |
+| `energy_influence`       | 0..1     | Wie stark `crowd.energy` die innere Bewegung moduliert. Beeinflusst **nie** die Sichtbarkeit.                                                               |
+| `individual_dimming_max` | 0..1     | Maximale Abschwächung personengebundener Effekte bei voller Aura. Bleibt unter 1, damit Personen sichtbar bleiben.                                          |
+| `body_clearance`         | 0..1     | Radius um jede Person, in dem das Aura-Feld ausgespart bleibt. Verhindert, dass Körper in der Atmosphäre verwischen.                                        |
+| `gap_emphasis`           | 0..1     | Wie stark das Feld im Zwischenraum betont und um die Körper herum zurückgenommen wird.                                                                      |
+| `warm_color`             | Hex      | Farbe im gemeinsamen Zentrum.                                                                                                                               |
+| `cool_color`             | Hex      | Farbe in den äußeren Bereichen.                                                                                                                             |
 
 Die Aura ist **kein Effekt für eine einzelne Person** und kein größerer Glow.
 Sie entsteht aus den vorhandenen anonymen Body-Positionen, `crowd.count` und
@@ -480,28 +480,28 @@ die Gruppe zu einem Brei wird:
 
 ### `aftereffect_waves` — Nachwirkung nach dem Gehen
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `enabled` | bool | Zeigt Nachwirkungswellen. |
-| `group_window_seconds` | Sekunden | Zeitfenster, in dem Austritte an derselben Kante zu **einer** Welle gebündelt werden. |
-| `group_distance` | 0..1 | Maximaler Achsabstand, innerhalb dessen Austritte gruppiert werden. |
-| `group_width_per_departure` | float | Zusätzliche Bandbreite pro weiterem Austritt in der Gruppe. Größere Gruppen erzeugen breitere Wellen. |
-| `duration_seconds` | Sekunden | Gesamtlebensdauer einer Welle. |
-| `initial_origin_outset` | 0..1 | Startabstand des virtuellen Ursprungs **außerhalb** des Bildrands. |
-| `origin_escape_distance` | 0..1 | Wie weit der Ursprung im Verlauf nach außen wandert. Der sichtbare Teil ist dadurch eine zurücklaufende Resonanz, keine Person-Linie. |
-| `start_radius` | 0..1 | Anfangsradius der Welle. |
-| `propagation_speed` | float | Ausbreitungsgeschwindigkeit (Radius pro Sekunde). |
-| `band_width` | 0..1 | Breite des Hauptbands. Größer = weicher, diffuser. |
-| `source_glow_radius` | 0..1 | Radius des Quell-Leuchtens am Ursprung. |
-| `echo_spacing` | 0..1 | Abstand eines inneren Echos zum Hauptband. |
-| `echo_strength` | 0..1 | Stärke dieses Echos. |
-| `max_alpha` | 0..1 | Maximale Deckkraft der Welle. Bewusst niedrig gehalten (Nachtprojektion). |
-| `fade_start_progress` | 0..1 | Fortschritt, ab dem die Welle zu verblassen beginnt. |
-| `fade_end_progress` | 0..1 | Fortschritt, bei dem die Deckkraft null erreicht. Muss größer als `fade_start_progress` sein. |
-| `glow_strength` | float | Helligkeitsverstärkung der Wellenfarbe. |
-| `warm_color` | Hex | Farbe am Anfang (nah am Austritt). |
-| `blue_color` | Hex | Farbe im weiteren Verlauf; die Welle wandert von warm nach kühl. |
-| `dedupe_seconds` | Sekunden | Sperrzeit pro Austritts-ID gegen doppelte Wellen aus wiederholten UDP-Paketen. |
+| Parameter                   | Typ      | Wirkung                                                                                                                               |
+| --------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `enabled`                   | bool     | Zeigt Nachwirkungswellen.                                                                                                             |
+| `group_window_seconds`      | Sekunden | Zeitfenster, in dem Austritte an derselben Kante zu **einer** Welle gebündelt werden.                                                 |
+| `group_distance`            | 0..1     | Maximaler Achsabstand, innerhalb dessen Austritte gruppiert werden.                                                                   |
+| `group_width_per_departure` | float    | Zusätzliche Bandbreite pro weiterem Austritt in der Gruppe. Größere Gruppen erzeugen breitere Wellen.                                 |
+| `duration_seconds`          | Sekunden | Gesamtlebensdauer einer Welle.                                                                                                        |
+| `initial_origin_outset`     | 0..1     | Startabstand des virtuellen Ursprungs **außerhalb** des Bildrands.                                                                    |
+| `origin_escape_distance`    | 0..1     | Wie weit der Ursprung im Verlauf nach außen wandert. Der sichtbare Teil ist dadurch eine zurücklaufende Resonanz, keine Person-Linie. |
+| `start_radius`              | 0..1     | Anfangsradius der Welle.                                                                                                              |
+| `propagation_speed`         | float    | Ausbreitungsgeschwindigkeit (Radius pro Sekunde).                                                                                     |
+| `band_width`                | 0..1     | Breite des Hauptbands. Größer = weicher, diffuser.                                                                                    |
+| `source_glow_radius`        | 0..1     | Radius des Quell-Leuchtens am Ursprung.                                                                                               |
+| `echo_spacing`              | 0..1     | Abstand eines inneren Echos zum Hauptband.                                                                                            |
+| `echo_strength`             | 0..1     | Stärke dieses Echos.                                                                                                                  |
+| `max_alpha`                 | 0..1     | Maximale Deckkraft der Welle. Bewusst niedrig gehalten (Nachtprojektion).                                                             |
+| `fade_start_progress`       | 0..1     | Fortschritt, ab dem die Welle zu verblassen beginnt.                                                                                  |
+| `fade_end_progress`         | 0..1     | Fortschritt, bei dem die Deckkraft null erreicht. Muss größer als `fade_start_progress` sein.                                         |
+| `glow_strength`             | float    | Helligkeitsverstärkung der Wellenfarbe.                                                                                               |
+| `warm_color`                | Hex      | Farbe am Anfang (nah am Austritt).                                                                                                    |
+| `blue_color`                | Hex      | Farbe im weiteren Verlauf; die Welle wandert von warm nach kühl.                                                                      |
+| `dedupe_seconds`            | Sekunden | Sperrzeit pro Austritts-ID gegen doppelte Wellen aus wiederholten UDP-Paketen.                                                        |
 
 Wellen sind bewusst anonym: nur Kante, gemeinsame Achse und Gruppengröße
 überleben. Keine Splash- oder Feuerwerk-Ästhetik.
@@ -530,11 +530,11 @@ der Lebensdauer Deckkraft null, damit kein hartes Abschalten entsteht.
 
 ## `debug` — Diagnose (Capture)
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
-| `preview` | bool | Öffnet ein lokales Vorschaufenster mit Overlay (IDs, Intensität, Personenzahl). Nur für Aufbau und Kalibrierung. Taste `q` beendet. **Nicht** Teil der Publikumsdarstellung. |
-| `diagnostics` | bool | Schaltet die kompakte Capture-Diagnose ein (zusätzlich per CLI `--diagnostics`). |
-| `diagnostics_interval` | Sekunden | Abstand zwischen zwei Diagnosezeilen. Untergrenze 0.05 s. |
+| Parameter              | Typ      | Wirkung                                                                                                                                                                      |
+| ---------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `preview`              | bool     | Öffnet ein lokales Vorschaufenster mit Overlay (IDs, Intensität, Personenzahl). Nur für Aufbau und Kalibrierung. Taste `q` beendet. **Nicht** Teil der Publikumsdarstellung. |
+| `diagnostics`          | bool     | Schaltet die kompakte Capture-Diagnose ein (zusätzlich per CLI `--diagnostics`).                                                                                             |
+| `diagnostics_interval` | Sekunden | Abstand zwischen zwei Diagnosezeilen. Untergrenze 0.05 s.                                                                                                                    |
 
 Eine Diagnosezeile pro Intervall (Standard: 1 s) enthält FPS der Kamera und der
 Schleife, die mittleren Stage-Zeiten `read`/`pose`/`features`/`udp` in
@@ -560,8 +560,8 @@ Diese Werkzeuge gehören zur Abnahme, nicht zur Publikumsdarstellung:
 
 ## `updates` — Automatische Updates
 
-| Parameter | Typ | Wirkung |
-|---|---|---|
+| Parameter | Typ  | Wirkung                                                                                                                                                     |
+| --------- | ---- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `enabled` | bool | Standard `false`. Es gibt keine stillen Updates beim normalen Start. Updates werden bewusst vor oder nach einer Veranstaltung über `update.ps1` ausgeführt. |
 
 ---
@@ -647,11 +647,11 @@ Promptlogik sind zusätzlich der deaktivierte Zustand, ein ungültiger
 
 **Was wann wirkt:**
 
-| Geänderter Abschnitt | Nötig |
-|---|---|
-| `effects` | nichts — der Renderer übernimmt die Änderung in etwa 0.5 s |
-| `renderer`, `station`, `network.port` | Renderer neu starten |
-| `camera`, `pose`, `features`, `debug` | Capture neu starten (`start.ps1`) |
+| Geänderter Abschnitt                  | Nötig                                                      |
+| ------------------------------------- | ---------------------------------------------------------- |
+| `effects`                             | nichts — der Renderer übernimmt die Änderung in etwa 0.5 s |
+| `renderer`, `station`, `network.port` | Renderer neu starten                                       |
+| `camera`, `pose`, `features`, `debug` | Capture neu starten (`start.ps1`)                          |
 
 **Referenzdatei mitpflegen:** `config/config.example.json` dokumentiert die
 Standardwerte. Der Test `tests/test_config_example.py` prüft, dass sie jeden
@@ -659,7 +659,6 @@ Schlüssel der Laufzeitconfig abdeckt, keine standortgebundenen Werte
 (Bildschirmsignaturen, Kameraidentität) enthält und dieselben Typen verwendet —
 eine Änderung an `config/config.json` schlägt dort fehl, bis die Referenz
 nachgezogen ist. Der Test liest keine Kameradaten und startet kein Godot.
-
 
 ### Stillness-Resonanz
 

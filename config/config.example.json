@@ -46,7 +46,7 @@
     "departure_edge_margin": 0.08,
     "departure_min_speed": 0.05,
     "position_smoothing": 0.5,
-    "stillness_speed_threshold": 0.08,
+    "stillness_speed_threshold": 0.12,
     "stillness_rise_seconds": 2.5,
     "stillness_fall_seconds": 0.8
   },
@@ -127,7 +127,7 @@
       "ripple_duration_seconds": 5.8,
       "ripple_interval_seconds": 3.3,
       "ripple_radius": 48,
-      "ripple_alpha": 0.22,
+      "ripple_alpha": 0.45,
       "ripple_threshold": 0.32
     },
     "crowd_aura": {
@@ -173,12 +173,12 @@
   },
   "renderer": {
     "missing_hold_seconds": 0.15,
-    "missing_fade_rate": 4
+    "missing_fade_rate": 4.0
   },
   "debug": {
     "preview": true,
     "diagnostics": false,
-    "diagnostics_interval": 1
+    "diagnostics_interval": 1.0
   },
   "updates": {
     "enabled": false

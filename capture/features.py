@@ -230,7 +230,7 @@ class BodyTracker:
         departure_edge_margin: float = 0.08,
         departure_min_speed: float = 0.05,
         confirmation_frames: int = 1,
-        stillness_speed_threshold: float = 0.08,
+        stillness_speed_threshold: float = 0.12,
         stillness_rise_seconds: float = 2.5,
         stillness_fall_seconds: float = 0.8,
         position_smoothing: float = 1.0,
@@ -393,19 +393,23 @@ class BodyTracker:
                 reassociated_after_gap = tr.state == "temporarily_missing"
                 vx = (c[0] - tr.centroid[0]) / dt
                 vy = (c[1] - tr.centroid[1]) / dt
+                centroid_speed = math.hypot(vx, vy)
                 wrist_speed = (
                     distance(wrists[i][0], tr.wrists[0])
                     + distance(wrists[i][1], tr.wrists[1])
                 ) / (2.0 * dt)
-                speed = math.hypot(vx, vy) + wrist_speed
+                speed = centroid_speed + wrist_speed
                 raw = min(speed * self.intensity_scale, 1.0)
                 alpha = self.smoothing
                 tr.intensity = tr.intensity * (1.0 - alpha) + raw * alpha
                 # A gap carries no observed movement.  Do not turn the
                 # position delta across it into an artificial stillness reset;
                 # the next contiguous observation resumes the smooth update.
+                # Stillness tracks the body holding its place (torso centroid),
+                # not the hands: noisy wrist landmarks must not read as motion,
+                # or a person who simply stands would never become "still".
                 if not reassociated_after_gap:
-                    self._update_stillness(tr, speed, dt)
+                    self._update_stillness(tr, centroid_speed, dt)
                 # A gap freezes the smoothed position; on reassociation snap it
                 # to the fresh observation instead of gliding across the gap.
                 if reassociated_after_gap:
