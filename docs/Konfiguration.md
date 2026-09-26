@@ -659,3 +659,8 @@ Schlüssel der Laufzeitconfig abdeckt, keine standortgebundenen Werte
 (Bildschirmsignaturen, Kameraidentität) enthält und dieselben Typen verwendet —
 eine Änderung an `config/config.json` schlägt dort fehl, bis die Referenz
 nachgezogen ist. Der Test liest keine Kameradaten und startet kein Godot.
+
+
+### Stillness-Resonanz
+
+`effects.stillness_resonance` steuert das ruhige Feld und den daran gebundenen Stillness-Puls. `ripple_duration_seconds`, `ripple_interval_seconds`, `ripple_radius`, `ripple_alpha` und `ripple_threshold` bestimmen Dauer, Abstand, Reichweite, Zurückhaltung und Auslöseschwelle der Ringe. Die Ringe entstehen nur oberhalb der kombinierten Anwesenheits-/Stillness-Schwelle; sie sind Teil dieser Effektfamilie. `aftereffect_waves` bleibt der Nachwirkung beim plausiblen Fortgehen vorbehalten.
