@@ -24,6 +24,7 @@ var _ripple_radius := 48.0
 var _ripple_alpha := 0.22
 var _ripple_threshold := 0.32
 var _elapsed := 0.0
+var _ripple_elapsed := 0.0
 var _strength := 0.0
 
 func _ready() -> void:
@@ -57,6 +58,10 @@ func _process(delta: float) -> void:
 	var maturity: float = clamp(_presence_time / _min_presence_seconds, 0.0, 1.0)
 	var target_strength: float = maturity * _stillness
 	_strength = move_toward(_strength, target_strength, delta * 0.7)
+	if _strength >= _ripple_threshold:
+		_ripple_elapsed += delta
+	else:
+		_ripple_elapsed = 0.0
 	_update_rings()
 	_refresh()
 
@@ -78,7 +83,7 @@ func _create_rings() -> void:
 func _update_rings() -> void:
 	for index in range(_rings.size()):
 		var ring := _rings[index]
-		var phase: float = fposmod((_elapsed + float(index) * _ripple_interval_seconds * 0.5) / _ripple_duration_seconds, 1.0)
+		var phase: float = fposmod((_ripple_elapsed + float(index) * _ripple_interval_seconds * 0.5) / _ripple_duration_seconds, 1.0)
 		var can_emit := _strength >= _ripple_threshold
 		var envelope := 0.0
 		if can_emit:
