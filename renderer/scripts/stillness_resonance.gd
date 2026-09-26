@@ -83,8 +83,9 @@ func _create_rings() -> void:
 func _update_rings() -> void:
 	for index in range(_rings.size()):
 		var ring := _rings[index]
-		var phase: float = fposmod((_ripple_elapsed + float(index) * _ripple_interval_seconds * 0.5) / _ripple_duration_seconds, 1.0)
-		var can_emit := _strength >= _ripple_threshold
+		var delay := float(index) * _ripple_interval_seconds
+		var phase: float = fposmod(max(_ripple_elapsed - delay, 0.0) / _ripple_duration_seconds, 1.0)
+		var can_emit := _strength >= _ripple_threshold and _ripple_elapsed >= delay
 		var envelope := 0.0
 		if can_emit:
 			if phase < RIPPLE_VISIBLE_AT:
