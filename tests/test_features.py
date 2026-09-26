@@ -282,6 +282,28 @@ class PresenceAndStillnessTest(unittest.TestCase):
         self.assertLess(moving["stillness"], quiet["stillness"])
         self.assertGreater(moving["stillness"], 0.0)
 
+    def test_wrist_jitter_does_not_block_stillness(self):
+        # A person standing in place with only jittery hands must still become
+        # "still": stillness follows the torso centroid, not noisy wrists. This
+        # is the real-world case where the stillness resonance failed to appear.
+        tracker = self._tracker()
+        spreads = [0.10, 0.24, 0.06, 0.28, 0.09, 0.26, 0.08]
+        body = None
+        for frame, spread in enumerate(spreads):
+            body = tracker.update([person(0.5, 0.5, wrist_spread=spread)], frame * 0.1)[0]
+        self.assertGreater(body["stillness"], 0.6)
+
+    def test_defaults_tolerate_realistic_torso_jitter(self):
+        # With the shipped defaults, the constant micro-movement of a person who
+        # merely stands (not frozen) must still build up stillness, so the
+        # resonance appears in an ordinary visit rather than only for a statue.
+        tracker = BodyTracker()
+        offsets = [0.012 * (frame % 2) for frame in range(24)]
+        body = None
+        for frame, offset in enumerate(offsets):
+            body = tracker.update([person(0.5 + offset, 0.5)], frame * 0.1)[0]
+        self.assertGreater(body["stillness"], 0.3)
+
 class JitteryApproachPairTest(unittest.TestCase):
     """A near threshold plus real pose jitter used to make bridges flicker.
 

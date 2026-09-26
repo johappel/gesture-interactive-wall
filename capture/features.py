@@ -189,6 +189,7 @@ class _Track:
         "seen_frames",
         "presence_started_at",
         "stillness",
+        "stillness_speed",
     )
 
     def __init__(self, tid: int, c: tuple[float, float], wrists, t: float) -> None:
@@ -210,6 +211,9 @@ class _Track:
         # deliberately survives a short missing-detection grace period.
         self.presence_started_at = t
         self.stillness = 0.0
+        # Low-passed centroid speed used only for the stillness judgement, so a
+        # single noisy frame cannot drop a standing person out of "still".
+        self.stillness_speed = 0.0
 
 
 class BodyTracker:
@@ -230,9 +234,10 @@ class BodyTracker:
         departure_edge_margin: float = 0.08,
         departure_min_speed: float = 0.05,
         confirmation_frames: int = 1,
-        stillness_speed_threshold: float = 0.08,
-        stillness_rise_seconds: float = 2.5,
-        stillness_fall_seconds: float = 0.8,
+        stillness_speed_threshold: float = 0.25,
+        stillness_speed_smoothing: float = 0.5,
+        stillness_rise_seconds: float = 1.8,
+        stillness_fall_seconds: float = 2.5,
         position_smoothing: float = 1.0,
     ) -> None:
         self.max_dist = max_dist
@@ -249,6 +254,7 @@ class BodyTracker:
         self.departure_min_speed = departure_min_speed
         self.confirmation_frames = max(int(confirmation_frames), 1)
         self.stillness_speed_threshold = max(float(stillness_speed_threshold), 1e-6)
+        self.stillness_speed_smoothing = max(float(stillness_speed_smoothing), 1e-3)
         self.stillness_rise_seconds = max(float(stillness_rise_seconds), 1e-3)
         self.stillness_fall_seconds = max(float(stillness_fall_seconds), 1e-3)
         self._tracks: dict[int, _Track] = {}
@@ -350,7 +356,12 @@ class BodyTracker:
 
     def _update_stillness(self, tr: _Track, speed: float, dt: float) -> None:
         """Blend observed movement into a continuous, non-semantic calmness value."""
-        target = min(max(1.0 - speed / self.stillness_speed_threshold, 0.0), 1.0)
+        # Smooth the noisy frame-to-frame speed first. Without this a standing
+        # person's constant micro-movement keeps crossing the threshold, so the
+        # resonance would only ever appear for someone frozen still.
+        speed_alpha = 1.0 - math.exp(-max(dt, 0.0) / self.stillness_speed_smoothing)
+        tr.stillness_speed += (speed - tr.stillness_speed) * speed_alpha
+        target = min(max(1.0 - tr.stillness_speed / self.stillness_speed_threshold, 0.0), 1.0)
         time_constant = (
             self.stillness_rise_seconds if target >= tr.stillness else self.stillness_fall_seconds
         )
@@ -393,19 +404,23 @@ class BodyTracker:
                 reassociated_after_gap = tr.state == "temporarily_missing"
                 vx = (c[0] - tr.centroid[0]) / dt
                 vy = (c[1] - tr.centroid[1]) / dt
+                centroid_speed = math.hypot(vx, vy)
                 wrist_speed = (
                     distance(wrists[i][0], tr.wrists[0])
                     + distance(wrists[i][1], tr.wrists[1])
                 ) / (2.0 * dt)
-                speed = math.hypot(vx, vy) + wrist_speed
+                speed = centroid_speed + wrist_speed
                 raw = min(speed * self.intensity_scale, 1.0)
                 alpha = self.smoothing
                 tr.intensity = tr.intensity * (1.0 - alpha) + raw * alpha
                 # A gap carries no observed movement.  Do not turn the
                 # position delta across it into an artificial stillness reset;
                 # the next contiguous observation resumes the smooth update.
+                # Stillness tracks the body holding its place (torso centroid),
+                # not the hands: noisy wrist landmarks must not read as motion,
+                # or a person who simply stands would never become "still".
                 if not reassociated_after_gap:
-                    self._update_stillness(tr, speed, dt)
+                    self._update_stillness(tr, centroid_speed, dt)
                 # A gap freezes the smoothed position; on reassociation snap it
                 # to the fresh observation instead of gliding across the gap.
                 if reassociated_after_gap:

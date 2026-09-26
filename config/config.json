@@ -1,6 +1,6 @@
 {
     "camera":  {
-                   "index":  701,
+                   "index":  702,
                    "width":  1280,
                    "height":  720,
                    "fps":  30,
@@ -8,10 +8,10 @@
                    "latest_frame_wins":  true,
                    "flip":  true,
                    "backend":  "any",
-                   "name":  "Logitech StreamCam",
-                   "device_path":  "\\\\?\\usb#vid_046d\u0026pid_0893\u0026mi_00#9\u002696a87e7\u00260\u00260000#{65e8773d-8f56-11d0-a3b9-00a0c9223196}\\global",
-                   "vid":  "046D",
-                   "pid":  "0893"
+                   "name":  "Logi Capture",
+                   "device_path":  "@device:sw:{860BB310-5D01-11D0-BD3B-00A0C911CE86}\\{4A2FEA90-B0A0-438E-8BC3-D84157660D0A}",
+                   "vid":  "",
+                   "pid":  ""
                },
     "network":  {
                     "host":  "127.0.0.1",
@@ -45,9 +45,10 @@
                      "departure_min_speed":  0.05,
                      "track_confirmation_frames":  4,
                      "position_smoothing":  0.5,
-                     "stillness_speed_threshold":  0.08,
-                     "stillness_rise_seconds":  2.5,
-                     "stillness_fall_seconds":  0.8
+                     "stillness_speed_threshold":  0.25,
+                     "stillness_speed_smoothing":  0.5,
+                     "stillness_rise_seconds":  1.8,
+                     "stillness_fall_seconds":  2.5
                  },
     "station":  {
                     "facade":  {
@@ -123,10 +124,10 @@
                                               "enabled":  true,
                                               "orbs_min":  5.0,
                                               "orbs_max":  19.0,
-                                              "travel":  1.0,
+                                              "travel":  0.99,
                                               "speed":  0.85,
                                               "orb_size":  33.0,
-                                              "wobble":  0.07,
+                                              "wobble":  0.06,
                                               "max_alpha":  0.86,
                                               "field_strength":  0.4,
                                               "fade_seconds":  0.75,
@@ -138,9 +139,14 @@
                                           },
                     "stillness_resonance":  {
                                                 "enabled":  true,
-                                                "min_presence_seconds":  3.0,
+                                                "min_presence_seconds":  2.0,
                                                 "pulse_seconds":  6.0,
-                                                "max_scale":  2.3
+                                                "max_scale":  2.3,
+                                                "ripple_duration_seconds":  5.8,
+                                                "ripple_interval_seconds":  3.8,
+                                                "ripple_radius":  90.0,
+                                                "ripple_alpha":  0.45,
+                                                "ripple_threshold":  0.22
                                             },
                     "crowd_aura":  {
                                        "enabled":  true,

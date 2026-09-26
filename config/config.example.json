@@ -29,10 +29,10 @@
     "inference_height": 0,
     "active_region": {
       "enabled": false,
-      "x_min": 0.0,
-      "x_max": 1.0,
-      "y_min": 0.0,
-      "y_max": 1.0
+      "x_min": 0,
+      "x_max": 1,
+      "y_min": 0,
+      "y_max": 1
     }
   },
   "features": {
@@ -46,9 +46,10 @@
     "departure_edge_margin": 0.08,
     "departure_min_speed": 0.05,
     "position_smoothing": 0.5,
-    "stillness_speed_threshold": 0.08,
-    "stillness_rise_seconds": 2.5,
-    "stillness_fall_seconds": 0.8
+    "stillness_speed_threshold": 0.25,
+    "stillness_speed_smoothing": 0.5,
+    "stillness_rise_seconds": 1.8,
+    "stillness_fall_seconds": 2.5
   },
   "station": {
     "facade": {
@@ -77,9 +78,9 @@
       ],
       "fade_in_seconds": 2.3,
       "fade_out_seconds": 1.4,
-      "underline_seconds": 2.0,
-      "star_tail_fade_seconds": 3.0,
-      "idle_cycle_seconds": 11.0
+      "underline_seconds": 2,
+      "star_tail_fade_seconds": 3,
+      "idle_cycle_seconds": 11
     }
   },
   "effects": {
@@ -91,15 +92,15 @@
     "trails": {
       "enabled": true,
       "max_points": 48,
-      "width": 10.0
+      "width": 10
     },
     "sparks": {
       "enabled": true,
       "amount_min": 24,
       "amount_max": 112,
       "lifetime": 1.4,
-      "velocity_min": 20.0,
-      "velocity_max": 300.0,
+      "velocity_min": 20,
+      "velocity_max": 300,
       "activation_intensity": 0.09
     },
     "proximity_bridges": {
@@ -108,7 +109,7 @@
       "orbs_max": 6,
       "travel": 0.8,
       "speed": 2.2,
-      "orb_size": 26.0,
+      "orb_size": 26,
       "wobble": 0.06,
       "max_alpha": 0.85,
       "field_strength": 0.6,
@@ -121,17 +122,22 @@
     },
     "stillness_resonance": {
       "enabled": true,
-      "min_presence_seconds": 3.0,
-      "pulse_seconds": 6.0,
-      "max_scale": 1.3
+      "min_presence_seconds": 2,
+      "pulse_seconds": 6,
+      "max_scale": 1.3,
+      "ripple_duration_seconds": 5.8,
+      "ripple_interval_seconds": 3.8,
+      "ripple_radius": 90,
+      "ripple_alpha": 0.45,
+      "ripple_threshold": 0.22
     },
     "crowd_aura": {
       "enabled": true,
       "min_people": 3,
       "full_strength_people": 10,
       "fade_in_seconds": 2.5,
-      "fade_out_seconds": 4.0,
-      "pulse_seconds": 9.0,
+      "fade_out_seconds": 4,
+      "pulse_seconds": 9,
       "padding": 0.12,
       "softness": 0.18,
       "min_alpha": 0.05,
@@ -163,7 +169,7 @@
       "glow_strength": 1.55,
       "warm_color": "#fff0bd",
       "blue_color": "#5caeff",
-      "dedupe_seconds": 5.0
+      "dedupe_seconds": 5
     }
   },
   "renderer": {

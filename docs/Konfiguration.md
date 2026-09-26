@@ -189,12 +189,17 @@ grundsätzlich kein `departure`. Die abgenommenen Fälle stehen in
 | Parameter                   | Typ      | Wirkung                                                                                                              |
 | --------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------- |
 | `stillness_speed_threshold` | float    | Geschwindigkeit, unterhalb derer eine Person als „ruhig“ gilt.                                                       |
+| `stillness_speed_smoothing` | Sekunden | Zeitkonstante der Glättung der Torso-Geschwindigkeit. Größer = einzelne Wackelbilder fallen weniger ins Gewicht.     |
 | `stillness_rise_seconds`    | Sekunden | Zeitkonstante, mit der `stillness` bei Ruhe ansteigt. Größer = Verweilen muss länger dauern, bevor es sichtbar wird. |
 | `stillness_fall_seconds`    | Sekunden | Zeitkonstante, mit der `stillness` bei Bewegung wieder abfällt. Klein = Ruhe „bricht“ schnell ab.                    |
 
 `stillness` ist ein kontinuierlicher, semantikfreier Wert (0 = zuletzt bewegt,
-1 = über Zeit ruhig). Er ist die Grundlage dafür, dass **Bleiben eine Antwort
-bekommt** — siehe `effects.stillness_resonance`.
+1 = über Zeit ruhig). Er folgt der **Torso-Geschwindigkeit** (nicht den
+Händen), damit leichter Handjitter eine ruhig stehende Person nicht als bewegt
+liest. Die Geschwindigkeit wird zusätzlich geglättet
+(`stillness_speed_smoothing`), damit ein einzelnes verrauschtes Bild den Wert
+nicht sofort einbrechen lässt. Er ist die Grundlage dafür, dass **Bleiben eine
+Antwort bekommt** — siehe `effects.stillness_resonance`.
 
 ---
 
@@ -403,21 +408,29 @@ ohne dass eine unbeobachtete Person weiter animiert wird.
 
 ### `stillness_resonance` — Antwort auf Bleiben
 
-| Parameter              | Typ      | Wirkung                                                                                      |
-| ---------------------- | -------- | -------------------------------------------------------------------------------------------- |
-| `enabled`              | bool     | Zeigt das ruhige Feld. Beim Abschalten wird der Prozess-Node entfernt (nicht nur versteckt). |
-| `min_presence_seconds` | Sekunden | Anwesenheitsdauer, ab der das Feld seine volle Reife erreicht.                               |
-| `pulse_seconds`        | Sekunden | Periodendauer des langsamen Pulsierens.                                                      |
-| `max_scale`            | float    | Maximale Feldgröße bei voller Reife und Ruhe.                                                |
+| Parameter                 | Typ      | Wirkung                                                                                      |
+| ------------------------- | -------- | -------------------------------------------------------------------------------------------- |
+| `enabled`                 | bool     | Zeigt das ruhige Feld. Beim Abschalten wird der Prozess-Node entfernt (nicht nur versteckt). |
+| `min_presence_seconds`    | Sekunden | Anwesenheitsdauer, ab der das Feld seine volle Reife erreicht.                               |
+| `pulse_seconds`           | Sekunden | Periodendauer des langsamen Pulsierens.                                                      |
+| `max_scale`               | float    | Maximale Feldgröße bei voller Reife und Ruhe.                                                |
+| `ripple_duration_seconds` | Sekunden | Dauer eines einzelnen nach außen laufenden Wellenrings.                                      |
+| `ripple_interval_seconds` | Sekunden | Abstand, in dem ein neuer Ring startet.                                                      |
+| `ripple_radius`           | Pixel    | Grundradius des Rings vor der Skalierung.                                                    |
+| `ripple_alpha`            | 0..1     | Höchsthelligkeit des Ringkamms (additiv, also als Licht).                                    |
+| `ripple_threshold`        | 0..1     | Schwelle aus `presence_time`-Reife × `stillness`, ab der Ringe entstehen.                    |
 
 Das Feld ist **keine Belohnung für eine Geste**: Anwesenheitszeit und beobachtete
 Ruhe blenden kontinuierlich in ein langsames Pulsieren ein. Damit bekommt
 Bleiben eine qualitativ andere Antwort als Vorübergehen.
 
+Die Ringe werden **additiv** gezeichnet: sie fügen Licht hinzu und strömen warm
+nach außen — nie ein kalter, dunkler Schleier um die Person.
+
 Das Feld ist ein Kind des Lichtkörpers: es verschwindet mit der Person, auch
 während eines kurzen Trackingverlusts. `max_scale` bestimmt den Radiusfaktor
-`(0.45 + Stärke × max_scale) × Puls`; die Deckkraft liegt bei `0.10 + Stärke ×
-0.32`. Beides wächst mit `presence_time` (Reife) und `stillness` — nie sprunghaft.
+`(0.45 + Stärke × max_scale) × Puls`; die Deckkraft liegt bei `0.06 + Stärke ×
+0.16`. Beides wächst mit `presence_time` (Reife) und `stillness` — nie sprunghaft.
 
 ### `crowd_aura` — gemeinsamer Resonanzraum der Gruppe
 
@@ -659,3 +672,7 @@ Schlüssel der Laufzeitconfig abdeckt, keine standortgebundenen Werte
 (Bildschirmsignaturen, Kameraidentität) enthält und dieselben Typen verwendet —
 eine Änderung an `config/config.json` schlägt dort fehl, bis die Referenz
 nachgezogen ist. Der Test liest keine Kameradaten und startet kein Godot.
+
+### Stillness-Resonanz
+
+`effects.stillness_resonance` steuert das ruhige Feld und den daran gebundenen Stillness-Puls. `ripple_duration_seconds`, `ripple_interval_seconds`, `ripple_radius`, `ripple_alpha` und `ripple_threshold` bestimmen Dauer, Abstand, Reichweite, Zurückhaltung und Auslöseschwelle der Ringe. Die Ringe entstehen nur oberhalb der kombinierten Anwesenheits-/Stillness-Schwelle; sie sind Teil dieser Effektfamilie. `aftereffect_waves` bleibt der Nachwirkung beim plausiblen Fortgehen vorbehalten.

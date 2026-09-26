@@ -260,7 +260,7 @@ Keine Klassifikation wie „Freude“, „Trauer“ oder „Gebet“.
 |----------|-----------------------|
 | Anwesenheit | Lichtkörper / Glow |
 | Bewegung | Funken / Lichtpartikel |
-| Ruhe / Bleiben | Verdichtung, langsames Pulsieren, Feldbildung |
+| Ruhe / Bleiben | Verdichtung, langsames Pulsieren und ein zurückhaltender, nach außen laufender Stillness-Puls |
 | Öffnung | räumliche Ausdehnung |
 | Bewegung durch den Raum | Trail |
 | Nähe | Lichtbrücke / gemeinsames Feld |
@@ -272,6 +272,14 @@ Die Zuordnung ist kein starres 1:1-Regelwerk.
 Besonders wichtig:
 
 > **Bleiben darf nicht bloß die Abwesenheit von Bewegung sein.**
+
+Die Stillness-Resonanz verbindet ein ruhiges Feld am Lichtkörper mit einem
+gelegentlichen, langsam nach außen laufenden Ringimpuls. Der Impuls setzt erst
+ein, wenn Anwesenheit und beobachtete Ruhe gemeinsam eine Schwelle erreichen.
+Er gehört zur bestehenden Effektfamilie `stillness_resonance`; er ist keine
+Rückkehr des entfernten allgemeinen `waves`-Effekts. Die
+`aftereffect_waves` bleiben ausschließlich die Nachwirkung eines plausiblen
+Fortgehens.
 
 Zieldramaturgie:
 
