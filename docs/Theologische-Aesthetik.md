@@ -412,3 +412,14 @@ Diese Fragen gehören nicht an das Ende des Projekts. Sie sollten die technische
 Als vorläufige Verdichtung könnte WIRKLICHT so beschrieben werden:
 
 > **WIRKLICHT macht erfahrbar, dass Anwesenheit Wirkung hat. Menschen treten in einen gemeinsamen Raum, bringen Licht und Bewegung hervor, verändern einander und die Atmosphäre und hinterlassen beim Gehen eine Spur, die noch einen Augenblick weiterwirkt. Die Installation hält niemanden fest — aber sie lässt sichtbar werden, dass niemand einfach wirkungslos hindurchgeht.**
+
+
+## Stillness als Ausstrahlung
+
+Anhaltende Ruhe kann im WIRKLICHT als stille Präsenz sichtbar werden, die sich
+nicht abschließt: Ein feiner Ring läuft gelegentlich vom Lichtkörper in den
+umgebenden Raum. Er ist keine Belohnung für regungsloses Verhalten und keine
+Deutung eines inneren Zustands. Der Impuls macht räumlich erfahrbar, dass auch
+Bleiben Wirkung entfalten kann. Seine helle, zurückhaltende Kontur knüpft an die
+Wellenform der Ankündigungsseite an; die Nachwirkungswelle beim Fortgehen bleibt
+dramaturgisch davon unterschieden.
