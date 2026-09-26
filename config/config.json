@@ -45,9 +45,10 @@
                      "departure_min_speed":  0.05,
                      "track_confirmation_frames":  4,
                      "position_smoothing":  0.5,
-                     "stillness_speed_threshold":  0.12,
-                     "stillness_rise_seconds":  2.5,
-                     "stillness_fall_seconds":  0.8
+                     "stillness_speed_threshold":  0.25,
+                     "stillness_speed_smoothing":  0.5,
+                     "stillness_rise_seconds":  1.8,
+                     "stillness_fall_seconds":  2.5
                  },
     "station":  {
                     "facade":  {
@@ -100,89 +101,94 @@
                                }
                 },
     "effects":  {
-                    "enabled":  true,
-                    "minimal_mode":  false,
-                    "body_glow":  {
-                                      "enabled":  true
-                                  },
-                    "trails":  {
-                                   "enabled":  true,
-                                   "max_points":  80.0,
-                                   "width":  3.0
-                               },
-                    "sparks":  {
-                                   "enabled":  true,
-                                   "amount_min":  54.0,
-                                   "amount_max":  112.0,
-                                   "lifetime":  1.4,
-                                   "velocity_min":  20.0,
-                                   "velocity_max":  300.0,
-                                   "activation_intensity":  0.09
-                               },
-                    "proximity_bridges":  {
-                                              "enabled":  true,
-                                              "orbs_min":  5.0,
-                                              "orbs_max":  19.0,
-                                              "travel":  1.0,
-                                              "speed":  0.85,
-                                              "orb_size":  33.0,
-                                              "wobble":  0.07,
-                                              "max_alpha":  0.86,
-                                              "field_strength":  0.4,
-                                              "fade_seconds":  0.75,
-                                              "occluded_fade_seconds":  0.3,
-                                              "smoothing":  0.15,
-                                              "min_distance":  0.66,
-                                              "warm_color":  "#ffcd79",
-                                              "hot_color":  "#ff9a3c"
-                                          },
-                    "stillness_resonance":  {
-                                                "enabled":  true,
-                                                "min_presence_seconds":  3.0,
-                                                "pulse_seconds":  6.0,
-                                                "max_scale":  2.3
-                                            },
-                    "crowd_aura":  {
-                                       "enabled":  true,
-                                       "min_people":  1.0,
-                                       "full_strength_people":  9.0,
-                                       "fade_in_seconds":  2.5,
-                                       "fade_out_seconds":  4.0,
-                                       "pulse_seconds":  9.0,
-                                       "padding":  0.12,
-                                       "softness":  0.18,
-                                       "min_alpha":  0.05,
-                                       "max_alpha":  0.28,
-                                       "energy_influence":  0.31,
-                                       "individual_dimming_max":  0.45,
-                                       "body_clearance":  0.12,
-                                       "gap_emphasis":  0.75,
-                                       "warm_color":  "#ffe3a1",
-                                       "cool_color":  "#5caeff"
-                                   },
-                    "aftereffect_waves":  {
-                                              "enabled":  true,
-                                              "group_window_seconds":  0.22,
-                                              "group_distance":  0.18,
-                                              "group_width_per_departure":  0.09,
-                                              "duration_seconds":  4.7,
-                                              "initial_origin_outset":  0.03,
-                                              "origin_escape_distance":  0.48,
-                                              "start_radius":  0.029,
-                                              "propagation_speed":  0.35,
-                                              "band_width":  0.09,
-                                              "source_glow_radius":  0.26,
-                                              "echo_spacing":  0.15,
-                                              "echo_strength":  0.058,
-                                              "max_alpha":  0.26,
-                                              "fade_start_progress":  0.15,
-                                              "fade_end_progress":  0.99,
-                                              "glow_strength":  1.55,
-                                              "warm_color":  "#ffcd79",
-                                              "blue_color":  "#164155",
-                                              "dedupe_seconds":  5.0
-                                          }
-                },
+        "enabled": true,
+        "minimal_mode": false,
+        "body_glow": {
+            "enabled": true
+        },
+        "trails": {
+            "enabled": true,
+            "max_points": 80.0,
+            "width": 3.0
+        },
+        "sparks": {
+            "enabled": true,
+            "amount_min": 54.0,
+            "amount_max": 112.0,
+            "lifetime": 1.4,
+            "velocity_min": 20.0,
+            "velocity_max": 300.0,
+            "activation_intensity": 0.09
+        },
+        "proximity_bridges": {
+            "enabled": true,
+            "orbs_min": 5.0,
+            "orbs_max": 19.0,
+            "travel": 0.99,
+            "speed": 0.85,
+            "orb_size": 33.0,
+            "wobble": 0.06,
+            "max_alpha": 0.86,
+            "field_strength": 0.4,
+            "fade_seconds": 0.75,
+            "occluded_fade_seconds": 0.3,
+            "smoothing": 0.15,
+            "min_distance": 0.66,
+            "warm_color": "#ffcd79",
+            "hot_color": "#ff9a3c"
+        },
+        "stillness_resonance": {
+            "enabled": true,
+            "min_presence_seconds": 3.6,
+            "pulse_seconds": 2.9,
+            "max_scale": 0.3,
+            "ripple_duration_seconds": 4.3,
+            "ripple_interval_seconds": 2.1,
+            "ripple_radius": 174.0,
+            "ripple_alpha": 0.4,
+            "ripple_threshold": 0.22
+        },
+        "crowd_aura": {
+            "enabled": true,
+            "min_people": 1.0,
+            "full_strength_people": 9.0,
+            "fade_in_seconds": 2.5,
+            "fade_out_seconds": 4.0,
+            "pulse_seconds": 9.0,
+            "padding": 0.12,
+            "softness": 0.18,
+            "min_alpha": 0.05,
+            "max_alpha": 0.28,
+            "energy_influence": 0.31,
+            "individual_dimming_max": 0.45,
+            "body_clearance": 0.12,
+            "gap_emphasis": 0.75,
+            "warm_color": "#ffe3a1",
+            "cool_color": "#5caeff"
+        },
+        "aftereffect_waves": {
+            "enabled": true,
+            "group_window_seconds": 0.22,
+            "group_distance": 0.18,
+            "group_width_per_departure": 0.09,
+            "duration_seconds": 4.7,
+            "initial_origin_outset": 0.03,
+            "origin_escape_distance": 0.48,
+            "start_radius": 0.029,
+            "propagation_speed": 0.35,
+            "band_width": 0.09,
+            "source_glow_radius": 0.26,
+            "echo_spacing": 0.15,
+            "echo_strength": 0.058,
+            "max_alpha": 0.26,
+            "fade_start_progress": 0.15,
+            "fade_end_progress": 0.99,
+            "glow_strength": 1.55,
+            "warm_color": "#ffcd79",
+            "blue_color": "#164155",
+            "dedupe_seconds": 5.0
+        }
+    },
     "renderer":  {
                      "missing_hold_seconds":  0.15,
                      "missing_fade_rate":  4.0

@@ -46,9 +46,10 @@
     "departure_edge_margin": 0.08,
     "departure_min_speed": 0.05,
     "position_smoothing": 0.5,
-    "stillness_speed_threshold": 0.12,
-    "stillness_rise_seconds": 2.5,
-    "stillness_fall_seconds": 0.8
+    "stillness_speed_threshold": 0.25,
+    "stillness_speed_smoothing": 0.5,
+    "stillness_rise_seconds": 1.8,
+    "stillness_fall_seconds": 2.5
   },
   "station": {
     "facade": {
@@ -121,14 +122,14 @@
     },
     "stillness_resonance": {
       "enabled": true,
-      "min_presence_seconds": 3,
+      "min_presence_seconds": 2,
       "pulse_seconds": 6,
       "max_scale": 1.3,
       "ripple_duration_seconds": 5.8,
-      "ripple_interval_seconds": 3.3,
-      "ripple_radius": 48,
+      "ripple_interval_seconds": 3.8,
+      "ripple_radius": 90,
       "ripple_alpha": 0.45,
-      "ripple_threshold": 0.32
+      "ripple_threshold": 0.22
     },
     "crowd_aura": {
       "enabled": true,

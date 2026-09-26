@@ -293,6 +293,17 @@ class PresenceAndStillnessTest(unittest.TestCase):
             body = tracker.update([person(0.5, 0.5, wrist_spread=spread)], frame * 0.1)[0]
         self.assertGreater(body["stillness"], 0.6)
 
+    def test_defaults_tolerate_realistic_torso_jitter(self):
+        # With the shipped defaults, the constant micro-movement of a person who
+        # merely stands (not frozen) must still build up stillness, so the
+        # resonance appears in an ordinary visit rather than only for a statue.
+        tracker = BodyTracker()
+        offsets = [0.012 * (frame % 2) for frame in range(24)]
+        body = None
+        for frame, offset in enumerate(offsets):
+            body = tracker.update([person(0.5 + offset, 0.5)], frame * 0.1)[0]
+        self.assertGreater(body["stillness"], 0.3)
+
 class JitteryApproachPairTest(unittest.TestCase):
     """A near threshold plus real pose jitter used to make bridges flicker.
 

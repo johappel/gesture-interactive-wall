@@ -93,14 +93,14 @@ func _schema() -> Array:
 			{"key": "hot_color", "type": "color", "default": "#ff9a3c"},
 		]},
 		{"effect": "stillness_resonance", "label": "Verweil-Resonanz", "params": [
-			{"key": "min_presence_seconds", "min": 0.1, "max": 20.0, "step": 0.1, "type": "float", "default": 3.0},
+			{"key": "min_presence_seconds", "min": 0.1, "max": 20.0, "step": 0.1, "type": "float", "default": 2.0},
 			{"key": "pulse_seconds", "min": 0.5, "max": 30.0, "step": 0.1, "type": "float", "default": 6.0},
 			{"key": "max_scale", "min": 0.1, "max": 5.0, "step": 0.1, "type": "float", "default": 2.3},
 			{"key": "ripple_duration_seconds", "min": 0.5, "max": 20.0, "step": 0.1, "type": "float", "default": 5.8},
-			{"key": "ripple_interval_seconds", "min": 0.5, "max": 20.0, "step": 0.1, "type": "float", "default": 3.3},
-			{"key": "ripple_radius", "min": 4.0, "max": 200.0, "step": 1.0, "type": "float", "default": 48.0},
+			{"key": "ripple_interval_seconds", "min": 0.5, "max": 20.0, "step": 0.1, "type": "float", "default": 3.8},
+			{"key": "ripple_radius", "min": 4.0, "max": 200.0, "step": 1.0, "type": "float", "default": 90.0},
 			{"key": "ripple_alpha", "min": 0.0, "max": 1.0, "step": 0.01, "type": "float", "default": 0.45},
-			{"key": "ripple_threshold", "min": 0.0, "max": 1.0, "step": 0.01, "type": "float", "default": 0.32},
+			{"key": "ripple_threshold", "min": 0.0, "max": 1.0, "step": 0.01, "type": "float", "default": 0.22},
 		]},
 		{"effect": "crowd_aura", "label": "Crowd-Aura", "params": [
 			{"key": "min_people", "min": 1, "max": 20, "step": 1, "type": "int", "default": 3},
